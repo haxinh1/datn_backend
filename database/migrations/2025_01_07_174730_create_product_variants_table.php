@@ -13,7 +13,18 @@ return new class extends Migration
     {
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('product_id'); // Sản phẩm liên kết
+            $table->string('sku')->nullable(); // Mã SKU
+            $table->decimal('price', 11, 2); // Giá bán
+            $table->decimal('sale_price', 11, 2)->nullable(); // Giá khuyến mãi
+            $table->timestamp('sale_price_start_at')->nullable();
+            $table->timestamp('sale_price_end_at')->nullable();
+            $table->string('thumbnail')->nullable(); // Ảnh biến thể
             $table->timestamps();
+            $table->softDeletes();
+
+            // Liên kết tới bảng products
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
         });
     }
 

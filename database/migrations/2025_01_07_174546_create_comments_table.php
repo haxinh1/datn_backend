@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('comments', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id()->comment('ID bình luận'); // ID bình luận
+            $table->unsignedBigInteger('product_id')->comment('ID sản phẩm được bình luận'); // ID sản phẩm
+            $table->unsignedBigInteger('user_id')->comment('ID người dùng bình luận'); // ID người dùng
+            $table->text('content')->comment('Nội dung bình luận'); // Nội dung bình luận
+            $table->timestamps(); // created_at, updated_at
+
+            // Khóa ngoại
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

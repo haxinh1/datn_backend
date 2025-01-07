@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_statuses', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id()->comment('ID trạng thái sản phẩm'); // ID trạng thái sản phẩm
+            $table->string('name', 255)->comment('Tên trạng thái'); // Tên trạng thái
+            $table->integer('ordinal')->default(0)->comment('Sắp xếp thứ tự'); // Thứ tự sắp xếp
         });
     }
 

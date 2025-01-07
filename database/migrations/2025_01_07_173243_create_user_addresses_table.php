@@ -12,8 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_addresses', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id(); // ID
+            $table->unsignedBigInteger('user_id')->comment('ID người dùng liên kết'); // ID người dùng
+            $table->text('address')->comment('Địa chỉ đầy đủ của người dùng'); // Địa chỉ đầy đủ
+            $table->boolean('id_default')->default(false)->comment('1 nếu là địa chỉ mặc định, 0 nếu không'); // Địa chỉ mặc định
+            $table->timestamps(); // created_at, updated_at
+
+            // Khóa ngoại liên kết tới bảng users
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

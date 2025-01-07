@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_galleries', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('product_id'); // Sản phẩm liên kết
-            $table->string('image'); // URL hình ảnh
-            $table->timestamps();
-
-            // Liên kết tới bảng products
+        Schema::create('product_tag', function (Blueprint $table) {
+            $table->unsignedBigInteger('product_id'); // Liên kết sản phẩm
+            $table->unsignedBigInteger('tag_id'); // Liên kết thẻ
+            $table->primary(['product_id', 'tag_id']); // Khóa chính
+        
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
         });
     }
 
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_galleries');
+        Schema::dropIfExists('_product_tag');
     }
 };

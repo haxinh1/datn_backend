@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('tags', function (Blueprint $table) {
             $table->id();
+            $table->string('name', 255)->unique()->comment('Tên thẻ');
+            $table->string('slug', 255)->unique()->comment('Đường dẫn SEO của thẻ');
             $table->timestamps();
         });
     }

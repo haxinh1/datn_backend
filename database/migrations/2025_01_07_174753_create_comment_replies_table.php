@@ -12,8 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('comment_replies', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id()->comment('ID trả lời bình luận'); // Khóa chính tự động tăng
+            $table->unsignedBigInteger('comment_id')->comment('ID của bình luận cha'); // ID bình luận cha
+            $table->unsignedBigInteger('user_id')->comment('ID của người bình luận'); // ID người bình luận
+            $table->unsignedBigInteger('reply_user_id')->comment('ID của người được trả lời'); // ID người được trả lời
+            $table->text('content')->comment('Nội dung bình luận'); // Nội dung bình luận
+            $table->timestamps(); // Thêm các cột created_at và updated_at
+
+            // Khóa ngoại cho comment_id (bình luận cha)
+            $table->foreign('comment_id')->references('id')->on('comments')->onDelete('cascade');
+
+            // Khóa ngoại cho user_id (người bình luận)
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
+            // Khóa ngoại cho reply_user_id (người được trả lời)
+            $table->foreign('reply_user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('parent_id')->nullable()->constrained('payments')->onDelete('set null')->comment('ID phương thức thanh toán cha (nếu có)');
+            $table->string('name', 255)->comment('Tên phương thức thanh toán');
+            $table->string('logo', 255)->nullable()->comment('Logo phương thức thanh toán');
+            $table->boolean('is_active')->default(true)->comment('1 nếu đang kích hoạt, 0 nếu không');
             $table->timestamps();
+            $table->softDeletes()->comment('Thời gian xóa mềm');
         });
     }
 

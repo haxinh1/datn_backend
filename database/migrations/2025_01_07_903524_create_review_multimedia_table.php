@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('review_multimedia', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id(); // Tạo cột id tự tăng
+            $table->unsignedBigInteger('review_id'); // Khóa ngoại review_id
+            $table->string('file'); // URL file đa phương tiện
+            $table->enum('file_type', ['image', 'video']); // Loại file
+        
+            // Thiết lập khóa ngoại
+            $table->foreign('review_id')->references('id')->on('reviews')->onDelete('cascade');
         });
     }
 

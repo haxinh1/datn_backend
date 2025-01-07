@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attribute_value_product_variants', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->unsignedBigInteger('product_variant_id'); // Liên kết biến thể sản phẩm
+            $table->unsignedBigInteger('attribute_value_id'); // Liên kết giá trị thuộc tính
+            $table->primary(['product_variant_id', 'attribute_value_id']);
+    
+            $table->foreign('product_variant_id')->references('id')->on('product_variants')->onDelete('cascade');
+            $table->foreign('attribute_value_id')->references('id')->on('attribute_values')->onDelete('cascade');
         });
     }
 

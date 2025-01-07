@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attribute_values', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id()->comment('ID giá trị thuộc tính'); // ID giá trị thuộc tính
+            $table->unsignedBigInteger('attribute_id')->comment('ID thuộc tính liên kết'); // ID thuộc tính
+            $table->string('value', 255)->comment('Giá trị thuộc tính'); // Giá trị thuộc tính
+            $table->boolean('is_active')->default(1)->comment('1 nếu giá trị thuộc tính đang hiển thị, 0 nếu ẩn'); // Trạng thái hiển thị
+            $table->timestamps(); // created_at, updated_at
+            $table->softDeletes()->comment('Thời gian xóa mềm'); // deleted_at
+
+            // Khóa ngoại
+            $table->foreign('attribute_id')->references('id')->on('attributes')->onDelete('cascade');
         });
     }
 

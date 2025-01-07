@@ -12,8 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('wishlists', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id()->comment('ID danh sách yêu thích'); // ID danh sách yêu thích
+            $table->unsignedBigInteger('user_id')->comment('ID người dùng liên kết'); // ID người dùng
+            $table->unsignedBigInteger('product_id')->comment('ID sản phẩm được yêu thích'); // ID sản phẩm
+            $table->timestamps(); // created_at
+
+            // Khóa ngoại
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
         });
     }
 

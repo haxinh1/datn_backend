@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('category__products', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->unsignedBigInteger('category_id'); // Danh mục liên kết
+            $table->unsignedBigInteger('product_id'); // Sản phẩm liên kết
+
+            // Khóa chính
+            $table->primary(['category_id', 'product_id']);
+
+            // Liên kết tới bảng categories và products
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
         });
     }
 

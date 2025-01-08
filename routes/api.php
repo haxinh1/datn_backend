@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::resource('attributes', AttributeController::class);
+Route::resource('brands', BrandController::class);
 
 Route::resource('attributes', AttributeController::class);
 Route::resource('brands', BrandController::class);

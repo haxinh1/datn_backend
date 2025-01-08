@@ -30,6 +30,9 @@ Route::resource('brands', BrandController::class);
 
 // Api url = "baseUrl/api/categories"
 Route::get('categories', [CategoryController::class, 'index']); // Lấy danh sách danh mục
-Route::get('categories/{id}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
+Route::get('categories/{category}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
 Route::post('categories/create', [CategoryController::class, 'create']);
+Route::put('categories/update/{category}', [CategoryController::class, 'update']);
+Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);
+
 

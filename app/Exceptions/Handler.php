@@ -29,7 +29,6 @@ class Handler extends ExceptionHandler
     }
 
 
-
     // mặc định là viết api
     public function render($request, \Throwable $exception)
     {

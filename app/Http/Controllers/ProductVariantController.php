@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_variant;
-use App\Http\Requests\StoreProduct_variantRequest;
-use App\Http\Requests\UpdateProduct_variantRequest;
+use App\Models\ProductVariant;
+use App\Http\Requests\StoreProductVariantRequest;
+use App\Http\Requests\UpdateProductVariantRequest;
 
 class ProductVariantController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductVariantController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_variantRequest $request)
+    public function store(StoreProductVariantRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductVariantController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_variant $product_variant)
+    public function show(ProductVariant $ProductVariant)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductVariantController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_variant $product_variant)
+    public function edit(ProductVariant $ProductVariant)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductVariantController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_variantRequest $request, Product_variant $product_variant)
+    public function update(UpdateProductVariantRequest $request, ProductVariant $ProductVariant)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductVariantController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_variant $product_variant)
+    public function destroy(ProductVariant $ProductVariant)
     {
         //
     }

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attribute_value_product;
-use App\Http\Requests\StoreAttribute_value_productRequest;
-use App\Http\Requests\UpdateAttribute_value_productRequest;
+use App\Models\AttributeValueProduct;
+use App\Http\Requests\StoreAttributeValueProductRequest;
+use App\Http\Requests\UpdateAttributeValueProductRequest;
 
 class AttributeValueProductController extends Controller
 {
@@ -27,7 +27,7 @@ class AttributeValueProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAttribute_value_productRequest $request)
+    public function store(StoreAttributeValueProductRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class AttributeValueProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Attribute_value_product $attribute_value_product)
+    public function show(AttributeValueProduct $AttributeValueProduct)
     {
         //
     }
@@ -43,7 +43,7 @@ class AttributeValueProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Attribute_value_product $attribute_value_product)
+    public function edit(AttributeValueProduct $AttributeValueProduct)
     {
         //
     }
@@ -51,7 +51,7 @@ class AttributeValueProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAttribute_value_productRequest $request, Attribute_value_product $attribute_value_product)
+    public function update(UpdateAttributeValueProductRequest $request, AttributeValueProduct $AttributeValueProduct)
     {
         //
     }
@@ -59,7 +59,7 @@ class AttributeValueProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Attribute_value_product $attribute_value_product)
+    public function destroy(AttributeValueProduct $AttributeValueProduct)
     {
         //
     }

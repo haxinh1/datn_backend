@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order_order_status;
-use App\Http\Requests\StoreOrder_order_statusRequest;
-use App\Http\Requests\UpdateOrder_order_statusRequest;
+use App\Models\OrderOrderStatus;
+use App\Http\Requests\StoreOrderOrderStatusRequest;
+use App\Http\Requests\UpdateOrderOrderStatusRequest;
 
 class OrderOrderStatusController extends Controller
 {
@@ -27,7 +27,7 @@ class OrderOrderStatusController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrder_order_statusRequest $request)
+    public function store(StoreOrderOrderStatusRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class OrderOrderStatusController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Order_order_status $order_order_status)
+    public function show(OrderOrderStatus $OrderOrderStatus)
     {
         //
     }
@@ -43,7 +43,7 @@ class OrderOrderStatusController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Order_order_status $order_order_status)
+    public function edit(OrderOrderStatus $OrderOrderStatus)
     {
         //
     }
@@ -51,7 +51,7 @@ class OrderOrderStatusController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateOrder_order_statusRequest $request, Order_order_status $order_order_status)
+    public function update(UpdateOrderOrderStatusRequest $request, OrderOrderStatus $OrderOrderStatus)
     {
         //
     }
@@ -59,7 +59,7 @@ class OrderOrderStatusController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Order_order_status $order_order_status)
+    public function destroy(OrderOrderStatus $OrderOrderStatus)
     {
         //
     }

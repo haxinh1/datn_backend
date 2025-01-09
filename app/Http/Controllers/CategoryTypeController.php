@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category_type;
-use App\Http\Requests\StoreCategory_typeRequest;
-use App\Http\Requests\UpdateCategory_typeRequest;
+use App\Models\CategoryType;
+use App\Http\Requests\StoreCategoryTypeRequest;
+use App\Http\Requests\UpdateCategoryTypeRequest;
 
 class CategoryTypeController extends Controller
 {
@@ -27,7 +27,7 @@ class CategoryTypeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategory_typeRequest $request)
+    public function store(StoreCategoryTypeRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class CategoryTypeController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Category_type $category_type)
+    public function show(CategoryType $CategoryType)
     {
         //
     }
@@ -43,7 +43,7 @@ class CategoryTypeController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category_type $category_type)
+    public function edit(CategoryType $CategoryType)
     {
         //
     }
@@ -51,7 +51,7 @@ class CategoryTypeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategory_typeRequest $request, Category_type $category_type)
+    public function update(UpdateCategoryTypeRequest $request, CategoryType $CategoryType)
     {
         //
     }
@@ -59,7 +59,7 @@ class CategoryTypeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category_type $category_type)
+    public function destroy(CategoryType $CategoryType)
     {
         //
     }

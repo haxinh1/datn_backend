@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_accessory;
-use App\Http\Requests\StoreProduct_accessoryRequest;
-use App\Http\Requests\UpdateProduct_accessoryRequest;
+use App\Models\ProductAccessory;
+use App\Http\Requests\StoreProductAccessoryRequest;
+use App\Http\Requests\UpdateProductAccessoryRequest;
 
 class ProductAccessoryController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductAccessoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_accessoryRequest $request)
+    public function store(StoreProductAccessoryRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductAccessoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_accessory $product_accessory)
+    public function show(ProductAccessory $ProductAccessory)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductAccessoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_accessory $product_accessory)
+    public function edit(ProductAccessory $ProductAccessory)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductAccessoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_accessoryRequest $request, Product_accessory $product_accessory)
+    public function update(UpdateProductAccessoryRequest $request, ProductAccessory $ProductAccessory)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductAccessoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_accessory $product_accessory)
+    public function destroy(ProductAccessory $ProductAccessory)
     {
         //
     }

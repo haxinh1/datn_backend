@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Chat_session;
-use App\Http\Requests\StoreChat_sessionRequest;
-use App\Http\Requests\UpdateChat_sessionRequest;
+use App\Models\ChatSession;
+use App\Http\Requests\StoreChatSessionRequest;
+use App\Http\Requests\UpdateChatSessionRequest;
 
 class ChatSessionController extends Controller
 {
@@ -27,7 +27,7 @@ class ChatSessionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreChat_sessionRequest $request)
+    public function store(StoreChatSessionRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ChatSessionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Chat_session $chat_session)
+    public function show(ChatSession $ChatSession)
     {
         //
     }
@@ -43,7 +43,7 @@ class ChatSessionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Chat_session $chat_session)
+    public function edit(ChatSession $ChatSession)
     {
         //
     }
@@ -51,7 +51,7 @@ class ChatSessionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateChat_sessionRequest $request, Chat_session $chat_session)
+    public function update(UpdateChatSessionRequest $request, ChatSession $ChatSession)
     {
         //
     }
@@ -59,7 +59,7 @@ class ChatSessionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Chat_session $chat_session)
+    public function destroy(ChatSession $ChatSession)
     {
         //
     }

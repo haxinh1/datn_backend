@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_tag;
-use App\Http\Requests\StoreProduct_tagRequest;
-use App\Http\Requests\UpdateProduct_tagRequest;
+use App\Models\ProductTag;
+use App\Http\Requests\StoreProductTagRequest;
+use App\Http\Requests\UpdateProductTagRequest;
 
 class ProductTagController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductTagController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_tagRequest $request)
+    public function store(StoreProductTagRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductTagController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_tag $product_tag)
+    public function show(ProductTag $ProductTag)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductTagController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_tag $product_tag)
+    public function edit(ProductTag $ProductTag)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductTagController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_tagRequest $request, Product_tag $product_tag)
+    public function update(UpdateProductTagRequest $request, ProductTag $ProductTag)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductTagController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_tag $product_tag)
+    public function destroy(ProductTag $ProductTag)
     {
         //
     }

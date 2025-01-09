@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_link;
-use App\Http\Requests\StoreProduct_linkRequest;
-use App\Http\Requests\UpdateProduct_linkRequest;
+use App\Models\ProductLink;
+use App\Http\Requests\StoreProductLinkRequest;
+use App\Http\Requests\UpdateProductLinkRequest;
 
 class ProductLinkController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductLinkController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_linkRequest $request)
+    public function store(StoreProductLinkRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductLinkController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_link $product_link)
+    public function show(ProductLink $ProductLink)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductLinkController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_link $product_link)
+    public function edit(ProductLink $ProductLink)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductLinkController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_linkRequest $request, Product_link $product_link)
+    public function update(UpdateProductLinkRequest $request, ProductLink $ProductLink)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductLinkController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_link $product_link)
+    public function destroy(ProductLink $ProductLink)
     {
         //
     }

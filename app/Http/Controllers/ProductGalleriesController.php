@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_galleries;
-use App\Http\Requests\StoreProduct_galleriesRequest;
-use App\Http\Requests\UpdateProduct_galleriesRequest;
+use App\Models\ProductGalleries;
+use App\Http\Requests\StoreProductGalleriesRequest;
+use App\Http\Requests\UpdateProductGalleriesRequest;
 
 class ProductGalleriesController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductGalleriesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_galleriesRequest $request)
+    public function store(StoreProductGalleriesRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductGalleriesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_galleries $product_galleries)
+    public function show(ProductGalleries $ProductGalleries)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductGalleriesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_galleries $product_galleries)
+    public function edit(ProductGalleries $ProductGalleries)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductGalleriesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_galleriesRequest $request, Product_galleries $product_galleries)
+    public function update(UpdateProductGalleriesRequest $request, ProductGalleries $ProductGalleries)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductGalleriesController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_galleries $product_galleries)
+    public function destroy(ProductGalleries $ProductGalleries)
     {
         //
     }

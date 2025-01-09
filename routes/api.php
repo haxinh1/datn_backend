@@ -3,6 +3,7 @@
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,8 @@ Route::resource('brands', BrandController::class);
 
 
 Route::apiResource('tags', TagController::class);
+Route::apiResource('coupons', CouponController::class);
+
 
 
 

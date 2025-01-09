@@ -3,64 +3,151 @@
 namespace App\Http\Controllers;
 
 use App\Models\Coupon;
-use App\Http\Requests\StoreCouponRequest;
-use App\Http\Requests\UpdateCouponRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CouponController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    
     public function index()
     {
-        //
+        $coupons = Coupon::orderByDesc('id')->get();
+        return response()->json([
+            'success' => true,
+            'message' => "Danh sách mã giảm giá",
+            'data' => $coupons,
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    
+    public function store(Request $request)
     {
-        //
+        $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
+
+        $validator = Validator::make($data, [
+            'code' => 'required|string|max:50|unique:coupons',
+            'title' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:255',
+            'discount_type' => 'required|in:percent,fix_amount',
+            'discount_value' => 'required|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi nhập liệu',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $coupon = Coupon::create($data);
+            return response()->json([
+                'success' => true,
+                'message' => 'Thêm mã giảm giá thành công',
+                'data' => $coupon,
+            ], 201);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreCouponRequest $request)
+    
+    public function show(string $id)
     {
-        //
+        try {
+            $coupon = Coupon::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Chi tiết mã giảm giá',
+                'data' => $coupon,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có dữ liệu phù hợp',
+            ], 404);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Coupon $coupon)
+    
+    public function update(Request $request, string $id)
     {
-        //
+        $coupon = Coupon::find($id);
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy dữ liệu',
+            ], 404);
+        }
+
+        $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
+
+        $validator = Validator::make($data, [
+            'code' => 'required|string|max:50|unique:coupons,code,' . $id,
+            'title' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:255',
+            'discount_type' => 'required|in:percent,fix_amount',
+            'discount_value' => 'required|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi nhập liệu',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $coupon->update($data);
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật mã giảm giá thành công',
+                'data' => $coupon,
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Coupon $coupon)
+    
+    public function destroy(string $id)
     {
-        //
-    }
+        $coupon = Coupon::find($id);
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy dữ liệu',
+            ], 404);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateCouponRequest $request, Coupon $coupon)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Coupon $coupon)
-    {
-        //
+        try {
+            $coupon->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa mã giảm giá thành công',
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+            ], 500);
+        }
     }
 }

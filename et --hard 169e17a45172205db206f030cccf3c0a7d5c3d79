@@ -1,0 +1,77 @@
+[33mcommit 2d4fc921ca0105de6da5dff7d2a9b7223fccea27[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: congmd0504 <congmd0504@gmail.com>
+Date:   Wed Jan 8 06:44:03 2025 +0700
+
+    attributes
+
+[33mcommit 169e17a45172205db206f030cccf3c0a7d5c3d79[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Wed Jan 8 05:18:54 2025 +0700
+
+    add all migration
+
+[33mcommit 191245060deb78d7a2f329736b92d7aa73c4d286[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Wed Jan 8 00:57:18 2025 +0700
+
+    add model all
+
+[33mcommit 9b21765ccc18cc52fa1b1fa168c680b2e7530889[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 23:59:47 2025 +0700
+
+    edit
+
+[33mcommit 91795856acded78adcb5e020913b45c97b67b74b[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 23:48:55 2025 +0700
+
+    delete file error
+
+[33mcommit 2e85745d38f5eae342c87fc2ff680550e8b8b54b[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 21:33:26 2025 +0700
+
+    add migration
+
+[33mcommit 55f0a3dde5aefeecbc807dc7759684e831c7c3f8[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 21:20:18 2025 +0700
+
+    add migrations
+
+[33mcommit 5164c425272a7736b4946cc70f3e2ec37b9139fd[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 21:06:46 2025 +0700
+
+    add migration products,...
+
+[33mcommit e9f85827fa34871b76da8c27a89b4ab2e83f8b82[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 06:12:13 2025 +0700
+
+    demo crud tags
+
+[33mcommit a72775d62fa3520abc273ed9cfcb57997b17da51[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 05:33:02 2025 +0700
+
+    add migrations tags
+
+[33mcommit 03afc63aade622432713ef2f6b2bf27a6b7d9a79[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Tue Jan 7 05:25:16 2025 +0700
+
+    add migrations payments
+
+[33mcommit 252f413b56244bf369a7acd3a7cad1cbaff75105[m
+Author: VietAnh464 <viethoak1@gmail.com>
+Date:   Mon Jan 6 23:41:39 2025 +0700
+
+    Add migration
+
+[33mcommit 5850a49764f2c10e48f79121498e4323bf54926d[m
+Author: haxinh1 <hanguyen010129@gmail.com>
+Date:   Sun Dec 22 21:57:30 2024 +0700
+
+    first commit

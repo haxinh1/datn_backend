@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order_status;
-use App\Http\Requests\StoreOrder_statusRequest;
-use App\Http\Requests\UpdateOrder_statusRequest;
+use App\Models\OrderStatus;
+use App\Http\Requests\StoreOrderStatusRequest;
+use App\Http\Requests\UpdateOrderStatusRequest;
 
 class OrderStatusController extends Controller
 {
@@ -27,7 +27,7 @@ class OrderStatusController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrder_statusRequest $request)
+    public function store(StoreOrderStatusRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class OrderStatusController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Order_status $order_status)
+    public function show(OrderStatus $OrderStatus)
     {
         //
     }
@@ -43,7 +43,7 @@ class OrderStatusController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Order_status $order_status)
+    public function edit(OrderStatus $OrderStatus)
     {
         //
     }
@@ -51,7 +51,7 @@ class OrderStatusController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateOrder_statusRequest $request, Order_status $order_status)
+    public function update(UpdateOrderStatusRequest $request, OrderStatus $OrderStatus)
     {
         //
     }
@@ -59,7 +59,7 @@ class OrderStatusController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Order_status $order_status)
+    public function destroy(OrderStatus $OrderStatus)
     {
         //
     }

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Coupon_user;
-use App\Http\Requests\StoreCoupon_userRequest;
-use App\Http\Requests\UpdateCoupon_userRequest;
+use App\Models\CouponUser;
+use App\Http\Requests\StoreCouponUserRequest;
+use App\Http\Requests\UpdateCouponUserRequest;
 
 class CouponUserController extends Controller
 {
@@ -27,7 +27,7 @@ class CouponUserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCoupon_userRequest $request)
+    public function store(StoreCouponUserRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class CouponUserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Coupon_user $coupon_user)
+    public function show(CouponUser $CouponUser)
     {
         //
     }
@@ -43,7 +43,7 @@ class CouponUserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Coupon_user $coupon_user)
+    public function edit(CouponUser $CouponUser)
     {
         //
     }
@@ -51,7 +51,7 @@ class CouponUserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCoupon_userRequest $request, Coupon_user $coupon_user)
+    public function update(UpdateCouponUserRequest $request, CouponUser $CouponUser)
     {
         //
     }
@@ -59,7 +59,7 @@ class CouponUserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Coupon_user $coupon_user)
+    public function destroy(CouponUser $CouponUser)
     {
         //
     }

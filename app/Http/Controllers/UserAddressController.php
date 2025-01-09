@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User_address;
-use App\Http\Requests\StoreUser_addressRequest;
-use App\Http\Requests\UpdateUser_addressRequest;
+use App\Models\UserAddress;
+use App\Http\Requests\StoreUserAddressRequest;
+use App\Http\Requests\UpdateUserAddressRequest;
 
 class UserAddressController extends Controller
 {
@@ -27,7 +27,7 @@ class UserAddressController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUser_addressRequest $request)
+    public function store(StoreUserAddressRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class UserAddressController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User_address $user_address)
+    public function show(UserAddress $UserAddress)
     {
         //
     }
@@ -43,7 +43,7 @@ class UserAddressController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User_address $user_address)
+    public function edit(UserAddress $UserAddress)
     {
         //
     }
@@ -51,7 +51,7 @@ class UserAddressController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUser_addressRequest $request, User_address $user_address)
+    public function update(UpdateUserAddressRequest $request, UserAddress $UserAddress)
     {
         //
     }
@@ -59,7 +59,7 @@ class UserAddressController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User_address $user_address)
+    public function destroy(UserAddress $UserAddress)
     {
         //
     }

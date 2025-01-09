@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attribute_value;
-use App\Http\Requests\StoreAttribute_valueRequest;
-use App\Http\Requests\UpdateAttribute_valueRequest;
+use App\Models\AttributeValue;
+use App\Http\Requests\StoreAttributeValueRequest;
+use App\Http\Requests\UpdateAttributeValueRequest;
 
 class AttributeValueController extends Controller
 {
@@ -27,7 +27,7 @@ class AttributeValueController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAttribute_valueRequest $request)
+    public function store(StoreAttributeValueRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class AttributeValueController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Attribute_value $attribute_value)
+    public function show(AttributeValue $AttributeValue)
     {
         //
     }
@@ -43,7 +43,7 @@ class AttributeValueController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Attribute_value $attribute_value)
+    public function edit(AttributeValue $AttributeValue)
     {
         //
     }
@@ -51,7 +51,7 @@ class AttributeValueController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAttribute_valueRequest $request, Attribute_value $attribute_value)
+    public function update(UpdateAttributeValueRequest $request, AttributeValue $AttributeValue)
     {
         //
     }
@@ -59,7 +59,7 @@ class AttributeValueController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Attribute_value $attribute_value)
+    public function destroy(AttributeValue $AttributeValue)
     {
         //
     }

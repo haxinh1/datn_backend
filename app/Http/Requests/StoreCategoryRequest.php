@@ -25,7 +25,7 @@ class StoreCategoryRequest extends FormRequest
             "name" => ['required', 'unique'],
             "slug" => ['nullable', 'unique'],
             "parent_id" => ['nullable'],
-            "ordinal" => ['nullable'],
+            "ordinal" => ['nullable',  'unique'],
         ];
     }
 }

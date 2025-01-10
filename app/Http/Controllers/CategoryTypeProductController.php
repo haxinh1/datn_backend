@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category_type_product;
-use App\Http\Requests\StoreCategory_type_productRequest;
-use App\Http\Requests\UpdateCategory_type_productRequest;
+use App\Models\CategoryTypeProduct;
+use App\Http\Requests\StoreCategoryTypeProductRequest;
+use App\Http\Requests\UpdateCategoryTypeProductRequest;
 
 class CategoryTypeProductController extends Controller
 {
@@ -27,7 +27,7 @@ class CategoryTypeProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategory_type_productRequest $request)
+    public function store(StoreCategoryTypeProductRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class CategoryTypeProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Category_type_product $category_type_product)
+    public function show(CategoryTypeProduct $CategoryTypeProduct)
     {
         //
     }
@@ -43,7 +43,7 @@ class CategoryTypeProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category_type_product $category_type_product)
+    public function edit(CategoryTypeProduct $CategoryTypeProduct)
     {
         //
     }
@@ -51,7 +51,7 @@ class CategoryTypeProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategory_type_productRequest $request, Category_type_product $category_type_product)
+    public function update(UpdateCategoryTypeProductRequest $request, CategoryTypeProduct $CategoryTypeProduct)
     {
         //
     }
@@ -59,7 +59,7 @@ class CategoryTypeProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category_type_product $category_type_product)
+    public function destroy(CategoryTypeProduct $CategoryTypeProduct)
     {
         //
     }

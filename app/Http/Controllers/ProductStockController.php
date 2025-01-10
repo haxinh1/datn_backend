@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product_stock;
-use App\Http\Requests\StoreProduct_stockRequest;
-use App\Http\Requests\UpdateProduct_stockRequest;
+use App\Models\ProductStock;
+use App\Http\Requests\StoreProductStockRequest;
+use App\Http\Requests\UpdateProductStockRequest;
 
 class ProductStockController extends Controller
 {
@@ -27,7 +27,7 @@ class ProductStockController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProduct_stockRequest $request)
+    public function store(StoreProductStockRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProductStockController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product_stock $product_stock)
+    public function show(ProductStock $ProductStock)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProductStockController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_stock $product_stock)
+    public function edit(ProductStock $ProductStock)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProductStockController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProduct_stockRequest $request, Product_stock $product_stock)
+    public function update(UpdateProductStockRequest $request, ProductStock $ProductStock)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProductStockController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product_stock $product_stock)
+    public function destroy(ProductStock $ProductStock)
     {
         //
     }

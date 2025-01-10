@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Comment_replies;
-use App\Http\Requests\StoreComment_repliesRequest;
-use App\Http\Requests\UpdateComment_repliesRequest;
+use App\Models\CommentReplies;
+use App\Http\Requests\StoreCommentRepliesRequest;
+use App\Http\Requests\UpdateCommentRepliesRequest;
 
 class CommentRepliesController extends Controller
 {
@@ -27,7 +27,7 @@ class CommentRepliesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreComment_repliesRequest $request)
+    public function store(StoreCommentRepliesRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class CommentRepliesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Comment_replies $comment_replies)
+    public function show(CommentReplies $CommentReplies)
     {
         //
     }
@@ -43,7 +43,7 @@ class CommentRepliesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Comment_replies $comment_replies)
+    public function edit(CommentReplies $CommentReplies)
     {
         //
     }
@@ -51,7 +51,7 @@ class CommentRepliesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateComment_repliesRequest $request, Comment_replies $comment_replies)
+    public function update(UpdateCommentRepliesRequest $request, CommentReplies $CommentReplies)
     {
         //
     }
@@ -59,7 +59,7 @@ class CommentRepliesController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Comment_replies $comment_replies)
+    public function destroy(CommentReplies $CommentReplies)
     {
         //
     }

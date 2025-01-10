@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Coupon_restriction;
-use App\Http\Requests\StoreCoupon_restrictionRequest;
-use App\Http\Requests\UpdateCoupon_restrictionRequest;
+use App\Models\CouponRestriction;
+use App\Http\Requests\StoreCouponRestrictionRequest;
+use App\Http\Requests\UpdateCouponRestrictionRequest;
 
 class CouponRestrictionController extends Controller
 {
@@ -27,7 +27,7 @@ class CouponRestrictionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCoupon_restrictionRequest $request)
+    public function store(StoreCouponRestrictionRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class CouponRestrictionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Coupon_restriction $coupon_restriction)
+    public function show(CouponRestriction $CouponRestriction)
     {
         //
     }
@@ -43,7 +43,7 @@ class CouponRestrictionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Coupon_restriction $coupon_restriction)
+    public function edit(CouponRestriction $CouponRestriction)
     {
         //
     }
@@ -51,7 +51,7 @@ class CouponRestrictionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCoupon_restrictionRequest $request, Coupon_restriction $coupon_restriction)
+    public function update(UpdateCouponRestrictionRequest $request, CouponRestriction $CouponRestriction)
     {
         //
     }
@@ -59,7 +59,7 @@ class CouponRestrictionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Coupon_restriction $coupon_restriction)
+    public function destroy(CouponRestriction $CouponRestriction)
     {
         //
     }

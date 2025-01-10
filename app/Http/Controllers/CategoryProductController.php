@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category_Product;
-use App\Http\Requests\StoreCategory_ProductRequest;
-use App\Http\Requests\UpdateCategory_ProductRequest;
+use App\Models\CategoryProduct;
+use App\Http\Requests\StoreCategoryProductRequest;
+use App\Http\Requests\UpdateCategoryProductRequest;
 
 class   CategoryProductController extends Controller
 {
@@ -27,7 +27,7 @@ class   CategoryProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategory_ProductRequest $request)
+    public function store(StoreCategoryProductRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class   CategoryProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Category_Product $category_Product)
+    public function show(CategoryProduct $CategoryProduct)
     {
         //
     }
@@ -43,7 +43,7 @@ class   CategoryProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category_Product $category_Product)
+    public function edit(CategoryProduct $CategoryProduct)
     {
         //
     }
@@ -51,7 +51,7 @@ class   CategoryProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategory_ProductRequest $request, Category_Product $category_Product)
+    public function update(UpdateCategoryProductRequest $request, CategoryProduct $CategoryProduct)
     {
         //
     }
@@ -59,7 +59,7 @@ class   CategoryProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category_Product $category_Product)
+    public function destroy(CategoryProduct $CategoryProduct)
     {
         //
     }

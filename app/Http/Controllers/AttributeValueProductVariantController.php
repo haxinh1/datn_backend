@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attribute_value_product_variant;
-use App\Http\Requests\StoreAttribute_value_product_variantRequest;
-use App\Http\Requests\UpdateAttribute_value_product_variantRequest;
+use App\Models\AttributeValueProductVariant;
+use App\Http\Requests\StoreAttributeValueProductVariantRequest;
+use App\Http\Requests\UpdateAttributeValueProductVariantRequest;
 
 class AttributeValueProductVariantController extends Controller
 {
@@ -27,7 +27,7 @@ class AttributeValueProductVariantController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAttribute_value_product_variantRequest $request)
+    public function store(StoreAttributeValueProductVariantRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class AttributeValueProductVariantController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Attribute_value_product_variant $attribute_value_product_variant)
+    public function show(AttributeValueProductVariant $AttributeValueProductVariant)
     {
         //
     }
@@ -43,7 +43,7 @@ class AttributeValueProductVariantController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Attribute_value_product_variant $attribute_value_product_variant)
+    public function edit(AttributeValueProductVariant $AttributeValueProductVariant)
     {
         //
     }
@@ -51,7 +51,7 @@ class AttributeValueProductVariantController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAttribute_value_product_variantRequest $request, Attribute_value_product_variant $attribute_value_product_variant)
+    public function update(UpdateAttributeValueProductVariantRequest $request, AttributeValueProductVariant $AttributeValueProductVariant)
     {
         //
     }
@@ -59,7 +59,7 @@ class AttributeValueProductVariantController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Attribute_value_product_variant $attribute_value_product_variant)
+    public function destroy(AttributeValueProductVariant $AttributeValueProductVariant)
     {
         //
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
@@ -32,7 +33,13 @@ Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
 
-
+Route::prefix('payments')->group(function () {
+    Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
+    Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
+    Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết
+    Route::put('/{id}', [PaymentController::class, 'update']);  // Cập nhật
+    Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
+});
 
 // Category api
 

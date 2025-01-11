@@ -4,6 +4,7 @@ use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
@@ -41,6 +42,11 @@ Route::prefix('payments')->group(function () {
     Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
 });
 
+Route::get('/order-statuses', [OrderStatusController::class, 'index']);
+Route::post('/order-statuses', [OrderStatusController::class, 'store']);
+Route::get('/order-statuses/{id}', [OrderStatusController::class, 'show']);
+Route::put('/order-statuses/{id}', [OrderStatusController::class, 'update']);
+Route::delete('/order-statuses/{id}', [OrderStatusController::class, 'destroy']);
 // Category api
 
 

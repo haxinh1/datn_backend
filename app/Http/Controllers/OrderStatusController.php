@@ -56,6 +56,7 @@ class OrderStatusController extends Controller
         }
 
         return response()->json($status, 200);
+
     }
 
     /**
@@ -98,5 +99,6 @@ class OrderStatusController extends Controller
 
         $status->delete();
         return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
+
     }
 }

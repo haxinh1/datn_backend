@@ -4,6 +4,7 @@ use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ Route::resource('brands', BrandController::class);
 Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
-
+//payment
 Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
     Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
@@ -40,6 +41,14 @@ Route::prefix('payments')->group(function () {
     Route::put('/{id}', [PaymentController::class, 'update']);  // Cập nhật
     Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
 });
+
+
+
+Route::get('/order-statuses', [OrderStatusController::class, 'index']);
+Route::post('/order-statuses', [OrderStatusController::class, 'store']);
+Route::get('/order-statuses/{id}', [OrderStatusController::class, 'show']);
+Route::put('/order-statuses/{id}', [OrderStatusController::class, 'update']);
+Route::delete('/order-statuses/{id}', [OrderStatusController::class, 'destroy']);
 
 // Category api
 
@@ -50,5 +59,3 @@ Route::get('categories/{category}', [CategoryController::class, 'show']); // L�
 Route::post('categories/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);
 Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);
-
-

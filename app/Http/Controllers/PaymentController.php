@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Http\Requests\StorePaymentRequest;
+use Illuminate\Http\Request;
 use App\Http\Requests\UpdatePaymentRequest;
 
 class PaymentController extends Controller
@@ -28,7 +28,7 @@ class PaymentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePaymentRequest $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'parent_id' => 'nullable|integer|exists:payments,id',
@@ -69,7 +69,7 @@ class PaymentController extends Controller
     /**ư
      * Update the specified resource in storage.
      */
-    public function update(UpdatePaymentRequest $request, Payment $payment , $id)
+    public function update(Request $request, Payment $payment , $id)
     {
         $payment = Payment::find($id);
         if (!$payment) {

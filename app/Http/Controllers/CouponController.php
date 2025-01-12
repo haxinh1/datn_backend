@@ -5,22 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class CouponController extends Controller
 {
-    
+   
     public function index()
     {
-        $coupons = Coupon::orderByDesc('id')->get();
+        $coupons = Coupon::withTrashed()->orderByDesc('id')->get();
         return response()->json([
             'success' => true,
-            'message' => "Danh sách mã giảm giá",
+            'message' => "Đây là danh sách mã giảm giá",
             'data' => $coupons,
         ]);
     }
 
-    
+  
     public function store(Request $request)
     {
         $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
@@ -37,6 +36,8 @@ class CouponController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $data['is_active'] = $data['is_active'] ?? 0;
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -44,6 +45,9 @@ class CouponController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
+
+        $data['usage_count'] = 0;
+        $data['is_expired'] = $data['end_date'] ? now()->greaterThan($data['end_date']) : false;
 
         try {
             $coupon = Coupon::create($data);
@@ -55,16 +59,16 @@ class CouponController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+                'message' => $th->getMessage(),
             ], 500);
         }
     }
 
-    
+   
     public function show(string $id)
     {
         try {
-            $coupon = Coupon::findOrFail($id);
+            $coupon = Coupon::withTrashed()->findOrFail($id);
             return response()->json([
                 'success' => true,
                 'message' => 'Chi tiết mã giảm giá',
@@ -78,10 +82,10 @@ class CouponController extends Controller
         }
     }
 
-    
+   
     public function update(Request $request, string $id)
     {
-        $coupon = Coupon::find($id);
+        $coupon = Coupon::withTrashed()->find($id);
         if (!$coupon) {
             return response()->json([
                 'success' => false,
@@ -103,6 +107,8 @@ class CouponController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $data['is_active'] = $data['is_active'] ?? 0;
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -110,6 +116,8 @@ class CouponController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
+
+        $data['is_expired'] = $data['end_date'] ? now()->greaterThan($data['end_date']) : false;
 
         try {
             $coupon->update($data);
@@ -121,12 +129,12 @@ class CouponController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+                'message' => $th->getMessage(),
             ], 500);
         }
     }
 
-    
+   
     public function destroy(string $id)
     {
         $coupon = Coupon::find($id);
@@ -136,12 +144,36 @@ class CouponController extends Controller
                 'message' => 'Không tìm thấy dữ liệu',
             ], 404);
         }
-
         try {
             $coupon->delete();
             return response()->json([
                 'success' => true,
-                'message' => 'Xóa mã giảm giá thành công',
+                'message' => 'Xóa mềm thành công',
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi hệ thống: ' . $th->getMessage(),
+            ], 500);
+        }
+    }
+
+ 
+    public function restore(string $id)
+    {
+        $coupon = Coupon::onlyTrashed()->find($id);
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy dữ liệu đã bị xóa',
+            ], 404);
+        }
+        try {
+            $coupon->restore();
+            return response()->json([
+                'success' => true,
+                'message' => 'Khôi phục mã giảm giá thành công',
+                'data' => $coupon,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([

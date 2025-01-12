@@ -29,7 +29,9 @@ Route::resource('brands', BrandController::class);
 
 
 Route::apiResource('tags', TagController::class);
+Route::post('/coupons/{id}/restore', [CouponController::class, 'restore']);
 Route::apiResource('coupons', CouponController::class);
+
 
 
 

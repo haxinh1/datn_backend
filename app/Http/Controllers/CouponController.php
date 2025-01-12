@@ -47,7 +47,7 @@ class CouponController extends Controller
         }
 
         $data['usage_count'] = 0;
-        $data['is_expired'] = $data['end_date'] ? now()->greaterThan($data['end_date']) : false;
+        $data['is_expired'] = $data['end_date'] ? (now()->lessThanOrEqualTo($data['end_date']) ? 1 : 0) : 1;
 
         try {
             $coupon = Coupon::create($data);
@@ -117,7 +117,7 @@ class CouponController extends Controller
             ], 422);
         }
 
-        $data['is_expired'] = $data['end_date'] ? now()->greaterThan($data['end_date']) : false;
+        $data['is_expired'] = $data['end_date'] ? (now()->lessThanOrEqualTo($data['end_date']) ? 1 : 0) : 1;
 
         try {
             $coupon->update($data);

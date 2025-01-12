@@ -31,6 +31,7 @@ Route::resource('brands', BrandController::class);
 
 
 Route::apiResource('tags', TagController::class);
+Route::post('/coupons/{id}/restore', [CouponController::class, 'restore']);
 Route::apiResource('coupons', CouponController::class);
 
 //payment
@@ -48,6 +49,7 @@ Route::post('/order-statuses', [OrderStatusController::class, 'store']);
 Route::get('/order-statuses/{id}', [OrderStatusController::class, 'show']);
 Route::put('/order-statuses/{id}', [OrderStatusController::class, 'update']);
 Route::delete('/order-statuses/{id}', [OrderStatusController::class, 'destroy']);
+
 
 // Category api
 

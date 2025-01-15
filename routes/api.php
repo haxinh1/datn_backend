@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\BrandController;
+use App\Http\Controllers\admin\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderStatusController;
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
+Route::resource('products', ProductController::class);
 
 
 Route::apiResource('tags', TagController::class);

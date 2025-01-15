@@ -22,10 +22,11 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "name" => ['required'],
-            "slug" => ['nullable'],
-            "parent_id" => ['nullable'],
-            "ordinal" => ['nullable'],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'ordinal' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean']
         ];
     }
 }

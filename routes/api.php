@@ -59,4 +59,5 @@ Route::get('categories', [CategoryController::class, 'index']); // Lấy danh s�
 Route::get('categories/{category}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
 Route::post('categories/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);
+Route::put('categories/update-status/{category}', [CategoryController::class, 'updateStatus']);
 Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);

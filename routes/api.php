@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\admin\AttributeController;
-use App\Http\Controllers\BrandController;
+use App\Http\Controllers\admin\BrandController;
+use App\Http\Controllers\admin\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderStatusController;
@@ -26,8 +27,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
-Route::resource('attributes', AttributeController::class);
-Route::resource('brands', BrandController::class);
+Route::apiResource('attributes', AttributeController::class);
+Route::apiResource('brands', BrandController::class);
+Route::resource('products', ProductController::class);
 
 
 Route::apiResource('tags', TagController::class);
@@ -60,4 +62,5 @@ Route::get('categories', [CategoryController::class, 'index']); // Lấy danh s�
 Route::get('categories/{category}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
 Route::post('categories/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);
+Route::put('categories/update-status/{category}', [CategoryController::class, 'updateStatus']);
 Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);

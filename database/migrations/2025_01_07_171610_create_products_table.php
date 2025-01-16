@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('brand_id')->nullable()->comment('ID thương hiệu'); // ID thương hiệu
             $table->string('name', 250)->comment('Tên sản phẩm'); // Tên sản phẩm
             $table->string('name_link', 250)->comment('Tên link sản phẩm khi chọn các sản phẩm liên kết'); // Tên link sản phẩm liên kết
-            $table->string('slug', 250)->comment('Đường dẫn sản phẩm (SEO)'); // Đường dẫn SEO
+            $table->string('slug', 250)->nullable()->comment('Đường dẫn sản phẩm (SEO)'); // Đường dẫn SEO
             $table->integer('views')->default(0)->comment('Số lượt xem sản phẩm'); // Số lượt xem
             $table->text('content')->nullable()->comment('Mô tả chi tiết sản phẩm'); // Mô tả chi tiết
             $table->string('thumbnail', 255)->comment('Ảnh đại diện của sản phẩm'); // Ảnh đại diện

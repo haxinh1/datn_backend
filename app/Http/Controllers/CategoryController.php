@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
+use Illuminate\Http\Request;
 
 
 
@@ -47,7 +48,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-       return response()->json($category->load('children'));
+        return response()->json($category->load('children'));
     }
 
     /**
@@ -56,12 +57,17 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, Category $category)
     {
         //
-        $category->name = $request->name;
-        $category->slug = $request->slug;
-        $category->ordinal = $request->ordinal;
-        $category->parent_id = $request->parent_id;
-        $category->save();
-        return response()->json($category);
+        try {
+            $category->name = $request->name;
+            $category->slug = $request->slug;
+            $category->ordinal = $request->ordinal;
+            $category->parent_id = $request->parent_id;
+            $category->is_active = $request->is_active;
+            $category->save();
+            return response()->json($category);
+        } catch (\Throwable $throwable) {
+            return response()->json(['message' => $throwable->getMessage()], 400);
+        }
     }
 
     /**
@@ -74,9 +80,17 @@ class CategoryController extends Controller
             $category->delete();
             return $this->json(['message' => 'Xóa thành công'], 200);
         } catch (\Throwable $throwable) {
-            return response()->json(['message' => $throwable->getMessage()], 500);
-
+            return response()->json(['message' => $throwable->getMessage()], 400);
         }
+
+    }
+
+    public function updateStatus(Category $category, Request $request)
+    {
+
+            $category->is_active = $request->is_active;
+            $category->save();
+            return response()->json($category, 200); // Đảm bảo mã trạng thái là 200 (OK)
 
     }
 

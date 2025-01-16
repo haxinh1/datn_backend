@@ -36,6 +36,7 @@ Route::apiResource('coupons', CouponController::class);
 
 //payment
 Route::prefix('payments')->group(function () {
+    
     Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
     Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
     Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết

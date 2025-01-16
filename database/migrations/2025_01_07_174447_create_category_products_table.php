@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('category__products', function (Blueprint $table) {
+        Schema::create('category_products', function (Blueprint $table) {
             $table->unsignedBigInteger('category_id'); // Danh mục liên kết
             $table->unsignedBigInteger('product_id'); // Sản phẩm liên kết
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('category__products');
+        Schema::dropIfExists('category_products');
     }
 };

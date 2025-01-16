@@ -17,10 +17,6 @@ return new class extends Migration
 
             // Khóa chính
             $table->primary(['product_id', 'attribute_value_id']);
-
-            // Liên kết tới bảng products và attribute_values
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('attribute_value_id')->references('id')->on('attribute_values')->onDelete('cascade');
         });
     }
 

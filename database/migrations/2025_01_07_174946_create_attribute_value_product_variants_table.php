@@ -15,9 +15,6 @@ return new class extends Migration
             $table->unsignedBigInteger('product_variant_id'); // Liên kết biến thể sản phẩm
             $table->unsignedBigInteger('attribute_value_id'); // Liên kết giá trị thuộc tính
             $table->primary(['product_variant_id', 'attribute_value_id']);
-    
-            $table->foreign('product_variant_id')->references('id')->on('product_variants')->onDelete('cascade');
-            $table->foreign('attribute_value_id')->references('id')->on('attribute_values')->onDelete('cascade');
         });
     }
 

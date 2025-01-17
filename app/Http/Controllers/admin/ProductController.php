@@ -57,7 +57,6 @@ class ProductController extends Controller
             'thumbnail',          // name="thumbnail"
             'sku',                // name="sku"
             'price',              // name="price"
-            'sell_price',         // name="sell_price"
             'sale_price',         // name="sale_price"
             'sale_price_start_at', // name="sale_price_start_at"
             'sale_price_end_at',  // name="sale_price_end_at"
@@ -67,9 +66,15 @@ class ProductController extends Controller
             $latestId = Product::max('id') ?? 0;
             $datas['sku'] = 'PD000' . ($latestId + 1); // Tạo SKU: SKU000 + (ID mới nhất + 1)
         }
+        if (empty($datas['name_link'])) {
+            $datas['name_link'] = "";
+        }
+        if (empty($datas['slug'])) {
+            $datas['slug'] = "";
+        }
+
         try {
             DB::beginTransaction();
-
             // Tạo sản phẩm với dữ liệu đã thu thập
             $product = Product::create($datas);
 

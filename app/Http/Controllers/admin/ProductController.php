@@ -22,9 +22,27 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $products = Product::with([
+               'categories',            
+            ])
+            ->orderByDesc('id') 
+            ->get();
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Danh sách sản phẩm!',
+                'data' => $products,
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi truy xuất sản phẩm!',
+            ], 500);
+        }
+        
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -180,7 +198,26 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+            $product = Product::with([
+                'categories',            
+                'galleries',   
+                'atributeValueProduct.attributeValue',
+                'variants',           
+                'variants.attributeValueProductVariants.attributeValue', 
+            ])->where('id', $id)->firstOrFail(); 
+
+            return response()->json([
+                'success' => true,
+                'data' => $product,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi!',
+            ], 404);
+        }
+    
     }
 
     /**

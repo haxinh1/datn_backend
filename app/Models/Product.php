@@ -28,19 +28,21 @@ class Product extends Model
     ];
     public function categories()
     {
-        return $this->belongsToMany(Category::class, 'category_products', 'product_id', 'category_id');
+        return $this->belongsToMany(Category::class, 'category_products');
     }
+
     public function galleries()
     {
         return $this->hasMany(ProductGalleries::class);
     }
+
     public function variants()
     {
-        return $this->hasMany(AttributeValueProductVariant::class);
+        return $this->hasMany(ProductVariant::class);
     }
 
-    public function attributeValues()
+    public function atributeValueProduct()
     {
-        return $this->belongsToMany(AttributeValue::class, 'attribute_value_product', 'product_id', 'attribute_value_id');
+        return $this->hasMany(AttributeValueProduct::class);
     }
 }

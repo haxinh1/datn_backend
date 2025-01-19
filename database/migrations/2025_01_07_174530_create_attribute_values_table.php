@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('attribute_values', function (Blueprint $table) {
             $table->id()->comment('ID giá trị thuộc tính'); // ID giá trị thuộc tính
-            $table->unsignedBigInteger('attribute_id')->comment('ID thuộc tính liên kết'); // ID thuộc tính
+            $table->unsignedBigInteger('attribute_id')->index()->comment('ID thuộc tính liên kết');
             $table->string('value', 255)->comment('Giá trị thuộc tính'); // Giá trị thuộc tính
             $table->boolean('is_active')->default(1)->comment('1 nếu giá trị thuộc tính đang hiển thị, 0 nếu ẩn'); // Trạng thái hiển thị
             $table->timestamps(); // created_at, updated_at

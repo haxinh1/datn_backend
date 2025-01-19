@@ -20,8 +20,8 @@ class ProductVariant extends Model
         'sale_price_end_at',
         'thumbnail',
     ];
-    public function attributeValues()
+    public function attributeValueProductVariants()
     {
-        return $this->belongsToMany(AttributeValue::class, 'attribute_value_product_variant');
+        return $this->hasMany(AttributeValueProductVariant::class);
     }
 }

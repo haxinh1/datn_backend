@@ -3,11 +3,11 @@
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\BrandController;
 use App\Http\Controllers\admin\ProductController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\OrderStatusController;
-use App\Http\Controllers\CouponController;
-use App\Http\Controllers\TagController;
+use App\Http\Controllers\admin\CategoryController;
+use App\Http\Controllers\admin\PaymentController;
+use App\Http\Controllers\admin\OrderStatusController;
+use App\Http\Controllers\admin\CouponController;
+use App\Http\Controllers\admin\TagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,10 +30,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
 Route::resource('products', ProductController::class);
+Route::put('/products/edit/active/{id}',[ProductController::class,'active']);
 
 
 Route::apiResource('tags', TagController::class);
-Route::post('/coupons/{id}/restore', [CouponController::class, 'restore']);
 Route::apiResource('coupons', CouponController::class);
 
 //payment

@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
 Route::resource('products', ProductController::class);
+Route::put('/products/edit/active/{id}',[ProductController::class,'active']);
 
 
 Route::apiResource('tags', TagController::class);

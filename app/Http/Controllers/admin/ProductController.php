@@ -74,7 +74,7 @@ class ProductController extends Controller
             'content',            // name="content"
             'thumbnail',          // name="thumbnail"
             'sku',                // name="sku"
-            'price',              // name="price"
+            'sell_price',              // name="sell_price"
             'sale_price',         // name="sale_price"
             'sale_price_start_at', // name="sale_price_start_at"
             'sale_price_end_at',  // name="sale_price_end_at"

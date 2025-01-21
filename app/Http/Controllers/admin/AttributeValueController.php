@@ -34,8 +34,7 @@ class AttributeValueController extends Controller
      */
     public function create()
     {
-        $attributes = Attribute::select('name', 'id', 'slug')->get();
-        return view('attributes.create', compact('attributes'));
+        
     }
 
     /**
@@ -44,12 +43,6 @@ class AttributeValueController extends Controller
     public function store(StoreAttributeValueRequest $request)
     {
         try {
-            // Xác thực dữ liệu đầu vào
-            $request->validate([
-                'attributes.*.id' => 'required|integer|exists:attributes,id',
-                'attributes.*.values.*' => 'nullable|string',
-            ]);
-
             // Lấy dữ liệu từ form
             $attributes = $request->input('attributes');
 

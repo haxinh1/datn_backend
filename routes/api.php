@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\admin\AttributeController;
+use App\Http\Controllers\admin\AttributeValueController;
 use App\Http\Controllers\admin\BrandController;
 use App\Http\Controllers\admin\ProductController;
 use App\Http\Controllers\admin\CategoryController;
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::apiResource('attributes', AttributeController::class);
+Route::resource('attributeValue', AttributeValueController::class);
 Route::apiResource('brands', BrandController::class);
 Route::resource('products', ProductController::class);
 Route::put('/products/edit/active/{id}',[ProductController::class,'active']);

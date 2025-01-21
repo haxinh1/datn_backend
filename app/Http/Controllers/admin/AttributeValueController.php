@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttributeValue;
 use App\Http\Requests\StoreAttributeValueRequest;
 use App\Http\Requests\UpdateAttributeValueRequest;
+use App\Models\Attribute;
 
 class AttributeValueController extends Controller
 {
@@ -14,7 +15,18 @@ class AttributeValueController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $attributeValues = AttributeValue::with('attribute')->get();
+            return response()->json([
+                'success' => true,
+                'data' => $attributeValues,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -22,7 +34,8 @@ class AttributeValueController extends Controller
      */
     public function create()
     {
-        //
+        $attributes = Attribute::select('name', 'id', 'slug')->get();
+        return view('attributes.create', compact('attributes'));
     }
 
     /**
@@ -30,7 +43,50 @@ class AttributeValueController extends Controller
      */
     public function store(StoreAttributeValueRequest $request)
     {
-        //
+        try {
+            // Xác thực dữ liệu đầu vào
+            $request->validate([
+                'attributes.*.id' => 'required|integer|exists:attributes,id',
+                'attributes.*.values.*' => 'nullable|string',
+            ]);
+
+            // Lấy dữ liệu từ form
+            $attributes = $request->input('attributes');
+
+            foreach ($attributes as $attribute) {
+                $attributeId = $attribute['id'];
+                $values = $attribute['values'] ?? [];
+
+                foreach ($values as $value) {
+                    if (!empty($value)) {
+                        // Kiểm tra xem giá trị đã tồn tại chưa
+                        $exists = AttributeValue::where('attribute_id', $attributeId)
+                            ->where('value', $value)
+                            ->exists();
+
+                        if (!$exists) {
+                            // Tạo mới giá trị thuộc tính
+                            AttributeValue::create([
+                                'attribute_id' => $attributeId,
+                                'value' => $value,
+                                'is_active' => 1,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thêm thành công giá trị thuộc tính.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

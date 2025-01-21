@@ -96,72 +96,72 @@ class ProductController extends Controller
             // Tạo sản phẩm với dữ liệu đã thu thập
             $product = Product::create($datas);
 
-            // Xử lý các thuộc tính của sản phẩm
-            if ($request->has('attribute_id') && $request->has('attribute_values')) {
-                $attributeIds = $request->input('attribute_id'); // name="attribute_id[]"
-                $attributeValues = $request->input('attribute_values'); // name="attribute_values[attribute_id][]"
-                $attributeValueIds = []; // Lưu các ID giá trị thuộc tính
-                foreach ($attributeIds as $attributeId) {
-                    if (isset($attributeValues[$attributeId])) {
-                        // Xử lý giá trị thuộc tính cho từng thuộc tính
-                        foreach ($attributeValues[$attributeId] as $value) {
-                            if (!empty($value)) {
-                                // Kiểm tra giá trị thuộc tính đã tồn tại chưa
-                                $attributeValue = AttributeValue::where('value', $value)
-                                    ->where('attribute_id', $attributeId)
-                                    ->first();
+            // // Xử lý các thuộc tính của sản phẩm
+            // if ($request->has('attribute_id') && $request->has('attribute_values')) {
+            //     $attributeIds = $request->input('attribute_id'); // name="attribute_id[]"
+            //     $attributeValues = $request->input('attribute_values'); // name="attribute_values[attribute_id][]"
+            //     $attributeValueIds = []; // Lưu các ID giá trị thuộc tính
+            //     foreach ($attributeIds as $attributeId) {
+            //         if (isset($attributeValues[$attributeId])) {
+            //             // Xử lý giá trị thuộc tính cho từng thuộc tính
+            //             foreach ($attributeValues[$attributeId] as $value) {
+            //                 if (!empty($value)) {
+            //                     // Kiểm tra giá trị thuộc tính đã tồn tại chưa
+            //                     $attributeValue = AttributeValue::where('value', $value)
+            //                         ->where('attribute_id', $attributeId)
+            //                         ->first();
 
-                                // Nếu không tìm thấy thì tạo mới
-                                if (!$attributeValue) {
-                                    $attributeValue = AttributeValue::create([
-                                        'attribute_id' => $attributeId,
-                                        'value' => $value,
-                                    ]);
-                                }
-                                $attributeValueIds[] = $attributeValue->id;
-                                // Liên kết giá trị thuộc tính với sản phẩm
-                                AttributeValueProduct::firstOrCreate([
-                                    'product_id' => $product->id,
-                                    'attribute_value_id' => $attributeValue->id,
-                                ]);
-                            }
-                        }
-                    }
-                }
-            }
+            //                     // Nếu không tìm thấy thì tạo mới
+            //                     if (!$attributeValue) {
+            //                         $attributeValue = AttributeValue::create([
+            //                             'attribute_id' => $attributeId,
+            //                             'value' => $value,
+            //                         ]);
+            //                     }
+            //                     $attributeValueIds[] = $attributeValue->id;
+            //                     // Liên kết giá trị thuộc tính với sản phẩm
+            //                     AttributeValueProduct::firstOrCreate([
+            //                         'product_id' => $product->id,
+            //                         'attribute_value_id' => $attributeValue->id,
+            //                     ]);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
 
-            // Xử lý các biến thể sản phẩm
-            $productVariantIds = []; // Lưu các ID biến thể sản phẩm
+            // // Xử lý các biến thể sản phẩm
+            // $productVariantIds = []; // Lưu các ID biến thể sản phẩm
 
-            if ($request->has('variants')) {
-                foreach ($request->input('variants') as $index => $variant) {
-                    // Tạo biến thể sản phẩm với dữ liệu được cung cấp
-                    $latestId = ProductVariant::max('id') ?? 0;
-                    $productVariant = ProductVariant::create([
-                        'product_id' => $product->id,
-                        'sku' => 'SKU000' . ($latestId + 1),// Tự động tạo SKU cho từng biến thể
-                        'price' => $variant['price'],   // name="variants[<index>][price]": Giá biến thể
-                        'sale_price' => $variant['sale_price'] ?? null, // name="variants[<index>][sale_price]"
-                        'sale_price_start_at' => $variant['sale_price_start_at'] ?? null, // name="variants[<index>][sale_price_start_at]"
-                        'sale_price_end_at' => $variant['sale_price_end_at'] ?? null, // name="variants[<index>][sale_price_end_at]"
-                        'thumbnail' => $variant['thumbnail'] ?? null, // name="variants[<index>][thumbnail]"
-                    ]);
+            // if ($request->has('variants')) {
+            //     foreach ($request->input('variants') as $index => $variant) {
+            //         // Tạo biến thể sản phẩm với dữ liệu được cung cấp
+            //         $latestId = ProductVariant::max('id') ?? 0;
+            //         $productVariant = ProductVariant::create([
+            //             'product_id' => $product->id,
+            //             'sku' => 'SKU000' . ($latestId + 1),// Tự động tạo SKU cho từng biến thể
+            //             'price' => $variant['price'],   // name="variants[<index>][price]": Giá biến thể
+            //             'sale_price' => $variant['sale_price'] ?? null, // name="variants[<index>][sale_price]"
+            //             'sale_price_start_at' => $variant['sale_price_start_at'] ?? null, // name="variants[<index>][sale_price_start_at]"
+            //             'sale_price_end_at' => $variant['sale_price_end_at'] ?? null, // name="variants[<index>][sale_price_end_at]"
+            //             'thumbnail' => $variant['thumbnail'] ?? null, // name="variants[<index>][thumbnail]"
+            //         ]);
 
-                    $productVariantIds[] = $productVariant->id; // Lưu ID biến thể
-                }
-            }
+            //         $productVariantIds[] = $productVariant->id; // Lưu ID biến thể
+            //     }
+            // }
 
-            // Liên kết thuộc tính với biến thể nếu cả hai tồn tại
-            if (!empty($attributeValueIds) && !empty($productVariantIds)) {
-                foreach ($productVariantIds as $index => $productVariantId) {
-                    if (isset($attributeValueIds[$index])) {
-                        DB::table('attribute_value_product_variants')->insert([
-                            'product_variant_id' => $productVariantId,
-                            'attribute_value_id' => $attributeValueIds[$index],
-                        ]);
-                    }
-                }
-            }
+            // // Liên kết thuộc tính với biến thể nếu cả hai tồn tại
+            // if (!empty($attributeValueIds) && !empty($productVariantIds)) {
+            //     foreach ($productVariantIds as $index => $productVariantId) {
+            //         if (isset($attributeValueIds[$index])) {
+            //             DB::table('attribute_value_product_variants')->insert([
+            //                 'product_variant_id' => $productVariantId,
+            //                 'attribute_value_id' => $attributeValueIds[$index],
+            //             ]);
+            //         }
+            //     }
+            // }
 
             // Đồng bộ danh mục sản phẩm
             // name="category_id[]"

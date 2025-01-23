@@ -7,6 +7,7 @@ use App\Models\AttributeValue;
 use App\Http\Requests\StoreAttributeValueRequest;
 use App\Http\Requests\UpdateAttributeValueRequest;
 use App\Models\Attribute;
+use Illuminate\Http\Request;
 
 class AttributeValueController extends Controller
 {
@@ -15,18 +16,18 @@ class AttributeValueController extends Controller
      */
     public function index()
     {
-        try {
-            $attributeValues = AttributeValue::with('attribute')->get();
-            return response()->json([
-                'success' => true,
-                'data' => $attributeValues,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
-            ], 500);
-        }
+        // try {
+        //     $attributeValues = AttributeValue::with('attribute')->get();
+        //     return response()->json([
+        //         'success' => true,
+        //         'data' => $attributeValues,
+        //     ], 200);
+        // } catch (\Exception $e) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+        //     ], 500);
+        // }
     }
 
     /**
@@ -40,54 +41,31 @@ class AttributeValueController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAttributeValueRequest $request)
+    public function store(Request $request)
     {
+        $request->validate([
+            'attribute_id' => 'required|exists:attributes,id',
+            'value' => 'required|string|max:255', 
+        ]);
+    
         try {
-            // Lấy dữ liệu từ form
-            $attributes = $request->input('attributes');
-
-            foreach ($attributes as $attribute) {
-                $attributeId = $attribute['id'];
-                $values = $attribute['values'] ?? [];
-
-                foreach ($values as $value) {
-                    if (!empty($value)) {
-                        // Kiểm tra xem giá trị đã tồn tại chưa
-                        $exists = AttributeValue::where('attribute_id', $attributeId)
-                            ->where('value', $value)
-                            ->exists();
-
-                        if (!$exists) {
-                            // Tạo mới giá trị thuộc tính
-                            AttributeValue::create([
-                                'attribute_id' => $attributeId,
-                                'value' => $value,
-                                'is_active' => 1,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Thêm thành công giá trị thuộc tính.',
-            ], 200);
-
+            $data = $request->only(['attribute_id', 'value']);
+            $data['is_active'] = 1;
+    
+            AttributeValue::create($data);
+            return redirect()->back()->with('success', 'Thêm giá trị thuộc tính thành công!');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
-            ], 500);
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi thêm giá trị thuộc tính. Vui lòng thử lại sau!');
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(AttributeValue $AttributeValue)
+    public function show(string $id)
     {
-        //
+        $attributeValues = AttributeValue::where('attribute_id', $id)->get();
+        return response()->json($attributeValues);
     }
 
     /**

@@ -35,7 +35,7 @@ class AttributeValueController extends Controller
      */
     public function create()
     {
-        
+
     }
 
     /**
@@ -45,17 +45,20 @@ class AttributeValueController extends Controller
     {
         $request->validate([
             'attribute_id' => 'required|exists:attributes,id',
-            'value' => 'required|string|max:255', 
+            'value' => 'required|string|max:255',
         ]);
-    
+
         try {
             $data = $request->only(['attribute_id', 'value']);
             $data['is_active'] = 1;
-    
-            AttributeValue::create($data);
-            return redirect()->back()->with('success', 'Thêm giá trị thuộc tính thành công!');
+
+            $attributeValue = AttributeValue::create($data);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Thêm giá trị thuộc tính thành công!',
+                 'data' => $attributeValue]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi thêm giá trị thuộc tính. Vui lòng thử lại sau!');
+            return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi thêm giá trị thuộc tính. Vui lòng thử lại sau!']);
         }
     }
 

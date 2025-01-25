@@ -16,18 +16,18 @@ class AttributeValueController extends Controller
      */
     public function index()
     {
-        // try {
-        //     $attributeValues = AttributeValue::with('attribute')->get();
-        //     return response()->json([
-        //         'success' => true,
-        //         'data' => $attributeValues,
-        //     ], 200);
-        // } catch (\Exception $e) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
-        //     ], 500);
-        // }
+        try {
+            $attributeValues = AttributeValue::all();
+            return response()->json([
+                'success' => true,
+                'data' => $attributeValues,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

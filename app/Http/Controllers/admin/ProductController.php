@@ -50,12 +50,12 @@ class ProductController extends Controller
     {
         $categories = Category::select('id', 'name', 'parent_id')->get();
         $brands = Brand::select('id', 'name')->get();
-        $attributes = Attribute::select('id', 'name')->get();
+        $attributes = Attribute::with('attributeValues')->get();
 
         return response()->json([
             'categories' => $categories,
             'brands' => $brands,
-            'attributes' => $attributes
+            'attributes' => $attributes,
         ], 200);
     }
 

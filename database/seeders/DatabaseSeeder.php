@@ -13,13 +13,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('attributes')->insert([
-            'name' => 'Thuộc tính 1',
-            'slug' => 'thuoc-tinh-1',
-            'is_active' => 1,
-        ]);
-
         for ($i = 0; $i < 5; $i++) {
+            DB::table('attributes')->insert([
+                'name' => 'Thuộc tính '.$i,
+                'slug' => 'thuoc-tinh'.$i,
+                'is_active' => 1,
+            ]);
+        }
+        for ($i = 0; $i < 5; $i++) {
+            DB::table('attribute_values')->insert([
+                'attribute_id' => rand(1,4),
+                'value' => 'gia tri'.$i,
+                'is_active' => 1,
+            ]);
             DB::table('brands')->insert([
                 'name' => 'Brand ' . ($i + 1),
                 'slug' => 'brand-' . ($i + 1),

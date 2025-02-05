@@ -17,4 +17,7 @@ class Attribute extends Model
         'is_variant',
         'is_active',
     ];
+    public function attributeValues(){
+        return $this->hasMany(AttributeValue::class);
+    }
 }

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AttributeValue;
 use App\Http\Requests\StoreAttributeValueRequest;
 use App\Http\Requests\UpdateAttributeValueRequest;
+use App\Models\Attribute;
+use Illuminate\Http\Request;
 
 class AttributeValueController extends Controller
 {
@@ -14,7 +16,18 @@ class AttributeValueController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $attributeValues = AttributeValue::all();
+            return response()->json([
+                'success' => true,
+                'data' => $attributeValues,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -22,23 +35,40 @@ class AttributeValueController extends Controller
      */
     public function create()
     {
-        //
+
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAttributeValueRequest $request)
+    public function store(Request $request)
     {
-        //
+        $request->validate([
+            'attribute_id' => 'required|exists:attributes,id',
+            'value' => 'required|string|max:255',
+        ]);
+
+        try {
+            $data = $request->only(['attribute_id', 'value']);
+            $data['is_active'] = 1;
+
+            $attributeValue = AttributeValue::create($data);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Thêm giá trị thuộc tính thành công!',
+                 'data' => $attributeValue]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi thêm giá trị thuộc tính. Vui lòng thử lại sau!']);
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(AttributeValue $AttributeValue)
+    public function show(string $id)
     {
-        //
+        $attributeValues = AttributeValue::where('attribute_id', $id)->get();
+        return response()->json($attributeValues);
     }
 
     /**

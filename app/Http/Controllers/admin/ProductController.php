@@ -51,7 +51,7 @@ class ProductController extends Controller
         $categories = Category::select('id', 'name', 'parent_id')->get();
         $brands = Brand::select('id', 'name')->get();
         $attributes = Attribute::get();
-       
+
 
         return response()->json([
             'categories' => $categories,
@@ -206,16 +206,7 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // Lấy sản phẩm cần cập nhật
-        $product = Product::find($id);
-        if (!$product) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sản phẩm không tồn tại!',
-            ], 404);
-        }
-
-        // Lấy các dữ liệu cần thiết từ request
+        $product = Product::findOrFail($id);
         $datas = $request->only(
             'brand_id',
             'name',
@@ -225,80 +216,19 @@ class ProductController extends Controller
             'content',
             'thumbnail',
             'sku',
-            'price',
+            'sell_price',
             'sale_price',
             'sale_price_start_at',
             'sale_price_end_at',
             'is_active'
         );
 
-        if (empty($datas['name_link'])) {
-            $datas['name_link'] = "";
-        }
-        if (empty($datas['slug'])) {
-            $datas['slug'] = "";
-        }
-
         try {
             DB::beginTransaction();
-
-            // Cập nhật sản phẩm với dữ liệu đã thu thập
             $product->update($datas);
-
-            // Xử lý các thuộc tính của sản phẩm
-            if ($request->has('attribute_id') && $request->has('attribute_values')) {
-                $attributeIds = $request->input('attribute_id'); // name="attribute_id[]"
-                $attributeValues = $request->input('attribute_values'); // name="attribute_values[attribute_id][]"
-                $attributeValueIds = [];
-                foreach ($attributeIds as $attributeId) {
-                    if (isset($attributeValues[$attributeId])) {
-                        foreach ($attributeValues[$attributeId] as $value) {
-                            if (!empty($value)) {
-                                $attributeValue = AttributeValue::where('value', $value)
-                                    ->where('attribute_id', $attributeId)
-                                    ->first();
-
-                                if (!$attributeValue) {
-                                    $attributeValue = AttributeValue::create([
-                                        'attribute_id' => $attributeId,
-                                        'value' => $value,
-                                    ]);
-                                }
-                                $attributeValueIds[] = $attributeValue->id;
-
-                                AttributeValueProduct::updateOrCreate(
-                                    ['product_id' => $product->id, 'attribute_value_id' => $attributeValue->id]
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Xử lý các biến thể sản phẩm
-            if ($request->has('variants')) {
-                foreach ($request->input('variants') as $index => $variant) {
-                    ProductVariant::updateOrCreate(
-                        ['id' => $variant['id'] ?? null], // Cập nhật nếu có ID, tạo mới nếu không
-                        [
-                            'product_id' => $product->id,
-                            'sku' => $variant['sku'] ?? ('SKU000' . (ProductVariant::max('id') + 1)),
-                            'price' => $variant['price'],
-                            'sale_price' => $variant['sale_price'] ?? null,
-                            'sale_price_start_at' => $variant['sale_price_start_at'] ?? null,
-                            'sale_price_end_at' => $variant['sale_price_end_at'] ?? null,
-                            'thumbnail' => $variant['thumbnail'] ?? null,
-                        ]
-                    );
-                }
-            }
-
-            // Đồng bộ danh mục sản phẩm
             if ($request->has('category_id')) {
                 $product->categories()->sync($request->category_id);
             }
-
-            // Xử lý hình ảnh sản phẩm
             if ($request->has('product_images')) {
                 ProductGalleries::where('product_id', $product->id)->delete();
                 foreach ($request->input('product_images') as $image) {
@@ -307,6 +237,40 @@ class ProductController extends Controller
                             'product_id' => $product->id,
                             'image' => $image,
                         ]);
+                    }
+                }
+            }
+
+            if ($request->has('attribute_values_id')) {
+                DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
+                foreach ($request->input('attribute_values_id') as $attributeValueId) {
+                    DB::table('attribute_value_products')->insert([
+                        'product_id' => $product->id,
+                        'attribute_value_id' => $attributeValueId,
+                    ]);
+                }
+            }
+
+            if ($request->has('product_variants')) {
+                ProductVariant::where('product_id', $product->id)->delete();
+                foreach ($request->input('product_variants') as $variant) {
+                    $productVariant = ProductVariant::create([
+                        'product_id' => $product->id,
+                        'sku' => $variant['sku'] ?? null,
+                        'price' => $variant['price'] ?? 0,
+                        'sale_price' => $variant['sale_price'] ?? null,
+                        'sale_price_start_at' => $variant['sale_price_start_at'] ?? null,
+                        'sale_price_end_at' => $variant['sale_price_end_at'] ?? null,
+                        'thumbnail' => $variant['thumbnail'] ?? null,
+                    ]);
+
+                    if (!empty($variant['attribute_values'])) {
+                        foreach ($variant['attribute_values'] as $attributeValueId) {
+                            DB::table('attribute_value_product_variants')->insert([
+                                'product_variant_id' => $productVariant->id,
+                                'attribute_value_id' => $attributeValueId,
+                            ]);
+                        }
                     }
                 }
             }

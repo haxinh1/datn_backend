@@ -16,6 +16,7 @@ class ProductVariant extends Model
         'sku',
         'sell_price',
         'sale_price',
+        'is_active',
         'sale_price_start_at',
         'sale_price_end_at',
         'thumbnail',

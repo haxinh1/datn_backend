@@ -72,18 +72,18 @@ class ProductVariantController extends Controller
     }
     public function active(string $id)
     {
-        $product = ProductVariant::find($id);
-        if (!$product) {
+        $variant = ProductVariant::find($id);
+        if (!$variant) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi!',
             ], 404);
         }
         try {
-            if ($product->is_active == 1) {
-                $product->update(['is_active' => 0]);
+            if ($variant->is_active == 1) {
+                $variant->update(['is_active' => 0]);
             } else {
-                $product->update(['is_active' => 1]);
+                $variant->update(['is_active' => 1]);
             }
             return response()->json([
                 'success' => true,

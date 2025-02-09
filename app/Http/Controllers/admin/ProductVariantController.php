@@ -15,7 +15,12 @@ class ProductVariantController extends Controller
      */
     public function index()
     {
-        //
+        $variants = ProductVariant::all();
+        return response()->json([
+            'success' => true,
+            'message' => "Đây là danh sách biến thể sản phẩm",
+            'data' => $variants,
+        ]);
     }
 
     /**

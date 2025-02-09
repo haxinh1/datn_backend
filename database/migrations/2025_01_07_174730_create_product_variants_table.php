@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('sku')->nullable(); // Mã SKU
             $table->decimal('sell_price', 11, 2); // Giá bán
             $table->decimal('sale_price', 11, 2)->nullable(); // Giá khuyến mãi
+            $table->integer('stock')->default(0); //số lượng tồn kho
             $table->timestamp('sale_price_start_at')->nullable();
             $table->timestamp('sale_price_end_at')->nullable();
             $table->string('thumbnail')->nullable(); // Ảnh biến thể

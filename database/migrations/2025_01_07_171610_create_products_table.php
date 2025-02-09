@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('content')->nullable()->comment('Mô tả chi tiết sản phẩm'); // Mô tả chi tiết
             $table->string('thumbnail', 255)->comment('Ảnh đại diện của sản phẩm'); // Ảnh đại diện
             $table->string('sku', 255)->nullable()->comment('Mã SKU của sản phẩm'); // Mã SKU
+            $table->integer('stock')->default(0); //số lượng tồn kho
             $table->decimal('price', 11, 2)->nullable()->comment('Giá nhập sản phẩm'); // Giá nhập
             $table->decimal('sell_price', 11, 2)->nullable()->comment('Giá bán sản phẩm'); // Giá bán
             $table->decimal('sale_price', 11, 2)->nullable()->comment('Giá giảm khuyến mãi'); // Giá giảm khuyến mãi

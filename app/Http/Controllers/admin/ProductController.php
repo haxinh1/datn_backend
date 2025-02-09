@@ -24,7 +24,10 @@ class ProductController extends Controller
     {
         try {
             $products = Product::with([
-                'categories',
+               'categories',
+                'atributeValueProduct.attributeValue',
+                'variants',
+                'variants.attributeValueProductVariants.attributeValue',
             ])
                 ->orderByDesc('id')
                 ->get();

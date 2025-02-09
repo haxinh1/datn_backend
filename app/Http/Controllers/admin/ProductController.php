@@ -136,7 +136,7 @@ class ProductController extends Controller
                     $productVariant = ProductVariant::create([
                         'product_id' => $product->id,
                         'sku' => $variant['sku'] ?? null,
-                        'price' => $variant['price'] ?? 0,
+                        'sell_price' => $variant['sell_price'] ?? 0,
                         'sale_price' => $variant['sale_price'] ?? null,
                         'sale_price_start_at' => $variant['sale_price_start_at'] ?? null,
                         'sale_price_end_at' => $variant['sale_price_end_at'] ?? null,
@@ -260,7 +260,7 @@ class ProductController extends Controller
                     $productVariant = ProductVariant::create([
                         'product_id' => $product->id,
                         'sku' => $variant['sku'] ?? null,
-                        'price' => $variant['price'] ?? 0,
+                        'sell_price' => $variant['sell_price'] ?? 0,
                         'sale_price' => $variant['sale_price'] ?? null,
                         'sale_price_start_at' => $variant['sale_price_start_at'] ?? null,
                         'sale_price_end_at' => $variant['sale_price_end_at'] ?? null,

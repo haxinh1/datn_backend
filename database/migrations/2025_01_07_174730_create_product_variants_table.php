@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('product_id'); // Sản phẩm liên kết
             $table->string('sku')->nullable(); // Mã SKU
-            $table->decimal('price', 11, 2); // Giá bán
+            $table->decimal('sell_price', 11, 2); // Giá bán
             $table->decimal('sale_price', 11, 2)->nullable(); // Giá khuyến mãi
             $table->timestamp('sale_price_start_at')->nullable();
             $table->timestamp('sale_price_end_at')->nullable();

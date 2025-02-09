@@ -21,6 +21,7 @@ return new class extends Migration
             $table->timestamp('sale_price_start_at')->nullable();
             $table->timestamp('sale_price_end_at')->nullable();
             $table->string('thumbnail')->nullable(); // Ảnh biến thể
+            $table->boolean('is_active')->default(1)->comment('1 nếu sản phẩm đang hiển thị, 0 nếu ẩn');
             $table->timestamps();
             $table->softDeletes();
 

@@ -15,14 +15,12 @@ return new class extends Migration
             $table->id(); // ID sản phẩm
             $table->unsignedBigInteger('brand_id')->nullable()->comment('ID thương hiệu'); // ID thương hiệu
             $table->string('name', 250)->comment('Tên sản phẩm'); // Tên sản phẩm
-            $table->string('name_link', 250)->comment('Tên link sản phẩm khi chọn các sản phẩm liên kết'); // Tên link sản phẩm liên kết
             $table->string('slug', 250)->nullable()->comment('Đường dẫn sản phẩm (SEO)'); // Đường dẫn SEO
             $table->integer('views')->default(0)->comment('Số lượt xem sản phẩm'); // Số lượt xem
             $table->text('content')->nullable()->comment('Mô tả chi tiết sản phẩm'); // Mô tả chi tiết
             $table->string('thumbnail', 255)->comment('Ảnh đại diện của sản phẩm'); // Ảnh đại diện
             $table->string('sku', 255)->nullable()->comment('Mã SKU của sản phẩm'); // Mã SKU
             $table->integer('stock')->default(0); //số lượng tồn kho
-            $table->decimal('price', 11, 2)->nullable()->comment('Giá nhập sản phẩm'); // Giá nhập
             $table->decimal('sell_price', 11, 2)->nullable()->comment('Giá bán sản phẩm'); // Giá bán
             $table->decimal('sale_price', 11, 2)->nullable()->comment('Giá giảm khuyến mãi'); // Giá giảm khuyến mãi
             $table->timestamp('sale_price_start_at')->nullable()->comment('Thời gian bắt đầu giá sale sản phẩm'); // Thời gian bắt đầu sale

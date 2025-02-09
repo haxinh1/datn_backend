@@ -25,7 +25,6 @@ class PostProductRequest extends FormRequest
             'brand_id' => 'nullable|exists:brands,id',
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
-            'name_link' => 'nullable|max:255',
             'slug' => 'nullable|string|max:255|unique:products,slug',
             'views' => 'nullable|integer|min:0',
             'content' => 'nullable|string',

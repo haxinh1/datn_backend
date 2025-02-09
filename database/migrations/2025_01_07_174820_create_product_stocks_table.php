@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id')->nullable(); // Sản phẩm
             $table->unsignedBigInteger('product_variant_id')->nullable(); // Biến thể
             $table->integer('quantity'); // Số lượng
-            $table->decimal('sell_price', 11, 2); // Giá bán
+            $table->decimal('price', 11, 2); // Giá nhập
             $table->timestamps();
         
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');

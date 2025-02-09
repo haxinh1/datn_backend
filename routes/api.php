@@ -10,6 +10,7 @@ use App\Http\Controllers\admin\OrderStatusController;
 use App\Http\Controllers\admin\CouponController;
 use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\TagController;
+use App\Http\Controllers\admin\UserController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,9 @@ Route::get('allVariant',[ProductVariantController::class,'index'])->name('allVar
 
 Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
+
+
+Route::apiResource('users', UserController::class);
 
 //payment
 Route::prefix('payments')->group(function () {

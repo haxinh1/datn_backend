@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ProductVariant;
 use App\Http\Requests\StoreProductVariantRequest;
 use App\Http\Requests\UpdateProductVariantRequest;
+use Illuminate\Http\Request;
 
 class ProductVariantController extends Controller
 {
@@ -58,10 +59,32 @@ class ProductVariantController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProductVariantRequest $request, ProductVariant $ProductVariant)
+    public function update(Request $request, string $id)
     {
-        //
+        $variant = ProductVariant::find($id);
+        if (!$variant) {
+            return response()->json([
+                'success' => false,
+                'msg' => "Không tìm thấy biến thể",
+            ]);
+        }
+        $variant->update([
+            'sku' => $request->input('sku', $variant->sku),
+            'sell_price' => $request->input('sell_price', $variant->sell_price),
+            'stock' => $request->input('stock', $variant->stock),
+            'sale_price' => $request->input('sale_price', $variant->sale_price),
+            'sale_price_start_at' => $request->input('sale_price_start_at', $variant->sale_price_start_at) ?? NULL,
+            'sale_price_end_at' => $request->input('sale_price_end_at', $variant->sale_price_end_at) ?? NULL,
+            'thumbnail' => $request->input('thumbnail', $variant->thumbnail),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'msg' => "Cập nhật biến thể thành công",
+            'variant' => $variant
+        ]);
     }
+
 
     /**
      * Remove the specified resource from storage.

@@ -34,11 +34,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('/attributes', AttributeController::class);
 Route::resource('/attributeValue', AttributeValueController::class);
 Route::resource('/brands', BrandController::class);
-Route::resource('/productVariant', BrandController::class);
+Route::resource('/productVariant', ProductVariantController::class);
 Route::resource('/products', ProductController::class);
 Route::put('/products/edit/active/{id}',[ProductController::class,'active']);
 Route::put('/productVariant/edit/active/{id}',[ProductVariantController::class,'active']);
-Route::get('allVariant',[ProductVariantController::class,'index'])->name('allVariant');
 Route::post('postStock',[ProductStockController::class,'store'])->name('postStock');
 
 

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('product_stocks', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('stock_id'); // Biến thể
             $table->unsignedBigInteger('product_id')->nullable(); // Sản phẩm
             $table->unsignedBigInteger('product_variant_id')->nullable(); // Biến thể
             $table->integer('quantity'); // Số lượng

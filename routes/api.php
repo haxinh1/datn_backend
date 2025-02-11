@@ -8,11 +8,9 @@ use App\Http\Controllers\admin\CategoryController;
 use App\Http\Controllers\admin\PaymentController;
 use App\Http\Controllers\admin\OrderStatusController;
 use App\Http\Controllers\admin\CouponController;
-use App\Http\Controllers\admin\ProductStockController;
 use App\Http\Controllers\admin\ProductVariantController;
+use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
-
-use App\Http\Controllers\StockController;
 
 use App\Http\Controllers\admin\UserController;
 

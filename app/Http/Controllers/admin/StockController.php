@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
@@ -130,7 +131,7 @@ class StockController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Stock $stock)
+    public function show(string $id)
     {
         //
     }
@@ -138,7 +139,7 @@ class StockController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Stock $stock)
+    public function edit(string $id)
     {
         //
     }
@@ -146,7 +147,7 @@ class StockController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Stock $stock)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -154,7 +155,7 @@ class StockController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Stock $stock)
+    public function destroy(string $id)
     {
         //
     }

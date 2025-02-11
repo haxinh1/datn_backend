@@ -66,7 +66,7 @@ class StockController extends Controller
 
                 ProductStock::create([
                     'stock_id' => $stock->id,
-                    'product_id' => $productVariant->product_id ?? null,
+                    'product_id' => $variant['product_id'] ?? null,
                     'product_variant_id' => $variant['product_variant_id'],
                     'quantity' => $variant['quantity'],
                     'price' => $variant['price'],

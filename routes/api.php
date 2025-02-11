@@ -11,7 +11,12 @@ use App\Http\Controllers\admin\CouponController;
 use App\Http\Controllers\admin\ProductStockController;
 use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\TagController;
+
 use App\Http\Controllers\StockController;
+
+use App\Http\Controllers\admin\UserController;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,8 +49,12 @@ Route::post('postStock',[StockController::class,'store'])->name('postStock');
 Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
+
+Route::apiResource('users', UserController::class);
+
 //payment
 Route::prefix('payments')->group(function () {
+    
     Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
     Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
     Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết

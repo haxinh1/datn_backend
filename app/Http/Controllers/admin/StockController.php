@@ -70,12 +70,15 @@ class StockController extends Controller
                             $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
                             continue;
                         }
-
-                        if ($variant['price'] > $productVariant->sale_price || $variant['price'] > $productVariant->sell_price) {
+                
+                        // Kiểm tra giá sale_price, nếu không có thì dùng sell_price
+                        $comparePrice = $productVariant->sale_price ?? $productVariant->sell_price;
+                
+                        if ($variant['price'] > $comparePrice) {
                             $errors[] = "Giá nhập của biến thể ID: {$variant['id']} cao hơn giá bán ra!";
                             continue;
                         }
-
+                
                         ProductStock::create([
                             'stock_id' => $stock->id,
                             'product_id' => $product->id,
@@ -83,23 +86,26 @@ class StockController extends Controller
                             'quantity' => $variant['quantity'],
                             'price' => $variant['price'],
                         ]);
-
+                
                         $productVariant->increment('stock', $variant['quantity']);
                         $totalAmount += $variant['quantity'] * $variant['price'];
                     }
                 } else {
-                    if ($productData['price'] > $product->sale_price || $productData['price'] > $product->sell_price) {
+                    // Kiểm tra giá sale_price, nếu không có thì dùng sell_price
+                    $comparePrice = $product->sale_price ?? $product->sell_price;
+                
+                    if ($productData['price'] > $comparePrice) {
                         $errors[] = "Giá nhập của sản phẩm ID: {$productData['id']} cao hơn giá bán ra!";
                         continue;
                     }
-
+                
                     ProductStock::create([
                         'stock_id' => $stock->id,
                         'product_id' => $product->id,
                         'quantity' => $productData['quantity'],
                         'price' => $productData['price'],
                     ]);
-
+                
                     $product->increment('stock', $productData['quantity']);
                     $totalAmount += $productData['quantity'] * $productData['price'];
                 }

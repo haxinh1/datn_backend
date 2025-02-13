@@ -33,15 +33,22 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
+//Route thuộc tính
 Route::apiResource('/attributes', AttributeController::class);
+//Route giá trị thuộc tính
 Route::resource('/attributeValue', AttributeValueController::class);
+//Route brand
 Route::resource('/brands', BrandController::class);
+//Route biến thể sản phẩm
 Route::resource('/productVariant', ProductVariantController::class);
+//Route product
 Route::resource('/products', ProductController::class);
-Route::put('/products/edit/active/{id}',[ProductController::class,'active']);
-Route::put('/productVariant/edit/active/{id}',[ProductVariantController::class,'active']);
-Route::post('postStock',[StockController::class,'store'])->name('postStock');
+//Active sản phẩm
+Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
+//Active biến thể
+Route::put('/productVariant/edit/active/{id}', [ProductVariantController::class, 'active']);
+//Nhập kho
+Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 
 
 Route::apiResource('tags', TagController::class);
@@ -52,7 +59,7 @@ Route::apiResource('users', UserController::class);
 
 //payment
 Route::prefix('payments')->group(function () {
-    
+
     Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
     Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
     Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết

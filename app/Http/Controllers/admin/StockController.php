@@ -35,19 +35,18 @@ class StockController extends Controller
     {
         $validatedData = $request->validate([
             'user_id' => 'nullable',
-            'variants' => 'nullable|array',
-            'variants.*.product_variant_id' => 'nullable|exists:product_variants,id',
-            'variants.*.quantity' => 'nullable|integer|min:1',
-            'variants.*.price' => 'nullable|numeric|min:0',
-            'products' => 'nullable|array',
-            'products.*.product_id' => 'required|exists:products,id',
-            'products.*.quantity' => 'required|integer|min:1',
-            'products.*.price' => 'required|numeric|min:0',
+            'products' => 'required|array',
+            'products.*.id' => 'required|exists:products,id',
+            'products.*.price' => 'nullable|numeric|min:0', // Cho phép null nếu có biến thể
+            'products.*.quantity' => 'nullable|integer|min:1', // Cho phép null nếu có biến thể
+            'products.*.variants' => 'nullable|array',
+            'products.*.variants.*.id' => 'required|exists:product_variants,id',
+            'products.*.variants.*.price' => 'required|numeric|min:0',
+            'products.*.variants.*.quantity' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
         try {
-            // Tạo bản ghi nhập kho
             $stock = Stock::create([
                 'user_id' => $validatedData['user_id'] ?? 1,
                 'total_amount' => 0, // Tạm thời, sẽ cập nhật sau
@@ -57,49 +56,56 @@ class StockController extends Controller
             $totalAmount = 0;
             $errors = [];
 
-            // Xử lý nhập kho cho các biến thể sản phẩm
-            foreach ($validatedData['variants'] ?? [] as $variant) {
-                $productVariant = ProductVariant::find($variant['product_variant_id']);
-                if ($productVariant && $variant['price'] > $productVariant->sale_price && $variant['price'] > $productVariant->sell_price) {
-                    $errors[] = "Giá nhập của biến thể ID: {$variant['product_variant_id']} cao hơn giá bán ra!";
-                    continue;
-                }
-
-                ProductStock::create([
-                    'stock_id' => $stock->id,
-                    'product_id' => $variant['product_id'] ?? null,
-                    'product_variant_id' => $variant['product_variant_id'],
-                    'quantity' => $variant['quantity'],
-                    'price' => $variant['price'],
-                ]);
-
-                $productVariant?->increment('stock', $variant['quantity']);
-                $totalAmount += $variant['quantity'] * $variant['price'];
-            }
-
-            foreach ($validatedData['products'] ?? [] as $productData) {
-                $product = Product::find($productData['product_id']);
+            foreach ($validatedData['products'] as $productData) {
+                $product = Product::find($productData['id']);
                 if (!$product) {
-                    $errors[] = "Không tìm thấy sản phẩm với ID: {$productData['product_id']}";
-                    continue;
-                }
-                if ($productData['price'] > $product->sale_price && $productData['price'] > $product->sell_price) {
-                    $errors[] = "Giá nhập của sản phẩm ID: {$productData['product_id']} cao hơn giá bán ra!";
+                    $errors[] = "Không tìm thấy sản phẩm với ID: {$productData['id']}";
                     continue;
                 }
 
-                ProductStock::create([
-                    'stock_id' => $stock->id,
-                    'product_id' => $productData['product_id'],
-                    'product_variant_id' => $productData['product_variant_id'] ?? null,
-                    'quantity' => $productData['quantity'],
-                    'price' => $productData['price'],
-                ]);
+                if (!empty($productData['variants'])) {
+                    foreach ($productData['variants'] as $variant) {
+                        $productVariant = ProductVariant::find($variant['id']);
+                        if (!$productVariant) {
+                            $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
+                            continue;
+                        }
 
-                $product->increment('stock', $productData['quantity']);
-                $totalAmount += $productData['quantity'] * $productData['price'];
+                        if ($variant['price'] > $productVariant->sale_price || $variant['price'] > $productVariant->sell_price) {
+                            $errors[] = "Giá nhập của biến thể ID: {$variant['id']} cao hơn giá bán ra!";
+                            continue;
+                        }
+
+                        ProductStock::create([
+                            'stock_id' => $stock->id,
+                            'product_id' => $product->id,
+                            'product_variant_id' => $variant['id'],
+                            'quantity' => $variant['quantity'],
+                            'price' => $variant['price'],
+                        ]);
+
+                        $productVariant->increment('stock', $variant['quantity']);
+                        $totalAmount += $variant['quantity'] * $variant['price'];
+                    }
+                } else {
+                    if ($productData['price'] > $product->sale_price || $productData['price'] > $product->sell_price) {
+                        $errors[] = "Giá nhập của sản phẩm ID: {$productData['id']} cao hơn giá bán ra!";
+                        continue;
+                    }
+
+                    ProductStock::create([
+                        'stock_id' => $stock->id,
+                        'product_id' => $product->id,
+                        'quantity' => $productData['quantity'],
+                        'price' => $productData['price'],
+                    ]);
+
+                    $product->increment('stock', $productData['quantity']);
+                    $totalAmount += $productData['quantity'] * $productData['price'];
+                }
             }
 
+            // Cập nhật tổng tiền nhập kho
             $stock->update(['total_amount' => $totalAmount]);
 
             if (!empty($errors)) {
@@ -117,7 +123,6 @@ class StockController extends Controller
                 'message' => 'Nhập kho thành công!',
                 'stock_id' => $stock->id,
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -127,6 +132,7 @@ class StockController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Display the specified resource.

@@ -175,10 +175,8 @@ class StockController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Chi tiết nhập kho',
-            'data' => [
-                'stock' => $stock,
-                'products' => $products
-            ]
+            'data' => $products
+            
         ], 200);
     }
 

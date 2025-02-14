@@ -45,4 +45,8 @@ class Product extends Model
     {
         return $this->hasMany(AttributeValueProduct::class);
     }
+    public function productStocks()
+    {
+        return $this->hasMany(ProductStock::class, 'stock_id');
+    }
 }

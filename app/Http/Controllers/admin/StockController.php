@@ -78,10 +78,6 @@ class StockController extends Controller
     ], 200);
 }
 
-
-
-    
-
     /**
      * Show the form for creating a new resource.
      */
@@ -249,5 +245,5 @@ class StockController extends Controller
     public function destroy(string $id)
     {
         //
-    }
+    } 
 }

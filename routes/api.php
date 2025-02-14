@@ -49,6 +49,7 @@ Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
 Route::put('/productVariant/edit/active/{id}', [ProductVariantController::class, 'active']);
 //Nhập kho
 Route::post('postStock', [StockController::class, 'store'])->name('postStock');
+Route::resource('/stocks', StockController::class);
 
 
 Route::apiResource('tags', TagController::class);

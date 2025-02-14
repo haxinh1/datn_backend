@@ -10,6 +10,7 @@ use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 class StockController extends Controller
 {
     /**
@@ -17,7 +18,21 @@ class StockController extends Controller
      */
     public function index()
     {
-        //
+        $stocks = Stock::select([
+            'stocks.id',
+            'stocks.status',
+            'stocks.total_amount',
+            'users.fullname',
+            'stocks.created_at as ngaytao',
+            'stocks.updated_at as ngaycapnhap'
+        ])
+            ->join('users', 'stocks.created_by', '=', 'users.id')
+            ->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách nhập kho',
+            'data' => $stocks
+        ], 200);
     }
 
     /**
@@ -48,7 +63,6 @@ class StockController extends Controller
         DB::beginTransaction();
         try {
             $stock = Stock::create([
-                'user_id' => $validatedData['user_id'] ?? 1,
                 'total_amount' => 0,
                 'status' => 0,
             ]);
@@ -137,7 +151,35 @@ class StockController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $stock = Stock::find($id);
+        if (!$stock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy phiếu nhập kho'
+            ], 404);
+        }
+        $products = DB::table('product_stocks')
+            ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
+            ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
+            ->select([
+                'product_stocks.id',
+                'product_stocks.quantity',
+                'product_stocks.price',
+                'products.name as product_name',
+                'product_variants.sku as variant_sku',
+                'product_variants.thumbnail as variant_image'
+            ])
+            ->where('product_stocks.stock_id', $id)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Chi tiết nhập kho',
+            'data' => [
+                'stock' => $stock,
+                'products' => $products
+            ]
+        ], 200);
     }
 
     /**

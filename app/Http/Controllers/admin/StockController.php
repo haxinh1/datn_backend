@@ -37,8 +37,8 @@ class StockController extends Controller
             'user_id' => 'nullable',
             'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
-            'products.*.price' => 'nullable|numeric|min:0', // Cho phép null nếu có biến thể
-            'products.*.quantity' => 'nullable|integer|min:1', // Cho phép null nếu có biến thể
+            'products.*.price' => 'nullable|numeric|min:0',
+            'products.*.quantity' => 'nullable|integer|min:1',
             'products.*.variants' => 'nullable|array',
             'products.*.variants.*.id' => 'required|exists:product_variants,id',
             'products.*.variants.*.price' => 'required|numeric|min:0',
@@ -49,7 +49,7 @@ class StockController extends Controller
         try {
             $stock = Stock::create([
                 'user_id' => $validatedData['user_id'] ?? 1,
-                'total_amount' => 0, // Tạm thời, sẽ cập nhật sau
+                'total_amount' => 0,
                 'status' => 0,
             ]);
 
@@ -70,15 +70,11 @@ class StockController extends Controller
                             $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
                             continue;
                         }
-                
-                        // Kiểm tra giá sale_price, nếu không có thì dùng sell_price
-                        $comparePrice = $productVariant->sale_price ?? $productVariant->sell_price;
-                
-                        if ($variant['price'] > $comparePrice) {
+                        if ($variant['price'] > $productVariant->sell_price) {
                             $errors[] = "Giá nhập của biến thể ID: {$variant['id']} cao hơn giá bán ra!";
                             continue;
                         }
-                
+
                         ProductStock::create([
                             'stock_id' => $stock->id,
                             'product_id' => $product->id,
@@ -86,32 +82,28 @@ class StockController extends Controller
                             'quantity' => $variant['quantity'],
                             'price' => $variant['price'],
                         ]);
-                
+
                         $productVariant->increment('stock', $variant['quantity']);
                         $totalAmount += $variant['quantity'] * $variant['price'];
                     }
                 } else {
-                    // Kiểm tra giá sale_price, nếu không có thì dùng sell_price
-                    $comparePrice = $product->sale_price ?? $product->sell_price;
-                
-                    if ($productData['price'] > $comparePrice) {
+                    if ($productData['price'] > $product->sell_price) {
                         $errors[] = "Giá nhập của sản phẩm ID: {$productData['id']} cao hơn giá bán ra!";
                         continue;
                     }
-                
+
                     ProductStock::create([
                         'stock_id' => $stock->id,
                         'product_id' => $product->id,
                         'quantity' => $productData['quantity'],
                         'price' => $productData['price'],
                     ]);
-                
+
                     $product->increment('stock', $productData['quantity']);
                     $totalAmount += $productData['quantity'] * $productData['price'];
                 }
             }
 
-            // Cập nhật tổng tiền nhập kho
             $stock->update(['total_amount' => $totalAmount]);
 
             if (!empty($errors)) {

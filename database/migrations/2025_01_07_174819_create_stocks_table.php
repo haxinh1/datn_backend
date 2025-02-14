@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('stocks', function (Blueprint $table) {
             $table->id();
             // $table->bigInteger('supplier_id')->comment('ID nhà cung cấp');
-            $table->bigInteger('user_id')->comment('ID nhân viên nhập hàng');
             $table->decimal('total_amount', 15, 2)->nullable()->comment('Tổng tiền nhập hàng');
             $table->boolean('status')->default(0);
+            $table->bigInteger('created_by')->nullable()->comment('ID nhân viên tạo nhập hàng');
+            $table->bigInteger('updated_by')->nullable()->comment('ID nhân viên cập nhập');
             $table->timestamps();
         });
     }

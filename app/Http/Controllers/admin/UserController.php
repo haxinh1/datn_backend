@@ -24,6 +24,7 @@ class UserController extends Controller
         }
         return response()->json($user, 200);
     }
+    
 
     public function store(Request $request)
     {
@@ -118,6 +119,69 @@ class UserController extends Controller
         return response()->json($user, 200);
     }
 
+    public function register(Request $request){
+        
 
+    }
+
+    public function login(Request $request){
+
+    
+         $validatedData = $request->validate([
+            'phone_number' => 'required',
+            'password'     => 'required'
+        ]);
+
+
+        $user = User::where('phone_number', $validatedData['phone_number'])->where('role', 'admin')->first();
+
+        if (!$user || !Hash::check($validatedData['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Thông tin đăng nhập không đúng hoặc tài khoản không phải admin'
+            ], 401);
+        }
+
+        
+        $token = $user->createToken('admin_token')->plainTextToken;
+
+        return response()->json([
+            'message'      => 'Đăng nhập admin thành công',
+            'admin'        => $user,
+            'access_token' => $token,
+            'token_type'   => 'Bearer'
+        ], 200);
+    }
+
+    public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+  
+    return response()->json([
+        'message' => 'Đăng xuất thành công'
+    ], 200);
+}
+
+
+public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6',
+            'confirm_password' => 'required|same:new_password'
+        ]);
+
+        $user = $request->user();
+
+     
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Mật khẩu hiện tại không chính xác.'], 400);
+        }
+
+   
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Mật khẩu đã được thay đổi thành công.'], 200);
+    }
 
 }

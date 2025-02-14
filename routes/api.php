@@ -12,7 +12,9 @@ use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
 
-use App\Http\Controllers\admin\UserController;
+use App\Http\Controllers\admin\UserController as AdminUserController;
+
+use App\Http\Controllers\clients\UserController as ClientUserController;
 
 
 use Illuminate\Http\Request;
@@ -56,7 +58,25 @@ Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
 
-Route::apiResource('users', UserController::class);
+Route::apiResource('users', AdminUserController::class);
+
+//route login admin
+Route::prefix('admin')->group(function(){
+    Route::post('/login', [AdminUserController::class, 'login']);
+    Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
+});
+// route login client
+Route::prefix('client')->group(function(){
+    Route::post('/register', [ClientUserController::class, 'register']);
+    Route::post('/login', [ClientUserController::class, 'login']);
+    Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
+    Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
+    Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
+});
+
+
 
 //payment
 Route::prefix('payments')->group(function () {

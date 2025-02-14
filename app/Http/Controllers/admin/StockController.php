@@ -17,23 +17,70 @@ class StockController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $stocks = Stock::select([
+{
+    $stocks = Stock::select([
             'stocks.id',
             'stocks.status',
             'stocks.total_amount',
-            'users.fullname',
+            'users.fullname as created_by',
             'stocks.created_at as ngaytao',
             'stocks.updated_at as ngaycapnhap'
         ])
-            ->join('users', 'stocks.created_by', '=', 'users.id')
-            ->get();
-        return response()->json([
-            'success' => true,
-            'message' => 'Danh sách nhập kho',
-            'data' => $stocks
-        ], 200);
-    }
+        ->join('users', 'stocks.created_by', '=', 'users.id')
+        ->with('productStocks.product', 'productStocks.productVariant')
+        ->get();
+
+    $formattedStocks = $stocks->map(function ($stock) {
+        $products = [];
+
+        foreach ($stock->productStocks as $productStock) {
+            $productId = $productStock->product->id ?? null;
+
+            if (!$productId) continue; 
+
+            if (!isset($products[$productId])) {
+                $products[$productId] = [
+                    'id' => $productId,
+                    'name' => $productStock->product->name ?? null,
+                    'thumbnail' => $productStock->product->thumbnail ?? null,
+                    'variants' => []
+                ];
+            }
+
+            if ($productStock->productVariant) {
+                $products[$productId]['variants'][] = [
+                    'id' => $productStock->productVariant->id ?? null,
+                    'price' => $productStock->price,
+                    'quantity' => $productStock->quantity,
+                    'thumbnail' => $productStock->productVariant->thumbnail ?? null
+                ];
+            } else {
+                $products[$productId]['price'] = $productStock->price;
+                $products[$productId]['quantity'] = $productStock->quantity;
+            }
+        }
+
+        return [
+            'id' => $stock->id,
+            'status' => $stock->status,
+            'total_amount' => $stock->total_amount,
+            'created_by' => $stock->created_by,
+            'ngaytao' => $stock->ngaytao,
+            'ngaycapnhap' => $stock->ngaycapnhap,
+            'products' => array_values($products)
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Danh sách nhập kho',
+        'data' => $formattedStocks
+    ], 200);
+}
+
+
+
+    
 
     /**
      * Show the form for creating a new resource.

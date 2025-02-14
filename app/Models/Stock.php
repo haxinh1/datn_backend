@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 class Stock extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'total_amount',
@@ -16,11 +17,16 @@ class Stock extends Model
         'created_by',
         'updated_by'
     ];
+
+    // Sửa lại quan hệ productStocks()
     public function productStocks()
     {
-        return $this->hasMany(Stock::class);
+        return $this->hasMany(ProductStock::class, 'stock_id');
     }
-
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public static function boot()
     {
@@ -35,3 +41,4 @@ class Stock extends Model
         });
     }
 }
+

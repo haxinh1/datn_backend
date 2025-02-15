@@ -174,6 +174,7 @@ class ProductController extends Controller
                 'products.thumbnail as product_thumbnail',
                 'product_stocks.quantity',
                 'product_stocks.price',
+                'product_variants.id as product_variant_id',
                 'product_variants.sku as variant_sku',
                 'product_variants.thumbnail as variant_image',
                 'product_stocks.created_at'

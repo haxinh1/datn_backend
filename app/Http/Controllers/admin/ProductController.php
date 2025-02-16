@@ -114,7 +114,7 @@ class ProductController extends Controller
                 foreach ($request->input('product_variants') as $variant) {
                     $productVariant = ProductVariant::create([
                         'product_id' => $product->id,
-                        'sku' => $variant['sku'] ?? null,
+                        'sku' => $variant['sku'] ?? 'VR00' . ((ProductVariant::max('id') ?? 0) + 1),,
                         'stock' => $variant['stock'] ?? 0,
                         'sell_price' => $variant['sell_price'],
                         'sale_price' => $variant['sale_price'] ?? null,

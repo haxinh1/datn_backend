@@ -255,7 +255,9 @@ class StockController extends Controller
                             $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
                             continue;
                         }
-                        if ($variant['price'] >=  $productVariant->sell_price && $variant['price'] > 0 && $variant['sell_price'] !== null && $variant['price'] >= $variant['sell_price']) {
+
+                        // Kiểm tra giá nhập không được cao hơn giá bán
+                        if ($variant['price'] > 0 && $variant['sell_price'] !== null && $variant['price'] >= $variant['sell_price']) {
                             $errors[] = "Giá nhập ({$variant['price']}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$variant['sell_price']})!";
                             continue;
                         }
@@ -285,10 +287,26 @@ class StockController extends Controller
                             ]);
                         }
 
+                        // Nếu status == 1, cập nhật giá cho biến thể nếu khác null và khác 0
+                        if ($validatedData['status'] == 1) {
+                            if (!empty($variant['sell_price']) && $variant['sell_price'] > 0) {
+                                $productVariant->sell_price = $variant['sell_price'];
+                            }
+                            if (!empty($variant['sale_price']) && $variant['sale_price'] > 0) {
+                                $productVariant->sale_price = $variant['sale_price'];
+                            }
+                            if (!empty($variant['quantity']) && $variant['quantity'] ) {
+                                $productVariant->stock = $variant['quantity'];
+                            }
+                            
+                            $productVariant->save();
+                        }
+
                         $totalAmount += $variant['quantity'] * $variant['price'];
                     }
                 } else {
-                    if ($productData['price'] >= $product->sell_price && $productData['price'] > 0 && $productData['sell_price'] !== null && $productData['price'] >= $productData['sell_price']) {
+                    // Kiểm tra giá nhập không được cao hơn giá bán
+                    if ($productData['price'] > 0 && $productData['sell_price'] !== null && $productData['price'] >= $productData['sell_price']) {
                         $errors[] = "Giá nhập ({$productData['price']}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$productData['sell_price']})!";
                         continue;
                     }
@@ -311,9 +329,23 @@ class StockController extends Controller
                             'product_id' => $product->id,
                             'quantity' => $productData['quantity'],
                             'price' => $productData['price'],
-                            'sell_price' => $productData['sell_price'] ?? $product->sell_price,
-                            'sale_price' => $productData['sale_price'] ?? $product->sale_price,
+                            'sell_price' => $productData['sell_price'] ?? null,
+                            'sale_price' => $productData['sale_price'] ?? null,
                         ]);
+                    }
+
+                    // Nếu status == 1, cập nhật giá sản phẩm nếu khác null và khác 0
+                    if ($validatedData['status'] == 1) {
+                        if (!empty($productData['sell_price']) && $productData['sell_price'] > 0) {
+                            $product->sell_price = $productData['sell_price'];
+                        }
+                        if (!empty($productData['quantity']) && $productData['quantity']) {
+                            $product->stock = $product->stock + $productData['quantity'];
+                        }
+                        if (!empty($productData['sale_price']) && $productData['sale_price'] > 0) {
+                            $product->sale_price = $productData['sale_price'];
+                        }
+                        $product->save();
                     }
 
                     $totalAmount += $productData['quantity'] * $productData['price'];
@@ -335,7 +367,6 @@ class StockController extends Controller
                 'total_amount' => $totalAmount,
                 'status' => $validatedData['status'],
                 'reason' => $validatedData['reason'] ?? $stock->reason,
-                'updated_by' => auth()->id(),
             ]);
 
             DB::commit();
@@ -353,6 +384,7 @@ class StockController extends Controller
             ], 500);
         }
     }
+
 
 
     /**

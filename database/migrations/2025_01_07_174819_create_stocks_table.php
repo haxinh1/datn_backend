@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             // $table->bigInteger('supplier_id')->comment('ID nhà cung cấp');
             $table->decimal('total_amount', 15, 2)->nullable()->comment('Tổng tiền nhập hàng');
-            $table->boolean('status')->default(0);
+            $table->integer('status')->default(0)->comment('0->chưa xác nhận, -1 ->bị hủy ,1 -> chấp nhận');
+            $table->string('type')->nullable()->comment('Loại thay đổi import, export, adjustment'); 
+            $table->text('reason')->nullable()->comment('Lý do thay đổi');
             $table->bigInteger('created_by')->nullable()->comment('ID nhân viên tạo nhập hàng');
             $table->bigInteger('updated_by')->nullable()->comment('ID nhân viên cập nhập');
             $table->timestamps();

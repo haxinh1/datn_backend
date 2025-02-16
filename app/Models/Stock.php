@@ -14,6 +14,7 @@ class Stock extends Model
         'user_id',
         'total_amount',
         'status',
+        'reason',
         'created_by',
         'updated_by'
     ];

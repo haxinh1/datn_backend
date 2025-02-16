@@ -14,7 +14,9 @@ class ProductStock extends Model
         'product_id',
         'product_variant_id',
         'quantity',
-        'price'
+        'price',
+        'sale_price',
+        'sell_price',
     ];
 
     public function product()

@@ -229,6 +229,7 @@ class StockController extends Controller
     {
         $validatedData = $request->all();
         DB::beginTransaction();
+
         try {
             $stock = Stock::find($id);
             if (!$stock) {
@@ -262,6 +263,7 @@ class StockController extends Controller
                             continue;
                         }
 
+                        // Cập nhật stock quantity (chỉ cập nhật chứ không cộng dồn)
                         $productStock = ProductStock::where([
                             'stock_id' => $stock->id,
                             'product_id' => $product->id,
@@ -270,7 +272,7 @@ class StockController extends Controller
 
                         if ($productStock) {
                             $productStock->update([
-                                'quantity' => $productStock->quantity + $variant['quantity'],
+                                'quantity' => $variant['quantity'],
                                 'price' => $variant['price'],
                                 'sell_price' => $variant['sell_price'] ?? null,
                                 'sale_price' => $variant['sale_price'] ?? null,
@@ -287,18 +289,11 @@ class StockController extends Controller
                             ]);
                         }
 
-                        // Nếu status == 1, cập nhật giá cho biến thể nếu khác null và khác 0
+                        // **Chỉ cập nhật bảng product_variant nếu status == 1**
                         if ($validatedData['status'] == 1) {
-                            if (!empty($variant['sell_price']) && $variant['sell_price'] > 0) {
-                                $productVariant->sell_price = $variant['sell_price'];
-                            }
-                            if (!empty($variant['sale_price']) && $variant['sale_price'] > 0) {
-                                $productVariant->sale_price = $variant['sale_price'];
-                            }
-                            if (!empty($variant['quantity']) && $variant['quantity'] ) {
-                                $productVariant->stock = $variant['quantity'];
-                            }
-                            
+                            $productVariant->stock += $variant['quantity'];
+                            $productVariant->sell_price = $variant['sell_price'] ?? $productVariant->sell_price;
+                            $productVariant->sale_price = $variant['sale_price'] ?? $productVariant->sale_price;
                             $productVariant->save();
                         }
 
@@ -318,7 +313,7 @@ class StockController extends Controller
 
                     if ($productStock) {
                         $productStock->update([
-                            'quantity' => $productStock->quantity + $productData['quantity'],
+                            'quantity' => $productData['quantity'],
                             'price' => $productData['price'],
                             'sell_price' => $productData['sell_price'] ?? null,
                             'sale_price' => $productData['sale_price'] ?? null,
@@ -334,17 +329,11 @@ class StockController extends Controller
                         ]);
                     }
 
-                    // Nếu status == 1, cập nhật giá sản phẩm nếu khác null và khác 0
+                    // **Chỉ cập nhật bảng product nếu status == 1**
                     if ($validatedData['status'] == 1) {
-                        if (!empty($productData['sell_price']) && $productData['sell_price'] > 0) {
-                            $product->sell_price = $productData['sell_price'];
-                        }
-                        if (!empty($productData['quantity']) && $productData['quantity']) {
-                            $product->stock = $product->stock + $productData['quantity'];
-                        }
-                        if (!empty($productData['sale_price']) && $productData['sale_price'] > 0) {
-                            $product->sale_price = $productData['sale_price'];
-                        }
+                        $product->stock += $productData['quantity'];
+                        $product->sell_price = $productData['sell_price'] ?? $product->sell_price;
+                        $product->sale_price = $productData['sale_price'] ?? $product->sale_price;
                         $product->save();
                     }
 
@@ -384,6 +373,7 @@ class StockController extends Controller
             ], 500);
         }
     }
+
 
 
 

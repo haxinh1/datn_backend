@@ -16,8 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('tag_id'); // Liên kết thẻ
             $table->primary(['product_id', 'tag_id']); // Khóa chính
         
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
         });
     }
 

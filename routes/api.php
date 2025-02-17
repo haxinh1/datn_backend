@@ -12,7 +12,9 @@ use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
 
-use App\Http\Controllers\admin\UserController;
+use App\Http\Controllers\admin\UserController as AdminUserController;
+
+use App\Http\Controllers\clients\UserController as ClientUserController;
 
 
 use Illuminate\Http\Request;
@@ -33,26 +35,52 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
+//Route thuộc tính
 Route::apiResource('/attributes', AttributeController::class);
+//Route giá trị thuộc tính
 Route::resource('/attributeValue', AttributeValueController::class);
+//Route brand
 Route::resource('/brands', BrandController::class);
+//Route biến thể sản phẩm
 Route::resource('/productVariant', ProductVariantController::class);
+//Route product
 Route::resource('/products', ProductController::class);
-Route::put('/products/edit/active/{id}',[ProductController::class,'active']);
-Route::put('/productVariant/edit/active/{id}',[ProductVariantController::class,'active']);
-Route::post('postStock',[StockController::class,'store'])->name('postStock');
+//Active sản phẩm
+Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
+//Active biến thể
+Route::put('/productVariant/edit/active/{id}', [ProductVariantController::class, 'active']);
+//Nhập kho
+Route::post('postStock', [StockController::class, 'store'])->name('postStock');
+Route::resource('/stocks', StockController::class);
 
 
 Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
 
-Route::apiResource('users', UserController::class);
+Route::apiResource('users', AdminUserController::class);
+
+//route login admin
+Route::prefix('admin')->group(function(){
+    Route::post('/login', [AdminUserController::class, 'login']);
+    Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
+});
+// route login client
+Route::prefix('client')->group(function(){
+    Route::post('/register', [ClientUserController::class, 'register']);
+    Route::post('/login', [ClientUserController::class, 'login']);
+    Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
+    Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
+    Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
+});
+
+
 
 //payment
 Route::prefix('payments')->group(function () {
-    
+
     Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
     Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
     Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết

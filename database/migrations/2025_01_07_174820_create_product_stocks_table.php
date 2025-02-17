@@ -18,6 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('product_variant_id')->nullable(); // Biến thể
             $table->integer('quantity'); // Số lượng
             $table->decimal('price', 11, 2); // Giá nhập
+            $table->decimal('sell_price', 11, 2)->nullable()->comment('Giá bán mới'); // Giá bán mới
+            $table->decimal('sale_price', 11, 2)->nullable()->comment('Giá khuyến mại mới'); // Giá khuyến mại mới
             $table->timestamps();
         
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');

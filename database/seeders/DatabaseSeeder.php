@@ -5,6 +5,7 @@ namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +21,23 @@ class DatabaseSeeder extends Seeder
                 'is_active' => 1,
             ]);
         }
+        DB::table('users')->insert([
+            'google_id'     => null,
+            'phone_number'  => '098765432',
+            'email'         => 'admin@example.com',
+            'password'      => Hash::make('password123'), // Mật khẩu đã mã hóa
+            'fullname'      => 'Admin User',
+            'avatar'        => null,
+            'gender'        => 'male',
+            'birthday'      => '1990-01-01',
+            'loyalty_points'=> 100,
+            'role'          => 'admin',
+            'status'        => 'active',
+            'remember_token'=> null,
+            'verified_at'   => now(),
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ]);
         for ($i = 0; $i < 5; $i++) {
             DB::table('attribute_values')->insert([
                 'attribute_id' => rand(1,4),
@@ -44,6 +62,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'danh-muc-' . ($i + 1),
                 'is_active' => 1,
             ]);
+            
         }
 
         $this->command->info('Seed data đã được chèn thành công!');

@@ -8,7 +8,45 @@ use Illuminate\Support\Facades\Validator;
 
 class CouponController extends Controller
 {
-   
+
+    public function search(Request $request)
+    {
+
+        $query = Coupon::query();
+
+        if ($request->filled('code')) {
+            $code = trim($request->code);
+            if ($code !== '') {
+                $query->where('code', 'LIKE', "%{$code}%");
+            }
+        }
+        if ($request->filled('title')) {
+            $title = trim($request->title);
+            if ($title !== '') {
+                $query->where('title', 'LIKE', "%{$title}%");
+            }
+        }
+
+        if ($request->filled('discount_type')) {
+            $query->where('discount_type', $request->discount_type);
+        }
+
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->is_active);
+        }
+
+        $coupons = $query->orderByDesc('id')->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách phiếu giảm giá đã lọc',
+            'data' => $coupons,
+        ]);
+    }
+
+
+
+
     public function index()
     {
         $coupons = Coupon::withTrashed()->orderByDesc('id')->get();
@@ -19,7 +57,7 @@ class CouponController extends Controller
         ]);
     }
 
-  
+
     public function store(Request $request)
     {
         $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
@@ -64,7 +102,7 @@ class CouponController extends Controller
         }
     }
 
-   
+
     public function show(string $id)
     {
         try {
@@ -82,7 +120,7 @@ class CouponController extends Controller
         }
     }
 
-   
+
     public function update(Request $request, string $id)
     {
         $coupon = Coupon::withTrashed()->find($id);

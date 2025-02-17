@@ -106,3 +106,13 @@ Route::post('categories/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);
 Route::put('categories/update-status/{category}', [CategoryController::class, 'updateStatus']);
 Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);
+
+
+// Api Coupon
+Route::get('coupons', [CouponController::class, 'index']);
+Route::get('coupons/search/filter', [CouponController::class, 'search']); // coupons/search/filter?code=SUMMER&discount_type=fix_amount&is_active=1&page=1
+Route::get('coupons/${id}', [CouponController::class, 'show']);
+Route::post('coupons/create', [CouponController::class, 'store']);
+Route::put('coupons/${id}', [CouponController::class, 'update']);
+
+

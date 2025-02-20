@@ -6,62 +6,45 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Models\CartItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(Request $request)
     {
-        //
-    }
+        if (Auth::check()) {
+            $cartItems = CartItem::where('user_id', Auth::id())->get();
+        } else {
+            $cartItems = session()->get('cart', []);
+        }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        if (empty($cartItems)) {
+            return response()->json(['message' => 'Giỏ hàng trống'], 400);
+        }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreOrderRequest $request)
-    {
-        //
-    }
+        $totalAmount = array_sum(array_map(fn($item) => $item['quantity'] * 100, $cartItems));
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Order $order)
-    {
-        //
-    }
+        $order = Order::create([
+            'code' => 'ORD' . time(),
+            'user_id' => Auth::id(),
+            'fullname' => $request->fullname,
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'address' => $request->address,
+            'total_amount' => $totalAmount,
+            'is_paid' => false,
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Order $order)
-    {
-        //
-    }
+        if (Auth::check()) {
+            CartItem::where('user_id', Auth::id())->delete();
+        } else {
+            session()->forget('cart');
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateOrderRequest $request, Order $order)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Order $order)
-    {
-        //
+        return response()->json(['message' => 'Đặt hàng thành công', 'order' => $order]);
     }
 }

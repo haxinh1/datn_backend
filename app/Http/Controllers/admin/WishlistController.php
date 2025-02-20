@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Wishlist;
 use App\Http\Requests\StoreWishlistRequest;
+
+
 use App\Http\Requests\UpdateWishlistRequest;
 
 class WishlistController extends Controller

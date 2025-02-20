@@ -9,10 +9,10 @@ class OrderStatus extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['name', 'ordinal'];
 
-
-    protected $fillable = [
-        'name',
-        'ordinal'
-    ];
+    public function orderHistories()
+    {
+        return $this->hasMany(OrderOrderStatus::class);
+    }
 }

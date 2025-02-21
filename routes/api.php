@@ -66,15 +66,15 @@ Route::prefix('admin')->group(function(){
     Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 });
-// route login client
-Route::prefix('client')->group(function(){
+// route login user
+
     Route::post('/register', [ClientUserController::class, 'register']);
     Route::post('/login', [ClientUserController::class, 'login']);
     Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
     Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
     Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
-});
+
 
 
 

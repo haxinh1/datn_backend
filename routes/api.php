@@ -3,11 +3,14 @@
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
 use App\Http\Controllers\admin\BrandController;
+use App\Http\Controllers\admin\CartItemController;
 use App\Http\Controllers\admin\ProductController;
 use App\Http\Controllers\admin\CategoryController;
 use App\Http\Controllers\admin\PaymentController;
 use App\Http\Controllers\admin\OrderStatusController;
 use App\Http\Controllers\admin\CouponController;
+use App\Http\Controllers\admin\OrderController;
+use App\Http\Controllers\admin\OrderOrderStatusController;
 use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
@@ -15,8 +18,7 @@ use App\Http\Controllers\admin\TagController;
 use App\Http\Controllers\admin\UserController as AdminUserController;
 
 use App\Http\Controllers\clients\UserController as ClientUserController;
-
-
+use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +56,28 @@ Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 Route::resource('/stocks', StockController::class);
 
 
+// Giỏ hàng (Cho phép khách vãng lai sử dụng)
+Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
+Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
+Route::post('/cart/update/{id}', [CartItemController::class, 'update'])->name('cart.update');
+Route::get('/cart/remove/{id}', [CartItemController::class, 'destroy'])->name('cart.remove');
+
+// Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
+Route::get('/orders', [OrderController::class, 'index'])->name('orders.view');
+Route::post('/orders/place', [OrderController::class, 'store'])->name('orders.place');
+Route::post('/orders/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+
+// Quản lý lịch sử trạng thái đơn hàng (Chỉ user đăng nhập mới xem được)
+Route::middleware('auth')->group(function () {
+    // Quản lý trạng thái đơn hàng
+    Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
+    Route::post('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])->name('orders.updateStatus');
+});
+
+// Thanh toán VNPay (Khách vãng lai cũng có thể thanh toán)
+Route::post('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
+Route::get('/payment/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('vnpay.return');
+
 Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
@@ -61,7 +85,7 @@ Route::apiResource('coupons', CouponController::class);
 Route::apiResource('users', AdminUserController::class);
 
 //route login admin
-Route::prefix('admin')->group(function(){
+Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminUserController::class, 'login']);
     Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
@@ -114,5 +138,3 @@ Route::get('coupons/search/filter', [CouponController::class, 'search']); // cou
 Route::get('coupons/${id}', [CouponController::class, 'show']);
 Route::post('coupons/create', [CouponController::class, 'store']);
 Route::put('coupons/${id}', [CouponController::class, 'update']);
-
-

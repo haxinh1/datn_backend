@@ -6,62 +6,56 @@ use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Http\Requests\StoreCartItemRequest;
 use App\Http\Requests\UpdateCartItemRequest;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CartItemController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        if (Auth::check()) {
+            $cartItems = CartItem::where('user_id', Auth::id())->with(['product', 'productVariant'])->get();
+        } else {
+            $cartItems = session()->get('cart', []);
+        }
+
+        return response()->json($cartItems);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request, $productId)
     {
-        //
+        if (Auth::check()) {
+            CartItem::updateOrCreate(
+                ['user_id' => Auth::id(), 'product_id' => $productId],
+                ['quantity' => $request->quantity ?? 1]
+            );
+        } else {
+            $cart = session()->get('cart', []);
+            if (isset($cart[$productId])) {
+                $cart[$productId]['quantity'] += $request->quantity ?? 1;
+            } else {
+                $cart[$productId] = [
+                    'product_id' => $productId,
+                    'quantity' => $request->quantity ?? 1
+                ];
+            }
+            session()->put('cart', $cart);
+        }
+
+        return response()->json(['message' => 'Sản phẩm đã thêm vào giỏ hàng']);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreCartItemRequest $request)
+    public function destroy($id)
     {
-        //
-    }
+        if (Auth::check()) {
+            CartItem::where('id', $id)->where('user_id', Auth::id())->delete();
+        } else {
+            $cart = session()->get('cart', []);
+            unset($cart[$id]);
+            session()->put('cart', $cart);
+        }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(CartItem $CartItem)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(CartItem $CartItem)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateCartItemRequest $request, CartItem $CartItem)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(CartItem $CartItem)
-    {
-        //
+        return response()->json(['message' => 'Sản phẩm đã được xóa']);
     }
 }

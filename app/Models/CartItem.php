@@ -11,6 +11,10 @@ class CartItem extends Model
 
     protected $fillable = ['user_id', 'product_id', 'product_variant_id', 'quantity'];
 
+    protected $casts = [
+        'quantity' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -26,3 +30,4 @@ class CartItem extends Model
         return $this->belongsTo(ProductVariant::class);
     }
 }
+

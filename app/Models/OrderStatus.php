@@ -11,8 +11,13 @@ class OrderStatus extends Model
 
     protected $fillable = ['name', 'ordinal'];
 
+    protected $casts = [
+        'ordinal' => 'integer',
+    ];
+
     public function orderHistories()
     {
         return $this->hasMany(OrderOrderStatus::class);
     }
 }
+

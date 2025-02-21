@@ -90,15 +90,21 @@ class OrderStatusController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy($id)
-    {
-        $status = OrderStatus::find($id);
+{
+    $status = OrderStatus::find($id);
 
-        if (!$status) {
-            return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
-        }
-
-        $status->delete();
-        return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
-
+    if (!$status) {
+        return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
     }
+
+    // Kiểm tra xem trạng thái này có đang được sử dụng trong đơn hàng không
+    if ($status->orderHistories()->exists()) {
+        return response()->json(['message' => 'Không thể xóa trạng thái này vì đang được sử dụng trong đơn hàng'], 400);
+    }
+
+    $status->delete();
+
+    return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
+}
+
 }

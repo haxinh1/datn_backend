@@ -33,21 +33,27 @@ class PaymentController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'parent_id' => 'nullable|integer|exists:payments,id',
-            'name' => 'required|string|max:255',
-            'logo' => 'nullable|string|max:255',
-            'is_active' => 'required|boolean',
-        ]);
-
-        $payment = Payment::create($validated);
-
-        return response()->json([
-            'message' => 'Phương thức thanh toán đã được tạo thành công.',
-            'data' => $payment,
-        ], 201);
+{
+    // Kiểm tra quyền (chỉ admin mới có thể tạo)
+    if (!auth()->user() || !auth()->user()->is_admin) {
+        return response()->json(['message' => 'Bạn không có quyền tạo phương thức thanh toán'], 403);
     }
+
+    $validated = $request->validate([
+        'parent_id' => 'nullable|integer|exists:payments,id',
+        'name' => 'required|string|max:255',
+        'logo' => 'nullable|string|max:255',
+        'is_active' => 'required|boolean',
+    ]);
+
+    $payment = Payment::create($validated);
+
+    return response()->json([
+        'message' => 'Phương thức thanh toán đã được tạo thành công.',
+        'data' => $payment,
+    ], 201);
+}
+
 
     /**
      * Display the specified resource.
@@ -75,44 +81,29 @@ class PaymentController extends Controller
      */
 
     public function update(Request $request, $id)
-
-
     {
-        $payment = Payment::find($id);
-        if (!$payment) {
-            return response()->json(['message' => 'Phương thức thanh toán không tồn tại'], 404);
+        $payment = Payment::findOrFail($id);
+    
+        // Kiểm tra quyền (chỉ admin mới có thể cập nhật)
+        if (!auth()->user() || !auth()->user()->is_admin) {
+            return response()->json(['message' => 'Bạn không có quyền cập nhật phương thức thanh toán'], 403);
         }
-
+    
         $validated = $request->validate([
             'parent_id' => 'nullable|integer|exists:payments,id',
             'name' => 'required|string|max:255',
             'logo' => 'nullable|string|max:255',
             'is_active' => 'required|boolean',
         ]);
-
+    
         $payment->update($validated);
-
+    
         return response()->json([
             'message' => 'Phương thức thanh toán đã được cập nhật thành công.',
             'data' => $payment,
         ]);
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Payment $payment, $id)
-    {
-        $payment = Payment::find($id);
-        if (!$payment) {
-            return response()->json(['message' => 'Phương thức thanh toán không tồn tại'], 404);
-        }
-
-        $payment->delete();
-
-        return response()->json([
-            'message' => 'Phương thức thanh toán đã được xóa thành công.',
-        ]);
     
-    }
+
+    
 }

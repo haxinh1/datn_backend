@@ -14,6 +14,11 @@ class Order extends Model
         'address', 'total_amount', 'is_paid', 'coupon_id', 'coupon_code'
     ];
 
+    protected $casts = [
+        'is_paid' => 'boolean',
+        'total_amount' => 'decimal:2',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -27,5 +32,10 @@ class Order extends Model
     public function orderStatuses()
     {
         return $this->hasMany(OrderOrderStatus::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

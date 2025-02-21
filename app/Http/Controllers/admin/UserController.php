@@ -66,52 +66,86 @@ class UserController extends Controller
             return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
         }
 
-        $validatedData = $request->validate([
-            'phone_number'   => 'sometimes|required|max:20|unique:users,phone_number,'.$user->id,
-            'email'          => 'sometimes|nullable|email|max:100|unique:users,email,'.$user->id,
-            'password'       => 'sometimes|required|min:6',
-            'fullname'       => 'sometimes|nullable|max:100',
-            'avatar'         => 'sometimes|nullable|url',
-            'gender'         => ['sometimes','nullable', Rule::in(['male', 'female', 'other'])],
-            'birthday'       => 'sometimes|nullable|date',
-            'loyalty_points' => 'sometimes|nullable|integer|min:0',
-            'role'           => ['sometimes','nullable', Rule::in(['customer', 'admin', 'manager'])],
-            'status'         => ['sometimes','nullable', Rule::in(['active', 'inactive', 'banned'])],
-            'google_id'      => 'sometimes|nullable|numeric',
-        ]);
+        // $validatedData = $request->validate([
+        //     'phone_number'   => 'sometimes|required|max:20|unique:users,phone_number,'.$user->id,
+        //     'email'          => 'sometimes|nullable|email|max:100|unique:users,email,'.$user->id,
+        //     'password'       => 'sometimes|required|min:6',
+        //     'fullname'       => 'sometimes|nullable|max:100',
+        //     'avatar'         => 'sometimes|nullable|url',
+        //     'gender'         => ['sometimes','nullable', Rule::in(['male', 'female', 'other'])],
+        //     'birthday'       => 'sometimes|nullable|date',
+        //     'loyalty_points' => 'sometimes|nullable|integer|min:0',
+        //     'role'           => ['sometimes','nullable', Rule::in(['customer', 'admin', 'manager'])],
+        //     'status'         => ['sometimes','nullable', Rule::in(['active', 'inactive', 'banned'])],
+        //     'google_id'      => 'sometimes|nullable|numeric',
+        // ]);
 
-        if(isset($validatedData['phone_number'])) {
-            $user->phone_number = $validatedData['phone_number'];
+        // if(isset($validatedData['phone_number'])) {
+        //     $user->phone_number = $validatedData['phone_number'];
+        // }
+        // if(array_key_exists('email', $validatedData)) {
+        //     $user->email = $validatedData['email'];
+        // }
+        // if(isset($validatedData['password'])) {
+        //     $user->password = Hash::make($validatedData['password']);
+        // }
+        // if(isset($validatedData['fullname'])) {
+        //     $user->fullname = $validatedData['fullname'];
+        // }
+        // if(isset($validatedData['avatar'])) {
+        //     $user->avatar = $validatedData['avatar'];
+        // }
+        // if(isset($validatedData['gender'])) {
+        //     $user->gender = $validatedData['gender'];
+        // }
+        // if(isset($validatedData['birthday'])) {
+        //     $user->birthday = $validatedData['birthday'];
+        // }
+        // if(isset($validatedData['loyalty_points'])) {
+        //     $user->loyalty_points = $validatedData['loyalty_points'];
+        // }
+        // if(isset($validatedData['role'])) {
+        //     $user->role = $validatedData['role'];
+        // }
+        // if(isset($validatedData['status'])) {
+        //     $user->status = $validatedData['status'];
+        // }
+        // if(isset($validatedData['google_id'])) {
+        //     $user->google_id = $validatedData['google_id'];
+        // }
+        
+        if ($request->has('phone_number')) {
+            $user->phone_number = $request->phone_number;
         }
-        if(array_key_exists('email', $validatedData)) {
-            $user->email = $validatedData['email'];
+        if ($request->has('email')) {
+            $user->email = $request->email;
         }
-        if(isset($validatedData['password'])) {
-            $user->password = Hash::make($validatedData['password']);
+        if ($request->has('password')) {
+            $user->password = Hash::make($request->password);
         }
-        if(isset($validatedData['fullname'])) {
-            $user->fullname = $validatedData['fullname'];
+        if ($request->has('fullname')) {
+            $user->fullname = $request->fullname;
         }
-        if(isset($validatedData['avatar'])) {
-            $user->avatar = $validatedData['avatar'];
+        if ($request->has('avatar')) {
+            $user->avatar = $request->avatar;
         }
-        if(isset($validatedData['gender'])) {
-            $user->gender = $validatedData['gender'];
+        if ($request->has('gender')) {
+            $user->gender = $request->gender;
         }
-        if(isset($validatedData['birthday'])) {
-            $user->birthday = $validatedData['birthday'];
+        if ($request->has('birthday')) {
+            $user->birthday = $request->birthday;
         }
-        if(isset($validatedData['loyalty_points'])) {
-            $user->loyalty_points = $validatedData['loyalty_points'];
+        if ($request->has('loyalty_points')) {
+            $user->loyalty_points = $request->loyalty_points;
         }
-        if(isset($validatedData['role'])) {
-            $user->role = $validatedData['role'];
+        if ($request->has('role')) {
+            $user->role = $request->role;
         }
-        if(isset($validatedData['status'])) {
-            $user->status = $validatedData['status'];
+        if ($request->has('status')) {
+            $user->status = $request->status;
         }
-        if(isset($validatedData['google_id'])) {
-            $user->google_id = $validatedData['google_id'];
+        if ($request->has('google_id')) {
+            $user->google_id = $request->google_id;
         }
 
         $user->save();
@@ -131,9 +165,11 @@ class UserController extends Controller
             'phone_number' => 'required',
             'password'     => 'required'
         ]);
-
-
-        $user = User::where('phone_number', $validatedData['phone_number'])->where('role', 'admin')->first();
+       
+        $user = User::where('phone_number', $validatedData['phone_number'])->where(function($query) {
+            $query->where('role', 'admin')->orWhere('role', 'manager');
+            })
+            ->first();
 
         if (!$user || !Hash::check($validatedData['password'], $user->password)) {
             return response()->json([
@@ -141,6 +177,17 @@ class UserController extends Controller
             ], 401);
         }
 
+        if ($user->status === 'inactive') {
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã dừng hoạt động'
+            ], 403);
+        }
+        if($user->status === 'banned'){
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã  bị khóa'
+            ], 403); 
+        }
+             
         
         $token = $user->createToken('admin_token')->plainTextToken;
 
@@ -150,6 +197,9 @@ class UserController extends Controller
             'access_token' => $token,
             'token_type'   => 'Bearer'
         ], 200);
+    
+
+      
     }
 
     public function logout(Request $request)
@@ -175,6 +225,9 @@ public function changePassword(Request $request)
      
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['message' => 'Mật khẩu hiện tại không chính xác.'], 400);
+        }
+        if(Hash::check($request->new_password, $user->password)){
+            return response()->json(['message' => 'Mật khẩu mới không được trùng với mật khẩu cũ.'], 400);
         }
 
    

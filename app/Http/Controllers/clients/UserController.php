@@ -22,7 +22,7 @@ class UserController extends Controller
             'phone_number' => 'required|string|unique:users,phone_number',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
-            'fullname' => 'nullable|string|max:100',
+            'fullname' => 'required|string|max:100',
             'avatar' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
             'birthday' => 'nullable|date',
@@ -59,10 +59,7 @@ class UserController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Thông tin đăng nhập không đúng'], 401);
         }
-
-        // if ($user->role !== 'customer') {
-        //     return response()->json(['message' => 'Access denied'], 403);
-        // }
+     
 
         $token = $user->createToken('customer_token')->plainTextToken;
 
@@ -99,6 +96,9 @@ class UserController extends Controller
      
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['message' => 'Mật khẩu hiện tại không chính xác.'], 400);
+        }
+        if (Hash::check($request->new_password, $user->password)) {
+            return response()->json(['message' => 'Mật khẩu mới không được trùng với mật khẩu cũ.'], 400);
         }
 
    
@@ -158,7 +158,7 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
       
-        DB::table('password_resets')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json([
             'message' => 'Mật khẩu đã được đặt lại thành công'

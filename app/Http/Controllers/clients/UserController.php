@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
 use Illuminate\Http\Request;
@@ -17,18 +18,25 @@ class UserController extends Controller
    
     public function register(Request $request)
     {
-      
-        $request->validate([
-            'phone_number' => 'required|string|unique:users,phone_number',
-            'email' => 'nullable|email|unique:users,email',
+    
+        $validator = Validator::make($request->all(), [
+            'phone_number' =>['required', 'regex:/^0[0-9]{9}$/', 'unique:users,phone_number'],
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'fullname' => 'required|string|max:100',
             'avatar' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
             'birthday' => 'nullable|date',
         ]);
-
-        // Tạo user mới
+   
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Đăng ký thất bại',
+                'errors' => $validator->errors()
+            ], 400);
+        }
+ 
+        try {
         $user = User::create([
             'phone_number' => $request->phone_number,
             'email' => $request->email,
@@ -45,7 +53,13 @@ class UserController extends Controller
             'message' => 'Đăng ký thành công',
             'user' => $user
         ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Đăng ký thất bại',
+            'errors' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function login(Request $request)
     {

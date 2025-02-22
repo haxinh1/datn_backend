@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('order_order_statuses', function (Blueprint $table) {
             $table->unsignedBigInteger('order_id')->comment('ID đơn hàng'); // ID đơn hàng
             $table->unsignedBigInteger('order_status_id')->comment('ID trạng thái đơn hàng'); // ID trạng thái đơn hàng
-            $table->unsignedBigInteger('modified_by')->comment('ID người xử lý đơn hàng'); // ID người xử lý
+            $table->unsignedBigInteger('modified_by')->nullable()->comment('ID người cập nhật trạng thái (có thể NULL)');
             $table->string('note', 255)->nullable()->comment('Ghi chú của người xử lý'); // Ghi chú
             $table->json('employee_evidence')->nullable()->comment('Minh chứng của nhân viên'); // Minh chứng của nhân viên
             $table->boolean('customer_confirmation')->nullable()->comment('null nếu nhân viên mới gửi minh chứng, 1 nếu xác nhận đã nhận, 0 nếu xác nhận không nhận được hàng'); // Xác nhận của khách hàng

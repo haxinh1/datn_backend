@@ -9,15 +9,8 @@ class OrderStatus extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'ordinal'];
-
-    protected $casts = [
-        'ordinal' => 'integer',
+    protected $fillable = [
+        'name',
+        'ordinal',
     ];
-
-    public function orderHistories()
-    {
-        return $this->hasMany(OrderOrderStatus::class);
-    }
 }
-

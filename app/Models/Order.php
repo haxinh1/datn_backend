@@ -10,32 +10,59 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code', 'user_id', 'payment_id', 'phone_number', 'email', 'fullname', 
-        'address', 'total_amount', 'is_paid', 'coupon_id', 'coupon_code'
+        'code',
+        'user_id',
+        'fullname',
+        'email',
+        'phone_number',
+        'address',
+        'total_amount',
+        'status_id',
+        'payment_id',
+        'coupon_id',
+        'coupon_code',
+        'coupon_description',
+        'coupon_discount_type',
+        'coupon_discount_value',
     ];
 
-    protected $casts = [
-        'is_paid' => 'boolean',
-        'total_amount' => 'decimal:2',
-    ];
-
-    public function user()
+    /**
+     * Quan hệ với chi tiết đơn hàng
+     */
+    public function orderItems()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Quan hệ với phương thức thanh toán
+     */
     public function payment()
     {
         return $this->belongsTo(Payment::class);
     }
 
+    /**
+     * Quan hệ với trạng thái đơn hàng
+     */
+    public function status()
+    {
+        return $this->belongsTo(OrderStatus::class, 'status_id');
+    }
+
+    /**
+     * Quan hệ với lịch sử trạng thái đơn hàng
+     */
     public function orderStatuses()
     {
         return $this->hasMany(OrderOrderStatus::class);
     }
 
-    public function orderItems()
+    /**
+     * Quan hệ với người dùng (nếu có)
+     */
+    public function user()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->belongsTo(User::class);
     }
 }

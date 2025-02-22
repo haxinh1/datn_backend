@@ -10,6 +10,7 @@ use App\Http\Controllers\admin\PaymentController;
 use App\Http\Controllers\admin\OrderStatusController;
 use App\Http\Controllers\admin\CouponController;
 use App\Http\Controllers\admin\OrderController;
+use App\Http\Controllers\admin\OrderItemController;
 use App\Http\Controllers\admin\OrderOrderStatusController;
 use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\StockController;
@@ -69,6 +70,11 @@ Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy']
     Route::post('/place', [OrderController::class, 'store'])->name('orders.place'); // Đặt hàng
     Route::get('/{id}', [OrderController::class, 'show'])->name('orders.show'); // Chi tiết đơn hàng
     Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus'); // Cập nhật trạng thái
+    Route::get('{orderId}/items', [OrderItemController::class, 'index']);
+    Route::post('{orderId}/items', [OrderItemController::class, 'store']);
+    Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
+    Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
+    
 });
 
 

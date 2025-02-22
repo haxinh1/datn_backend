@@ -9,19 +9,11 @@ class OrderOrderStatus extends Model
 {
     use HasFactory;
 
-    protected $table = 'order_order_statuses';
-
     protected $fillable = [
         'order_id',
         'order_status_id',
         'modified_by',
         'note',
-        'employee_evidence',
-        'customer_confirmation'
-    ];
-
-    protected $casts = [
-        'employee_evidence' => 'array',
     ];
 
     public function order()

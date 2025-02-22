@@ -1,51 +1,42 @@
 <?php
 
 namespace App\Http\Controllers\admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\OrderStatus;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreOrderStatusRequest;
-use App\Http\Requests\UpdateOrderStatusRequest;
 
 class OrderStatusController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lấy danh sách trạng thái đơn hàng.
      */
     public function index()
     {
-        $statuses = OrderStatus::all();
-        return response()->json($statuses, 200);
+        $statuses = OrderStatus::orderBy('ordinal')->get();
+        return response()->json(['status' => 'success', 'data' => $statuses], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Tạo trạng thái đơn hàng mới.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:50',
+            'name' => 'required|string|max:50|unique:order_statuses,name',
             'ordinal' => 'nullable|integer',
         ]);
 
         try {
             $status = OrderStatus::create($validated);
-            return response()->json($status, 201);
+            return response()->json(['message' => 'Trạng thái đơn hàng đã được tạo', 'data' => $status], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Display the specified resource.
+     * Lấy thông tin trạng thái đơn hàng cụ thể.
      */
     public function show($id)
     {
@@ -55,56 +46,50 @@ class OrderStatusController extends Controller
             return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
         }
 
-        return response()->json($status, 200);
-
+        return response()->json(['status' => 'success', 'data' => $status], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(OrderStatus $OrderStatus)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
+     * Cập nhật trạng thái đơn hàng.
      */
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:50',
-            'ordinal' => 'nullable|integer',
-        ]);
-
         $status = OrderStatus::find($id);
 
         if (!$status) {
             return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
         }
-        $status->update($validated);
-        return response()->json($status, 200);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:50|unique:order_statuses,name,' . $id,
+            'ordinal' => 'nullable|integer',
+        ]);
+
+        try {
+            $status->update($validated);
+            return response()->json(['message' => 'Cập nhật trạng thái thành công', 'data' => $status], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa trạng thái đơn hàng (chỉ khi không có đơn hàng nào sử dụng).
      */
     public function destroy($id)
-{
-    $status = OrderStatus::find($id);
+    {
+        $status = OrderStatus::find($id);
 
-    if (!$status) {
-        return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
+        if (!$status) {
+            return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
+        }
+
+        // Kiểm tra xem trạng thái có đang được sử dụng không
+        if ($status->orderHistories()->exists()) {
+            return response()->json(['message' => 'Không thể xóa trạng thái này vì đang được sử dụng trong đơn hàng'], 400);
+        }
+
+        $status->delete();
+        return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
     }
-
-    // Kiểm tra xem trạng thái này có đang được sử dụng trong đơn hàng không
-    if ($status->orderHistories()->exists()) {
-        return response()->json(['message' => 'Không thể xóa trạng thái này vì đang được sử dụng trong đơn hàng'], 400);
-    }
-
-    $status->delete();
-
-    return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
-}
-
 }

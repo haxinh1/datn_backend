@@ -24,11 +24,18 @@ return [
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
+    'vnpay' => [
+        'url' => env('VNP_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNP_RETURN_URL', 'http://127.0.0.1:8000/api/payments/vnpay/return'),
+        'tmn_code' => env('VNP_TMN_CODE', 'FOQ8B80U'),
+        'hash_secret' => env('VNP_HASH_SECRET', 'E2XRZHWXVAC2XGJXO1M51MRRQXNDN3U8'), // 🔥 CHẮC CHẮN hash_secret này đúng
+    ],
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-    ],
+    ]
+   
 
 ];

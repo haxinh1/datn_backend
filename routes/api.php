@@ -87,6 +87,8 @@ Route::middleware('auth')->group(function () {
 
 // Cong thanh toan
 Route::post('/VNPay', [VNPayController::class, 'createPayment']);
+Route::get('/payments/vnpay/return', [VNPayController::class, 'paymentReturn']);
+
 
 
 Route::apiResource('tags', TagController::class);

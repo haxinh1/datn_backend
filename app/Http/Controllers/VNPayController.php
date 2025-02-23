@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
@@ -16,7 +17,6 @@ class VNPayController extends Controller
     {
         date_default_timezone_set('Asia/Ho_Chi_Minh');
 
-        // Kiểm tra đầu vào
         $validator = Validator::make($request->all(), [
             'order_id' => 'required|exists:orders,id',
             'payment_method' => 'required|in:vnpay,cod'
@@ -31,76 +31,175 @@ class VNPayController extends Controller
 
         $order = Order::findOrFail($request->order_id);
 
-        // Kiểm tra trạng thái đơn hàng
-        if (!in_array($order->status_id, [1, 2])) {
-            return response()->json([
-                'message' => 'Đơn hàng không hợp lệ để thanh toán',
-                'order_id' => $order->id,
-                'status_id' => $order->status_id
-            ], 400);
-        }
-
-        // Kiểm tra tổng tiền hợp lệ (> 5,000 VND)
         if ($order->total_amount < 5000) {
             return response()->json(['message' => 'Số tiền giao dịch không hợp lệ. Phải lớn hơn 5,000 VND'], 400);
         }
 
-        // Xử lý thanh toán VNPay
-        if ($request->payment_method === 'vnpay') {
-            $vnp_Url = env('VNP_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html');
-            $vnp_Returnurl = env('VNP_RETURN_URL', 'http://127.0.0.1:8000/api/payments/vnpay/return');
-            $vnp_TmnCode = env('VNP_TMN_CODE', 'FOQ8B80U');
-            $vnp_HashSecret = env('VNP_HASH_SECRET', 'E2XRZHWXVAC2XGJXO1M51MRRQXNDN3U8');
-
-            $vnp_TxnRef = (string) $order->id;
-            $vnp_OrderInfo = "Thanh toán đơn hàng #" . $order->code;
-            $vnp_OrderType = "billpayment";
-            $vnp_Amount = (int) $order->total_amount * 100;
-            $vnp_Locale = "vn";
-            $vnp_BankCode = $request->bank_code ?? "NCB";
-            $vnp_IpAddr = request()->ip();
-            $vnp_ExpireDate = date('YmdHis', time() + 1800);
-
-            $inputData = [
-                "vnp_Version" => "2.1.0",
-                "vnp_TmnCode" => $vnp_TmnCode,
-                "vnp_Amount" => $vnp_Amount,
-                "vnp_Command" => "pay",
-                "vnp_CreateDate" => date("YmdHis"),
-                "vnp_CurrCode" => "VND",
-                "vnp_IpAddr" => $vnp_IpAddr,
-                "vnp_Locale" => $vnp_Locale,
-                "vnp_OrderInfo" => $vnp_OrderInfo,
-                "vnp_OrderType" => $vnp_OrderType,
-                "vnp_ReturnUrl" => $vnp_Returnurl,
-                "vnp_TxnRef" => $vnp_TxnRef,
-                "vnp_ExpireDate" => $vnp_ExpireDate,
-            ];
-
-            if (!empty($vnp_BankCode)) {
-                $inputData["vnp_BankCode"] = $vnp_BankCode;
-            }
-
-            ksort($inputData);
-            $query = [];
-            foreach ($inputData as $key => $value) {
-                if ($value !== null && $value !== '') {
-                    $query[] = urlencode($key) . "=" . urlencode($value);
-                }
-            }
-            $queryString = implode("&", $query);
-            $vnp_SecureHash = hash_hmac("sha512", $queryString, $vnp_HashSecret);
-
-            // Log dữ liệu gửi đi để kiểm tra
-            Log::info("VNPay Request: ", $inputData);
-            Log::info("Generated Secure Hash: " . $vnp_SecureHash);
-
-            $queryString .= "&vnp_SecureHash=" . $vnp_SecureHash;
-            $vnp_Url .= "?" . $queryString;
-
-            return response()->json(["message" => "Chuyển hướng đến VNPay", "payment_url" => $vnp_Url], 200);
+        $payment = Payment::where('name', 'VN Pay')->first();
+        if (!$payment) {
+            return response()->json(['message' => 'Phương thức thanh toán VNPay không tồn tại'], 400);
         }
 
-        return response()->json(["message" => "Phương thức thanh toán không hợp lệ"], 400);
+        $order->update([
+            'status_id' => 2,
+            'payment_id' => $payment->id
+        ]);
+
+        $vnp_Url = config('services.vnpay.url');
+        $vnp_Returnurl = config('services.vnpay.return_url');
+        $vnp_TmnCode = config('services.vnpay.tmn_code');
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+
+        if (!$vnp_HashSecret) {
+            Log::error("VNPay Hash Secret is NULL. Kiểm tra config/services.php!");
+            return response()->json(['message' => 'Lỗi hệ thống: Hash Secret chưa được cấu hình'], 500);
+        }
+
+        // 🔹 Xử lý vnp_OrderInfo
+        $vnp_OrderInfo = "Thanh toan don hang " . preg_replace('/[^a-zA-Z0-9 ]/', '', $order->code);
+
+        // 🔹 Xây dựng dữ liệu gửi đến VNPay
+        $inputData = [
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => (int) $order->total_amount * 100,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date("YmdHis"),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => request()->ip(),
+            "vnp_Locale" => "vn",
+            "vnp_OrderInfo" => $vnp_OrderInfo, // 🔥 Fix lỗi encoding Unicode
+            "vnp_OrderType" => "billpayment",
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => (string) $order->id,
+            "vnp_ExpireDate" => date("YmdHis", time() + 1800),
+        ];
+
+        if ($request->has('bank_code')) {
+            $inputData["vnp_BankCode"] = $request->bank_code;
+        }
+
+        // 🔹 Sắp xếp mảng & tạo query string
+        ksort($inputData);
+        $queryString = "";
+        foreach ($inputData as $key => $value) {
+            if ($value !== null && $value !== '') {
+                $queryString .= $key . "=" . urlencode($value) . "&"; // 🔥 Dùng `urlencode()`
+            }
+        }
+        $queryString = rtrim($queryString, "&");
+
+        // 🔹 Tạo Secure Hash
+        $vnp_SecureHash = hash_hmac("sha512", $queryString, $vnp_HashSecret);
+
+        Log::info("VNPay Hash Data (Create Payment):", [$queryString]);
+        Log::info("Generated Secure Hash:", [$vnp_SecureHash]);
+
+        // 🔹 Gửi request sang VNPay
+        $queryString .= "&vnp_SecureHash=" . $vnp_SecureHash;
+        $vnp_Url .= "?" . $queryString;
+
+        return response()->json([
+            "message" => "Chuyển hướng đến VNPay",
+            "payment_url" => $vnp_Url
+        ], 200);
     }
+
+
+
+
+
+    /**
+     * Xử lý phản hồi từ VNPay
+     */
+    public function paymentReturn(Request $request)
+{
+    $inputData = $request->all();
+    Log::info("VNPay Response Data:", $inputData);
+
+    // 🔹 Kiểm tra nếu thiếu `vnp_SecureHash`
+    if (!isset($inputData['vnp_SecureHash'])) {
+        return response()->json([
+            'message' => 'Thiếu mã bảo mật VNPay',
+            'data' => $inputData
+        ], 400);
+    }
+
+    // 🔹 Lấy Secure Hash từ VNPay
+    $secureHash = trim($inputData['vnp_SecureHash']);
+    unset($inputData['vnp_SecureHash'], $inputData['vnp_SecureHashType']); // Loại bỏ để tính toán chính xác
+
+    // 🔹 Định dạng lại giá trị `vnp_Amount` (VNPay gửi về string nhưng cần convert integer)
+    if (isset($inputData['vnp_Amount'])) {
+        $inputData['vnp_Amount'] = strval(intval($inputData['vnp_Amount']));
+    }
+
+    // 🔹 Loại bỏ khoảng trắng đầu cuối tất cả giá trị
+    array_walk($inputData, function (&$value, $key) {
+        $value = trim(strval($value));
+    });
+
+    // 🔹 Sắp xếp mảng dữ liệu đúng chuẩn VNPay (A-Z)
+    ksort($inputData);
+
+    // 🔹 Tạo chuỗi hash đúng chuẩn
+    $hashData = [];
+    foreach ($inputData as $key => $value) {
+        $hashData[] = urlencode($key) . "=" . urlencode($value);
+    }
+    $hashData = implode("&", $hashData);
+
+    // 🔹 Lấy `hash_secret` từ config
+    $vnp_HashSecret = config('services.vnpay.hash_secret');
+    if (!$vnp_HashSecret) {
+        Log::error("VNPay Hash Secret is NULL. Kiểm tra config/services.php!");
+        return response()->json(['message' => 'Lỗi hệ thống: Hash Secret chưa được cấu hình'], 500);
+    }
+
+    // 🔹 Tạo chữ ký số SHA512
+    $computedHash = hash_hmac("sha512", $hashData, $vnp_HashSecret);
+
+    // 🔹 Log kiểm tra
+    Log::info("VNPay Hash Data (Return):", [$hashData]);
+    Log::info("Computed Secure Hash:", [$computedHash]);
+    Log::info("Secure Hash từ VNPay:", [$secureHash]);
+
+    // 🔹 So sánh chữ ký số (KHÔNG phân biệt hoa/thường)
+    if (strcasecmp($computedHash, $secureHash) !== 0) {
+        Log::error("Xác thực thanh toán thất bại", [
+            'computed_hash' => $computedHash,
+            'secure_hash' => $secureHash,
+            'input_data' => $inputData
+        ]);
+        return response()->json([
+            'message' => 'Xác thực thanh toán thất bại',
+            'computed_hash' => $computedHash,
+            'secure_hash' => $secureHash,
+            'input_data' => $inputData
+        ], 400);
+    }
+
+    // 🔹 Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
+    if ($inputData['vnp_ResponseCode'] == '00') {
+        $order = Order::findOrFail($inputData['vnp_TxnRef']);
+        $order->update([
+            'status_id' => 3,  // Đã thanh toán
+            'payment_id' => Payment::where('name', 'VN Pay')->value('id')
+        ]);
+
+        return response()->json([
+            'message' => 'Thanh toán thành công',
+            'order' => $order
+        ], 200);
+    } else {
+        return response()->json([
+            'message' => 'Thanh toán không thành công'
+        ], 400);
+    }
+}
+
+
+
+
+
 }

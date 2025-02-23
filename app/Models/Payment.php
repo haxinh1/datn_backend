@@ -10,8 +10,14 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
+        'parent_id',  
         'name',
         'logo',
-        'is_active',
+        'is_active'
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(Payment::class, 'parent_id');
+    }
 }

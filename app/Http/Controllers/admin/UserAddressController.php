@@ -5,8 +5,9 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 
 use App\Models\UserAddress;
-use App\Http\Requests\StoreUserAddressRequest;
-use App\Http\Requests\UpdateUserAddressRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+
 
 class UserAddressController extends Controller
 {
@@ -15,7 +16,9 @@ class UserAddressController extends Controller
      */
     public function index()
     {
-        //
+        $user = Auth::user();
+        $addresses = UserAddress::where('user_id', $user->id)->get();
+        return response()->json($addresses, 200);
     }
 
     /**
@@ -29,40 +32,65 @@ class UserAddressController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserAddressRequest $request)
+    public function store(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'address' => 'required|string',
+            'is_default' => 'boolean',
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(UserAddress $UserAddress)
-    {
-        //
-    }
+        $user = Auth::user();
+     
+        if ($request->is_default) {
+            UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(UserAddress $UserAddress)
-    {
-        //
-    }
+        $address = UserAddress::create([
+            'user_id' => $user->id,
+            'address' => $request->address,
+            'is_default' => $request->is_default ?? false,
+        ]);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateUserAddressRequest $request, UserAddress $UserAddress)
+        return response()->json($address, 201);
+    }
+   
+    public function update(Request $request,  $id)
     {
-        //
+        $request->validate([
+            'address' => 'sometimes|required|string',
+            'is_default' => 'boolean',
+        ]);
+
+        $user = Auth::user();
+        $address = UserAddress::where('user_id', $user->id)->where('id', $id)->first();
+
+        if (!$address) {
+            return response()->json(['message' => 'Không tìm thấy địa chỉ'], 404);
+        }
+
+        if ($request->is_default) {
+            UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
+        }
+
+        $address->update($request->only(['address', 'is_default']));
+
+        return response()->json($address, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(UserAddress $UserAddress)
+    public function destroy($id)
     {
-        //
+        $user = Auth::user();
+        $address = UserAddress::where('user_id', $user->id)->where('id', $id)->first();
+
+        if (!$address) {
+            return response()->json(['message' => 'Không tìm thấy địa chỉ'], 404);
+        }
+
+        $address->delete();
+
+        return response()->json(['message' => 'Địa chỉ đã được xóa'], 200);
     }
 }

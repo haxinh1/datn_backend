@@ -13,6 +13,7 @@ use App\Http\Controllers\admin\OrderController;
 use App\Http\Controllers\admin\OrderItemController;
 use App\Http\Controllers\admin\OrderOrderStatusController;
 use App\Http\Controllers\admin\ProductVariantController;
+use App\Http\Controllers\admin\SearchController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
 use App\Http\Controllers\admin\UserAddressController;
@@ -95,10 +96,17 @@ Route::apiResource('tags', TagController::class);
 Route::apiResource('coupons', CouponController::class);
 
 
-Route::apiResource('users', AdminUserController::class);
+// Route::apiResource('users', AdminUserController::class);
 
-//route login admin
+//route admin user
 Route::prefix('admin')->group(function () {
+    Route::get('/users/search', [SearchController::class, 'searchUsers']);
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::get('/users/{id}', [AdminUserController::class, 'show']);
+    Route::post('/users', [AdminUserController::class, 'store']);
+    Route::put('/users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+
     Route::post('/login', [AdminUserController::class, 'login']);
     Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
@@ -115,8 +123,9 @@ Route::prefix('admin')->group(function () {
 
 // user address
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('user-address', [UserAddressController::class, 'index']);
-        Route::post('user-address', [UserAddressController::class, 'store']);
+        Route::get('user-addresses', [UserAddressController::class, 'index']);
+        Route::get('user-addresses/search', [UserAddressController::class, 'search']); // Thêm route này
+        Route::post('user-addresses', [UserAddressController::class, 'store']);
         Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
         Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
     });

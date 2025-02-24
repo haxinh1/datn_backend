@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\CartItem;
 use App\Models\OrderOrderStatus;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ class OrderController extends Controller
     try {
         // Lấy giỏ hàng
         if (Auth::check()) {
-            $cartItems = CartItem::where('user_id', Auth::id())->with('product')->get();
+            $cartItems = CartItem::where('user_id', Auth::id())->with('product', 'productVariant')->get();
         } else {
             $cartItems = session()->get('cart', []);
         }
@@ -42,10 +43,16 @@ class OrderController extends Controller
             return response()->json(['message' => 'Giỏ hàng trống'], 400);
         }
 
-        // Tính tổng tiền
+        // Tính tổng tiền đơn hàng (ưu tiên sale_price nếu có)
         $totalAmount = collect($cartItems)->sum(function ($item) {
-            $product = Product::find($item['product_id']);
-            return $item['quantity'] * ($product ? $product->sale_price : 0);
+            if (isset($item['product_variant_id']) && $item['product_variant_id']) {
+                $productVariant = ProductVariant::find($item['product_variant_id']);
+                $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
+            } else {
+                $product = Product::find($item['product_id']);
+                $price = $product ? ($product->sale_price ?? $product->sell_price) : 0;
+            }
+            return $item['quantity'] * $price;
         });
 
         if ($totalAmount <= 0) {
@@ -76,13 +83,20 @@ class OrderController extends Controller
 
         // Thêm sản phẩm vào chi tiết đơn hàng
         foreach ($cartItems as $item) {
-            $product = Product::find($item['product_id']);
+            if (isset($item['product_variant_id']) && $item['product_variant_id']) {
+                $productVariant = ProductVariant::find($item['product_variant_id']);
+                $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
+            } else {
+                $product = Product::find($item['product_id']);
+                $price = $product ? ($product->sale_price ?? $product->sell_price) : 0;
+            }
 
-            if ($product) {
+            if ($price > 0) {
                 $order->orderItems()->create([
                     'product_id' => $item['product_id'],
+                    'product_variant_id' => $item['product_variant_id'] ?? null,
                     'quantity' => $item['quantity'],
-                    'sell_price' => $product->sale_price,
+                    'sell_price' => $price,
                 ]);
             }
         }
@@ -107,6 +121,7 @@ class OrderController extends Controller
         return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
     }
 }
+
 
 
 

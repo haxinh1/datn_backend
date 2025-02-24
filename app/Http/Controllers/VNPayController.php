@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\OrderOrderStatus;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +42,6 @@ class VNPayController extends Controller
         }
 
         $order->update([
-            'status_id' => 2,
             'payment_id' => $payment->id
         ]);
 
@@ -183,10 +183,17 @@ class VNPayController extends Controller
     if ($inputData['vnp_ResponseCode'] == '00') {
         $order = Order::findOrFail($inputData['vnp_TxnRef']);
         $order->update([
-            'status_id' => 3,  // Đã thanh toán
+            'status_id' => 2,  // Đã thanh toán
             'payment_id' => Payment::where('name', 'VN Pay')->value('id')
         ]);
 
+            // ✅ Cập nhật trạng thái mới vào `order_order_statuses`
+                OrderOrderStatus::create([
+                'order_id' => $order->id,
+                'order_status_id' => 2, // Trạng thái "Đã thanh toán"
+                'note' => 'Thanh toán VNPay thành công.',
+            ]);
+        
         return response()->json([
             'message' => 'Thanh toán thành công',
             'order' => $order

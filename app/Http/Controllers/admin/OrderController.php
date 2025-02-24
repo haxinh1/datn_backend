@@ -35,7 +35,7 @@ class OrderController extends Controller
         // Tính tổng tiền
         $totalAmount = collect($cartItems)->sum(function ($item) {
             $product = Product::find($item['product_id']);
-            return $item['quantity'] * ($product ? $product->sell_price : 0);
+            return $item['quantity'] * ($product ? $product->sale_price : 0);
         });
 
         if ($totalAmount <= 0) {
@@ -51,8 +51,17 @@ class OrderController extends Controller
             'phone_number' => $request->phone_number,
             'address' => $request->address,
             'total_amount' => $totalAmount,
-            'status_id' => 1, // Trạng thái: Chờ xác nhận
+            'status_id' => 1, // Trạng thái mặc định: Đang xử lý
             'payment_id' => null,
+        ]);
+
+        // Thêm trạng thái đầu tiên vào bảng `order_order_statuses`
+        OrderOrderStatus::create([
+            'order_id' => $order->id,
+            'order_status_id' => 1, // Trạng thái "Đang xử lý"
+            'modified_by' => Auth::id(), // Nếu là khách vãng lai thì để NULL
+            'note' => 'Đơn hàng mới được tạo.',
+            'employee_evidence' => null,
         ]);
 
         // Thêm sản phẩm vào chi tiết đơn hàng
@@ -63,7 +72,7 @@ class OrderController extends Controller
                 $order->orderItems()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'sell_price' => $product->sell_price,
+                    'sell_price' => $product->sale_price,
                 ]);
             }
         }
@@ -78,13 +87,17 @@ class OrderController extends Controller
 
         DB::commit(); // Commit transaction
 
-        return response()->json(['message' => 'Đặt hàng thành công', 'order' => $order]);
+        return response()->json([
+            'message' => 'Đặt hàng thành công',
+            'order' => $order,
+        ], 201);
 
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
     }
 }
+
 
 
     /**

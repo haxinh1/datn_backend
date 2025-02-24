@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+
+    public function index(Request $request)
+    {
+        $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
+            ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian đặt hàng mới nhất
+            ->paginate(10); // Phân trang, mỗi trang 10 đơn hàng
+
+        return response()->json(['orders' => $orders], 200);
+    }
+
     /**
      * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
      */

@@ -15,7 +15,7 @@ use App\Http\Controllers\admin\OrderOrderStatusController;
 use App\Http\Controllers\admin\ProductVariantController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
-
+use App\Http\Controllers\admin\UserAddressController;
 use App\Http\Controllers\admin\UserController as AdminUserController;
 
 use App\Http\Controllers\clients\UserController as ClientUserController;
@@ -113,6 +113,13 @@ Route::prefix('admin')->group(function () {
     Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 
 
+// user address
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('user-address', [UserAddressController::class, 'index']);
+        Route::post('user-address', [UserAddressController::class, 'store']);
+        Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
+        Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
+    });
 
 
 //payment

@@ -166,10 +166,17 @@ class UserController extends Controller
             'password'     => 'required'
         ]);
        
-        $user = User::where('phone_number', $validatedData['phone_number'])->where(function($query) {
-            $query->where('role', 'admin')->orWhere('role', 'manager');
-            })
-            ->first();
+        $user = User::where(function($query) use ($validatedData) {
+            $query->where('phone_number', $validatedData['phone_number'])
+                  ->orWhere('email', $validatedData['phone_number']);
+        })
+        ->where(function($query) {
+            $query->where('role', 'admin')
+                  ->orWhere('role', 'manager');
+        })
+        ->first();
+
+   
 
         if (!$user || !Hash::check($validatedData['password'], $user->password)) {
             return response()->json([

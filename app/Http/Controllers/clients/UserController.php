@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Models\UserAddress;
 use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class UserController extends Controller
             'avatar' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
             'birthday' => 'nullable|date',
+            'address' => 'required|string',
         ]);
    
         if ($validator->fails()) {
@@ -49,6 +51,14 @@ class UserController extends Controller
             'status' => 'active',
         ]);
 
+
+        UserAddress::create([
+            'user_id' => $user->id,
+            'address' => $request->address,
+            'id_default' => true, 
+        ]);
+
+
         return response()->json([
             'message' => 'Đăng ký thành công',
             'user' => $user
@@ -67,13 +77,23 @@ class UserController extends Controller
             'phone_number' => 'required',
             'password' => 'required',
         ]);
-
-        $user = User::where('phone_number', $request->phone_number)->first();
+    
+        $user = User::where('phone_number', $request->phone_number)->orWhere('email', $request->phone_number)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Thông tin đăng nhập không đúng'], 401);
         }
-     
+      
+        if ($user->status === 'inactive') {
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã dừng hoạt động'
+            ], 403);
+        }
+        if($user->status === 'banned'){
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã  bị khóa'
+            ], 403); 
+        }
 
         $token = $user->createToken('customer_token')->plainTextToken;
 

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CartItemController extends Controller
 {
@@ -37,6 +38,12 @@ class CartItemController extends Controller
  */
 public function store(Request $request, $productId)
 {
+    Log::info('🟢 Đang thêm sản phẩm vào giỏ hàng', [
+        'user' => Auth::user(),
+        'user_id' => Auth::id(),
+        'token' => $request->header('Authorization'),
+    ]);
+    
     $product = Product::findOrFail($productId);
     $productVariantId = $request->input('product_variant_id', null);
     $quantity = $request->input('quantity', 1);

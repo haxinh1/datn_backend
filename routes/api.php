@@ -97,7 +97,11 @@ Route::apiResource('coupons', CouponController::class);
 
 
 // Route::apiResource('users', AdminUserController::class);
-
+// sreach 
+Route::prefix('admin')->group(function () {
+Route::get('/products/search', [SearchController::class, 'searchProducts']);
+ Route::get('/users/search', [SearchController::class, 'searchUsers']);
+});
 //route admin user
 Route::prefix('admin')->group(function () {
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
@@ -114,6 +118,7 @@ Route::prefix('admin')->group(function () {
 // route login user
 
     Route::post('/register', [ClientUserController::class, 'register']);
+    Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
     Route::post('/login', [ClientUserController::class, 'login']);
     Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');

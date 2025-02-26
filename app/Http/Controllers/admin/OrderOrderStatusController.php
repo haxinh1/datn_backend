@@ -32,26 +32,28 @@ class OrderOrderStatusController extends Controller
      * Cập nhật trạng thái đơn hàng.
      */
     public function updateStatus(Request $request, $orderId)
-    {
-        $request->validate([
-            'order_status_id' => 'required|exists:order_statuses,id',
-            'note' => 'nullable|string|max:255',
-            'employee_evidence' => 'nullable|json',
-        ]);
+{
+    // ✅ Kiểm tra dữ liệu đầu vào
+    $request->validate([
+        'order_status_id' => 'required|exists:order_statuses,id',
+        'note' => 'nullable|string|max:255',
+        'employee_evidence' => 'nullable|json',
+    ]);
 
-        // Kiểm tra đơn hàng có tồn tại không
-        $order = Order::find($orderId);
-        if (!$order) {
-            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
-        }
+    // ✅ Kiểm tra đơn hàng có tồn tại không
+    $order = Order::find($orderId);
+    if (!$order) {
+        return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+    }
 
-        // Kiểm tra trạng thái có tồn tại không
-        $orderStatus = OrderStatus::find($request->order_status_id);
-        if (!$orderStatus) {
-            return response()->json(['message' => 'Trạng thái đơn hàng không hợp lệ'], 400);
-        }
+    // ✅ Kiểm tra trạng thái đơn hàng có hợp lệ không
+    if (!OrderStatus::where('id', $request->order_status_id)->exists()) {
+        return response()->json(['message' => 'Trạng thái đơn hàng không hợp lệ'], 400);
+    }
 
-        // Lưu trạng thái mới vào bảng order_order_statuses
+    // ✅ Lưu trạng thái mới vào bảng `order_order_statuses`
+    DB::beginTransaction();
+    try {
         $orderOrderStatus = OrderOrderStatus::create([
             'order_id' => $orderId,
             'order_status_id' => $request->order_status_id,
@@ -60,12 +62,20 @@ class OrderOrderStatusController extends Controller
             'employee_evidence' => $request->employee_evidence ? json_decode($request->employee_evidence, true) : null,
         ]);
 
-        // Cập nhật trạng thái chính của đơn hàng
+        // ✅ Cập nhật trạng thái đơn hàng trong bảng `orders`
         $order->update(['status_id' => $request->order_status_id]);
+
+        DB::commit();
 
         return response()->json([
             'message' => 'Cập nhật trạng thái đơn hàng thành công',
-            'data' => $orderOrderStatus,
+            'order' => $order,
+            'history' => $orderOrderStatus
         ], 200);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'Lỗi khi cập nhật trạng thái đơn hàng', 'error' => $e->getMessage()], 500);
     }
+}
+
 }

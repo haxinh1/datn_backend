@@ -8,130 +8,127 @@ use App\Models\CartItem;
 use App\Models\OrderOrderStatus;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-
+    /**
+     * 📌 Lấy danh sách đơn hàng
+     */
     public function index(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
-            ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian đặt hàng mới nhất
-            ->paginate(10); // Phân trang, mỗi trang 10 đơn hàng
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         return response()->json(['orders' => $orders], 200);
     }
 
     /**
-     * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
+     * 📌 Đặt hàng (Thanh toán COD hoặc chuyển khoản)
      */
     public function store(Request $request)
-{
-    DB::beginTransaction(); // Bắt đầu transaction
+    {
+        DB::beginTransaction(); // Bắt đầu transaction
 
-    try {
-        // Lấy giỏ hàng
-        if (Auth::check()) {
-            $cartItems = CartItem::where('user_id', Auth::id())->with('product', 'productVariant')->get();
-        } else {
-            $cartItems = session()->get('cart', []);
-        }
+        try {
+            // ✅ Lấy user_id hoặc session_id
+            $userId = Auth::id();
+            $sessionId = session()->get('guest_session_id');
 
-        if (empty($cartItems)) {
-            return response()->json(['message' => 'Giỏ hàng trống'], 400);
-        }
-
-        // Tính tổng tiền đơn hàng (ưu tiên sale_price nếu có)
-        $totalAmount = collect($cartItems)->sum(function ($item) {
-            if (isset($item['product_variant_id']) && $item['product_variant_id']) {
-                $productVariant = ProductVariant::find($item['product_variant_id']);
-                $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
-            } else {
-                $product = Product::find($item['product_id']);
-                $price = $product ? ($product->sale_price ?? $product->sell_price) : 0;
-            }
-            return $item['quantity'] * $price;
-        });
-
-        if ($totalAmount <= 0) {
-            return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
-        }
-
-        // Tạo đơn hàng
-        $order = Order::create([
-            'code' => 'ORD' . time(),
-            'user_id' => Auth::id(),
-            'fullname' => $request->fullname,
-            'email' => $request->email,
-            'phone_number' => $request->phone_number,
-            'address' => $request->address,
-            'total_amount' => $totalAmount,
-            'status_id' => 1, // Trạng thái mặc định: Đang xử lý
-            'payment_id' => null,
-        ]);
-
-        // Thêm trạng thái đầu tiên vào bảng `order_order_statuses`
-        OrderOrderStatus::create([
-            'order_id' => $order->id,
-            'order_status_id' => 1, // Trạng thái "Đang xử lý"
-            'modified_by' => Auth::id(), // Nếu là khách vãng lai thì để NULL
-            'note' => 'Đơn hàng mới được tạo.',
-            'employee_evidence' => null,
-        ]);
-
-        // Thêm sản phẩm vào chi tiết đơn hàng
-        foreach ($cartItems as $item) {
-            if (isset($item['product_variant_id']) && $item['product_variant_id']) {
-                $productVariant = ProductVariant::find($item['product_variant_id']);
-                $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
-            } else {
-                $product = Product::find($item['product_id']);
-                $price = $product ? ($product->sale_price ?? $product->sell_price) : 0;
+            if (!$userId && !$sessionId) {
+                return response()->json(['message' => 'Không thể xác định khách hàng'], 400);
             }
 
-            if ($price > 0) {
-                $order->orderItems()->create([
-                    'product_id' => $item['product_id'],
-                    'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'sell_price' => $price,
+            Log::info('🛒 Bắt đầu đặt hàng', ['user_id' => $userId, 'session_id' => $sessionId]);
+
+            // ✅ Lấy giỏ hàng theo user hoặc session
+            $cartItems = CartItem::where(function ($query) use ($userId, $sessionId) {
+                if ($userId) {
+                    $query->where('user_id', $userId);
+                } else {
+                    $query->where('session_id', $sessionId);
+                }
+            })->with('product', 'productVariant')->get();
+
+            if ($cartItems->isEmpty()) {
+                return response()->json(['message' => 'Giỏ hàng trống'], 400);
+            }
+
+            // ✅ Tính tổng tiền đơn hàng
+            $totalAmount = $cartItems->sum(function ($item) {
+                return $item->quantity * ($item->product_variant_id
+                    ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
+                    : ($item->product->sale_price ?? $item->product->sell_price));
+            });
+
+            if ($totalAmount <= 0) {
+                return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
+            }
+
+            // ✅ Tạo đơn hàng
+            $order = Order::create([
+                'code' => 'ORD' . strtoupper(Str::random(8)), // Mã đơn ngẫu nhiên
+                'user_id' => $userId,
+                'session_id' => $userId ? null : $sessionId,
+                'fullname' => $request->fullname,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'address' => $request->address,
+                'total_amount' => $totalAmount,
+                'status_id' => 1, // Trạng thái "Đang xử lý"
+                'payment_id' => null, // Chưa thanh toán
+            ]);
+
+            // ✅ Thêm trạng thái vào `order_order_statuses`
+            OrderOrderStatus::create([
+                'order_id' => $order->id,
+                'order_status_id' => 1, // Trạng thái "Đang xử lý"
+                'modified_by' => $userId,
+                'note' => 'Đơn hàng mới được tạo.',
+                'employee_evidence' => null,
+            ]);
+
+            // ✅ Thêm sản phẩm vào `order_items`
+            foreach ($cartItems as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id ?? null,
+                    'quantity' => $item->quantity,
+                    'sell_price' => $item->product_variant_id
+                        ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
+                        : ($item->product->sale_price ?? $item->product->sell_price),
                 ]);
             }
+
+            // ✅ Xóa giỏ hàng sau khi đặt hàng
+            CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
+
+            DB::commit(); // Commit transaction
+
+            return response()->json([
+                'message' => 'Đặt hàng thành công!',
+                'order' => $order,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Lỗi khi đặt hàng:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
-
-        // Xóa giỏ hàng sau khi đặt hàng
-        if (Auth::check()) {
-            CartItem::where('user_id', Auth::id())->delete();
-        } else {
-            session()->forget('cart');
-            session()->save(); // Đảm bảo session được cập nhật
-        }
-
-        DB::commit(); // Commit transaction
-
-        return response()->json([
-            'message' => 'Đặt hàng thành công',
-            'order' => $order,
-        ], 201);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
     }
-}
-
-
-
 
     /**
-     * Lấy chi tiết đơn hàng
+     * 📌 Lấy chi tiết đơn hàng
      */
     public function show($id)
     {
-        $order = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
-            ->find($id);
+        $order = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])->find($id);
 
         if (!$order) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);

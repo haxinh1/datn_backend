@@ -15,7 +15,7 @@ class StockMovementController extends Controller
      */
     public function index()
     {
-        //
+        //gegege
     }
 
     /**

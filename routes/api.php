@@ -78,17 +78,35 @@ Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy']
     
 });
 
+Route::prefix('payments')->group(function () { 
+    Route::post('/', [PaymentController::class, 'store']); // Tạo mới
+    Route::get('/', [PaymentController::class, 'index']); // Lấy danh sách
+    Route::get('/{id}', [PaymentController::class, 'show']); // Lấy chi tiết
+    Route::put('/{id}', [PaymentController::class, 'update']); // Cập nhật
+    Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
 
-// Quản lý lịch sử trạng thái đơn hàng (Chỉ user đăng nhập mới xem được)
-Route::middleware('auth')->group(function () {
-    // Quản lý trạng thái đơn hàng
-    Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
-    Route::post('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])->name('orders.updateStatus');
+    // VNPay Payment
+    Route::post('/vnpay', [VNPayController::class, 'createPayment'])->name('payment.process'); 
+    Route::get('/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('payment.vnpayReturn');
 });
 
-// Cong thanh toan
-Route::post('/VNPay', [VNPayController::class, 'createPayment']);
-Route::get('/payments/vnpay/return', [VNPayController::class, 'paymentReturn']);
+
+// Quản lí trạng thái
+Route::prefix('order-statuses')->group(function () {
+    Route::get('/', [OrderStatusController::class, 'index']);
+    Route::post('/', [OrderStatusController::class, 'store']);
+    Route::get('/{id}', [OrderStatusController::class, 'show']);
+    Route::put('/{id}', [OrderStatusController::class, 'update']);
+    Route::delete('/{id}', [OrderStatusController::class, 'destroy']); // Xóa nếu không có đơn hàng nào đang sử dụng
+});
+
+
+
+// Quản lý lịch sử trạng thái đơn hàng 
+    Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
+    Route::post('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])->name('orders.updateStatus');
+
+
 
 
 
@@ -135,27 +153,6 @@ Route::prefix('admin')->group(function () {
         Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
     });
 
-
-//payment
-Route::prefix('payments')->group(function () {
-
-    Route::post('/', [PaymentController::class, 'store']);      // Tạo mới
-    Route::get('/', [PaymentController::class, 'index']);       // Lấy danh sách
-    Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết
-    Route::put('/{id}', [PaymentController::class, 'update']);  // Cập nhật
-    Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
-    Route::post('/process', [VNPayController::class, 'createPayment'])->name('payment.process'); 
-    Route::get('/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('payment.vnpayReturn');
-});
-
-
-Route::prefix('order-statuses')->group(function () {
-    Route::get('/', [OrderStatusController::class, 'index']);
-    Route::post('/', [OrderStatusController::class, 'store']);
-    Route::get('/{id}', [OrderStatusController::class, 'show']);
-    Route::put('/{id}', [OrderStatusController::class, 'update']);
-    Route::delete('/{id}', [OrderStatusController::class, 'destroy']); // Xóa nếu không có đơn hàng nào đang sử dụng
-});
 
 
 

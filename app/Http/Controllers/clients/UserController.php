@@ -60,19 +60,18 @@ class UserController extends Controller
                 'id_default' => true,
             ]);
 
-        $token = Str::random(60);
-        DB::table('email_verification_tokens')->insert([
-            'user_id' => $user->id,
-            'token' => $token,
-            'created_at' => now(),
-        ]);
+            $token = Str::random(60);
+            DB::table('email_verification_tokens')->insert([
+                'user_id' => $user->id,
+                'token' => $token,
+                'created_at' => now(),
+            ]);
 
-        // Gửi email xác nhận
-        Mail::to($user->email)->send(new VerifyEmail($user, $token));
+            // Gửi email xác nhận
+            Mail::to($user->email)->send(new VerifyEmail($user, $token));
 
-<<<<<<< HEAD
             return response()->json([
-                'message' => 'Đăng ký thành công',
+                'message' => 'Đăng ký thành công. Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
                 'user' => $user
             ], 201);
         } catch (\Exception $e) {
@@ -81,20 +80,8 @@ class UserController extends Controller
                 'errors' => $e->getMessage()
             ], 500);
         }
-=======
-        return response()->json([
-            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
-            'user' => $user
-        ], 201);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Đăng ký thất bại',
-            'errors' => $e->getMessage()
-        ], 500);
->>>>>>> be6219b13097e8839a407cefaa4e71ca6c85f961
     }
-
-public function verifyEmail(Request $request)
+    public function verifyEmail(Request $request)
     {
         $request->validate([
             'token' => 'required|string',

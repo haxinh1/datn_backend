@@ -189,11 +189,7 @@ class UserController extends Controller
                 'message' => 'Tài khoản của bạn đã dừng hoạt động'
             ], 403);
         }
-        if($user->status === 'banned'){
-            return response()->json([
-                'message' => 'Tài khoản của bạn đã  bị khóa'
-            ], 403); 
-        }
+      
              
         
         $token = $user->createToken('admin_token')->plainTextToken;

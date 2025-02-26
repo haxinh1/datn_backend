@@ -49,7 +49,7 @@ class UserController extends Controller
             'gender' => $request->gender,
             'birthday' => $request->birthday,
             'role' => 'customer',
-            'status' => 'active',
+            'status' => 'inactive',
         ]);
 
 
@@ -130,11 +130,7 @@ public function verifyEmail(Request $request)
                 'message' => 'Tài khoản của bạn đã dừng hoạt động'
             ], 403);
         }
-        if($user->status === 'banned'){
-            return response()->json([
-                'message' => 'Tài khoản của bạn đã  bị khóa'
-            ], 403); 
-        }
+     
 
         $token = $user->createToken('customer_token')->plainTextToken;
 

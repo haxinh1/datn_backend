@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 
 class UserAddressController extends Controller
 {
+  
     /**
      * Display a listing of the resource.
      */
@@ -24,10 +25,7 @@ class UserAddressController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        //
-    }
+  
 
     /**
      * Store a newly created resource in storage.
@@ -36,19 +34,19 @@ class UserAddressController extends Controller
     {
         $request->validate([
             'address' => 'required|string',
-            'is_default' => 'boolean',
+            'id_default' => 'boolean',
         ]);
 
         $user = Auth::user();
-     
-        if ($request->is_default) {
-            UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
+       
+        if ($request->id_default) {
+            UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
 
         $address = UserAddress::create([
             'user_id' => $user->id,
             'address' => $request->address,
-            'is_default' => $request->is_default ?? false,
+            'id_default' => $request->id_default ?? false,
         ]);
 
         return response()->json($address, 201);
@@ -58,21 +56,17 @@ class UserAddressController extends Controller
     {
         $request->validate([
             'address' => 'sometimes|required|string',
-            'is_default' => 'boolean',
+            'id_default' => 'boolean',
         ]);
 
         $user = Auth::user();
         $address = UserAddress::where('user_id', $user->id)->where('id', $id)->first();
 
-        if (!$address) {
-            return response()->json(['message' => 'Không tìm thấy địa chỉ'], 404);
+        if ($request->id_default) {
+            UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
 
-        if ($request->is_default) {
-            UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
-        }
-
-        $address->update($request->only(['address', 'is_default']));
+        $address->update($request->only(['address', 'id_default']));
 
         return response()->json($address, 200);
     }

@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\VerifyEmail;
 use App\Models\UserAddress;
 use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
@@ -29,7 +30,7 @@ class UserController extends Controller
             'avatar' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
             'birthday' => 'nullable|date',
-            'address' => 'required|string',
+            'address' => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -59,7 +60,17 @@ class UserController extends Controller
                 'id_default' => true,
             ]);
 
+        $token = Str::random(60);
+        DB::table('email_verification_tokens')->insert([
+            'user_id' => $user->id,
+            'token' => $token,
+            'created_at' => now(),
+        ]);
 
+        // Gửi email xác nhận
+        Mail::to($user->email)->send(new VerifyEmail($user, $token));
+
+<<<<<<< HEAD
             return response()->json([
                 'message' => 'Đăng ký thành công',
                 'user' => $user
@@ -70,6 +81,48 @@ class UserController extends Controller
                 'errors' => $e->getMessage()
             ], 500);
         }
+=======
+        return response()->json([
+            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
+            'user' => $user
+        ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Đăng ký thất bại',
+            'errors' => $e->getMessage()
+        ], 500);
+>>>>>>> be6219b13097e8839a407cefaa4e71ca6c85f961
+    }
+
+public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $tokenData = DB::table('email_verification_tokens')->where('token', $request->token)->first();
+
+        if (!$tokenData) {
+            return response()->json([
+                'message' => 'Token không hợp lệ hoặc đã hết hạn'
+            ], 400);
+        }
+
+        $user = User::find($tokenData->user_id);
+        if (!$user) {
+            return response()->json([
+                'message' => 'Người dùng không tồn tại'
+            ], 404);
+        }
+
+        $user->status = 'active';
+        $user->save();
+
+        DB::table('email_verification_tokens')->where('token', $request->token)->delete();
+
+        return response()->json([
+            'message' => 'Xác nhận email thành công. Tài khoản của bạn đã được kích hoạt.'
+        ], 200);
     }
 
     public function login(Request $request)

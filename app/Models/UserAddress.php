@@ -13,4 +13,8 @@ class UserAddress extends Model
         'address',
         'is_default',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

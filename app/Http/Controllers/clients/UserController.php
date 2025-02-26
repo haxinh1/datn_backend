@@ -14,14 +14,15 @@ use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+
 class UserController extends Controller
 {
-   
+
     public function register(Request $request)
     {
-    
+
         $validator = Validator::make($request->all(), [
-            'phone_number' =>['required', 'regex:/^0[0-9]{9}$/', 'unique:users,phone_number'],
+            'phone_number' => ['required', 'regex:/^0[0-9]{9}$/', 'unique:users,phone_number'],
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'fullname' => 'required|string|max:100',
@@ -30,46 +31,46 @@ class UserController extends Controller
             'birthday' => 'nullable|date',
             'address' => 'required|string',
         ]);
-   
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Đăng ký thất bại',
                 'errors' => $validator->errors()
             ], 400);
         }
- 
+
         try {
-        $user = User::create([
-            'phone_number' => $request->phone_number,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'fullname' => $request->fullname,
-            'avatar' => $request->avatar,
-            'gender' => $request->gender,
-            'birthday' => $request->birthday,
-            'role' => 'customer',
-            'status' => 'active',
-        ]);
+            $user = User::create([
+                'phone_number' => $request->phone_number,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'fullname' => $request->fullname,
+                'avatar' => $request->avatar,
+                'gender' => $request->gender,
+                'birthday' => $request->birthday,
+                'role' => 'customer',
+                'status' => 'active',
+            ]);
 
 
-        UserAddress::create([
-            'user_id' => $user->id,
-            'address' => $request->address,
-            'id_default' => true, 
-        ]);
+            UserAddress::create([
+                'user_id' => $user->id,
+                'address' => $request->address,
+                'id_default' => true,
+            ]);
 
 
-        return response()->json([
-            'message' => 'Đăng ký thành công',
-            'user' => $user
-        ], 201);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Đăng ký thất bại',
-            'errors' => $e->getMessage()
-        ], 500);
+            return response()->json([
+                'message' => 'Đăng ký thành công',
+                'user' => $user
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đăng ký thất bại',
+                'errors' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     public function login(Request $request)
     {
@@ -77,22 +78,22 @@ class UserController extends Controller
             'phone_number' => 'required',
             'password' => 'required',
         ]);
-    
+
         $user = User::where('phone_number', $request->phone_number)->orWhere('email', $request->phone_number)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Thông tin đăng nhập không đúng'], 401);
         }
-      
+
         if ($user->status === 'inactive') {
             return response()->json([
                 'message' => 'Tài khoản của bạn đã dừng hoạt động'
             ], 403);
         }
-        if($user->status === 'banned'){
+        if ($user->status === 'banned') {
             return response()->json([
                 'message' => 'Tài khoản của bạn đã  bị khóa'
-            ], 403); 
+            ], 403);
         }
 
         $token = $user->createToken('customer_token')->plainTextToken;
@@ -113,7 +114,11 @@ class UserController extends Controller
 
     public function logout(Request $request)
     {
+
         $request->user()->tokens()->delete();
+        session()->invalidate();
+        session()->regenerateToken();
+
         return response()->json(['message' => 'Đăng xuất thành công']);
     }
 
@@ -127,7 +132,7 @@ class UserController extends Controller
 
         $user = $request->user();
 
-     
+
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['message' => 'Mật khẩu hiện tại không chính xác.'], 400);
         }
@@ -135,7 +140,7 @@ class UserController extends Controller
             return response()->json(['message' => 'Mật khẩu mới không được trùng với mật khẩu cũ.'], 400);
         }
 
-   
+
         $user->password = Hash::make($request->new_password);
         $user->save();
 
@@ -144,14 +149,14 @@ class UserController extends Controller
 
     public function forgotPassword(Request $request)
     {
-        
+
         $request->validate([
             'email' => 'required|email|exists:users,email'
         ]);
 
         $token = Str::random(60);
 
-      
+
         DB::table('password_reset_tokens')->insert([
             'email' => $request->email,
             'token' => Hash::make($token),
@@ -166,17 +171,17 @@ class UserController extends Controller
     }
 
 
-   
+
     public function resetPassword(Request $request)
     {
-       
+
         $request->validate([
             'email' => 'required|email|exists:users,email',
             'token' => 'required',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-      
+
         $passwordReset = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->first();
@@ -187,17 +192,15 @@ class UserController extends Controller
             ], 400);
         }
 
- 
+
         $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
-      
+
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json([
             'message' => 'Mật khẩu đã được đặt lại thành công'
         ], 200);
     }
-
-
 }

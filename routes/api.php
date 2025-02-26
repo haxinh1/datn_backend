@@ -102,10 +102,9 @@ Route::prefix('order-statuses')->group(function () {
 
 
 // Quản lý lịch sử trạng thái đơn hàng 
-Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
     Route::post('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])->name('orders.updateStatus');
-});
+
 
 
 
@@ -140,15 +139,6 @@ Route::prefix('admin')->group(function () {
         Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
     });
 
-
-
-Route::prefix('order-statuses')->group(function () {
-    Route::get('/', [OrderStatusController::class, 'index']);
-    Route::post('/', [OrderStatusController::class, 'store']);
-    Route::get('/{id}', [OrderStatusController::class, 'show']);
-    Route::put('/{id}', [OrderStatusController::class, 'update']);
-    Route::delete('/{id}', [OrderStatusController::class, 'destroy']); // Xóa nếu không có đơn hàng nào đang sử dụng
-});
 
 
 

@@ -104,7 +104,9 @@ Route::prefix('order-statuses')->group(function () {
 
 // Quản lý lịch sử trạng thái đơn hàng 
     Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
-    Route::post('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
+    ->name('orders.updateStatus');
+
 
 
 

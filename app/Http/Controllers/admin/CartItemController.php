@@ -17,10 +17,11 @@ class CartItemController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = Auth::id();
+        $user = Auth::guard('sanctum')->user();
+        $userId = $user ? $user->id : null;
         $sessionId = session()->get('guest_session_id');
 
-        Log::info('🔍 Kiểm tra giỏ hàng:', [
+        Log::info('🔍 Lấy giỏ hàng:', [
             'Auth ID' => $userId,
             'Session ID' => $sessionId
         ]);
@@ -64,27 +65,66 @@ class CartItemController extends Controller
      * 📌 Thêm sản phẩm vào giỏ hàng
      */
     public function store(Request $request, $productId)
-{
-    try {
-        $user = Auth::guard('sanctum')->user(); // ✅ Kiểm tra user từ Sanctum
+    {
+        try {
+            $user = Auth::guard('sanctum')->user();
+            $userId = $user ? $user->id : null;
+            $sessionId = $userId ? null : $this->getSessionId();
+
+            Log::info('📌 Kiểm tra trước khi thêm vào giỏ hàng:', [
+                'Auth ID' => $userId,
+                'Session ID' => $sessionId
+            ]);
+
+            // 🛒 Lấy thông tin sản phẩm
+            $product = Product::findOrFail($productId);
+            $quantity = $request->input('quantity', 1);
+
+            // ✅ Kiểm tra sản phẩm đã có trong giỏ hàng chưa
+            $cartQuery = CartItem::where('product_id', $productId);
+
+            if ($userId) {
+                $cartQuery->where('user_id', $userId);
+            } else {
+                $cartQuery->where('session_id', $sessionId);
+            }
+
+            $cartItem = $cartQuery->first();
+
+            if ($cartItem) {
+                $cartItem->increment('quantity', $quantity);
+            } else {
+                $cartItem = CartItem::create([
+                    'user_id' => $userId,
+                    'session_id' => $userId ? null : $sessionId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $product->sale_price ?? $product->sell_price
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Sản phẩm đã thêm vào giỏ hàng',
+                'cart_item' => $cartItem
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi thêm sản phẩm vào giỏ hàng'], 500);
+        }
+    }
+
+    /**
+     * 📌 Cập nhật số lượng sản phẩm trong giỏ hàng
+     */
+    public function update(Request $request, $productId)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:1'
+        ]);
+
+        $user = Auth::guard('sanctum')->user();
         $userId = $user ? $user->id : null;
         $sessionId = $userId ? null : session()->get('guest_session_id');
 
-        // Nếu user đã đăng nhập nhưng session cart chưa hợp nhất, hợp nhất ngay
-        if ($userId && $sessionId) {
-            $this->mergeSessionCartToUser($userId, $sessionId);
-        }
-
-        Log::info('📌 Kiểm tra trước khi thêm vào giỏ hàng:', [
-            'Auth ID' => $userId,
-            'Session ID' => $sessionId
-        ]);
-
-        // 🛒 Lấy thông tin sản phẩm
-        $product = Product::findOrFail($productId);
-        $quantity = $request->input('quantity', 1);
-
-        // ✅ Kiểm tra sản phẩm đã có trong giỏ hàng chưa
         $cartQuery = CartItem::where('product_id', $productId);
 
         if ($userId) {
@@ -96,26 +136,38 @@ class CartItemController extends Controller
         $cartItem = $cartQuery->first();
 
         if ($cartItem) {
-            $cartItem->increment('quantity', $quantity);
-        } else {
-            $cartItem = CartItem::create([
-                'user_id' => $userId,
-                'session_id' => $userId ? null : $sessionId,
-                'product_id' => $productId,
-                'quantity' => $quantity,
-                'price' => $product->sale_price ?? $product->sell_price
-            ]);
+            $cartItem->update(['quantity' => $request->quantity]);
+            return response()->json(['message' => 'Cập nhật số lượng thành công']);
         }
 
-        return response()->json([
-            'message' => 'Sản phẩm đã thêm vào giỏ hàng',
-            'cart_item' => $cartItem
-        ]);
-    } catch (\Exception $e) {
-        return response()->json(['message' => 'Lỗi khi thêm sản phẩm vào giỏ hàng'], 500);
+        return response()->json(['message' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
     }
-}
 
+    /**
+     * 📌 Xóa sản phẩm khỏi giỏ hàng
+     */
+    public function destroy(Request $request, $productId)
+    {
+        $user = Auth::guard('sanctum')->user();
+        $userId = $user ? $user->id : null;
+        $sessionId = $userId ? null : session()->get('guest_session_id');
+
+        $cartQuery = CartItem::where('product_id', $productId);
+
+        if ($userId) {
+            $cartQuery->where('user_id', $userId);
+        } else {
+            $cartQuery->where('session_id', $sessionId);
+        }
+
+        $deleted = $cartQuery->delete();
+
+        if ($deleted) {
+            return response()->json(['message' => 'Sản phẩm đã được xóa']);
+        }
+
+        return response()->json(['message' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+    }
 
     /**
      * 📌 Hợp nhất giỏ hàng session vào user khi đăng nhập
@@ -150,5 +202,18 @@ class CartItemController extends Controller
         session()->save();
 
         Log::info('✅ Giỏ hàng đã được hợp nhất', ['user_id' => $userId]);
+    }
+
+    /**
+     * 📌 Lấy session ID duy nhất cho khách vãng lai
+     */
+    private function getSessionId()
+    {
+        if (!session()->has('guest_session_id')) {
+            $sessionId = Str::uuid()->toString();
+            session()->put('guest_session_id', $sessionId);
+            session()->save();
+        }
+        return session()->get('guest_session_id');
     }
 }

@@ -33,11 +33,17 @@ class OrderOrderStatusController extends Controller
      */
     public function updateStatus(Request $request, $orderId)
 {
+    // ✅ Kiểm tra user có đăng nhập không
+    $userId = Auth::id();
+    if (!$userId) {
+        return response()->json(['message' => 'Người dùng chưa xác thực'], 401);
+    }
+
     // ✅ Kiểm tra dữ liệu đầu vào
     $request->validate([
         'order_status_id' => 'required|exists:order_statuses,id',
         'note' => 'nullable|string|max:255',
-        'employee_evidence' => 'nullable|json',
+        'employee_evidence' => 'nullable|string', // Nếu đã đổi DB từ JSON sang string
     ]);
 
     // ✅ Kiểm tra đơn hàng có tồn tại không
@@ -46,20 +52,15 @@ class OrderOrderStatusController extends Controller
         return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
     }
 
-    // ✅ Kiểm tra trạng thái đơn hàng có hợp lệ không
-    if (!OrderStatus::where('id', $request->order_status_id)->exists()) {
-        return response()->json(['message' => 'Trạng thái đơn hàng không hợp lệ'], 400);
-    }
-
-    // ✅ Lưu trạng thái mới vào bảng `order_order_statuses`
     DB::beginTransaction();
     try {
+        // ✅ Lưu trạng thái mới vào bảng `order_order_statuses`
         $orderOrderStatus = OrderOrderStatus::create([
             'order_id' => $orderId,
             'order_status_id' => $request->order_status_id,
-            'modified_by' => Auth::id(),
+            'modified_by' => $userId, // ✅ Đảm bảo modified_by được lưu
             'note' => $request->note,
-            'employee_evidence' => $request->employee_evidence ? json_decode($request->employee_evidence, true) : null,
+            'employee_evidence' => $request->employee_evidence ?? '', // Tránh null nếu dùng kiểu string
         ]);
 
         // ✅ Cập nhật trạng thái đơn hàng trong bảng `orders`
@@ -74,8 +75,12 @@ class OrderOrderStatusController extends Controller
         ], 200);
     } catch (\Exception $e) {
         DB::rollBack();
-        return response()->json(['message' => 'Lỗi khi cập nhật trạng thái đơn hàng', 'error' => $e->getMessage()], 500);
+        return response()->json([
+            'message' => 'Lỗi khi cập nhật trạng thái đơn hàng',
+            'error' => $e->getMessage()
+        ], 500);
     }
 }
+
 
 }

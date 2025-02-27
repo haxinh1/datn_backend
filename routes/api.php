@@ -61,12 +61,12 @@ Route::resource('/stocks', StockController::class);
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
-Route::put('/cart/update/{id}', [CartItemController::class, 'update'])->name('cart.update'); 
-Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy'])->name('cart.remove'); 
+Route::put('/cart/update/{id}', [CartItemController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy'])->name('cart.remove');
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
-    Route::prefix('orders')->group(function () {
+Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('orders.view'); // Danh sách đơn hàng
     Route::post('/place', [OrderController::class, 'store'])->name('orders.place'); // Đặt hàng
     Route::get('/{id}', [OrderController::class, 'show'])->name('orders.show'); // Chi tiết đơn hàng
@@ -75,10 +75,9 @@ Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy']
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
-    
 });
 
-Route::prefix('payments')->group(function () { 
+Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']); // Tạo mới
     Route::get('/', [PaymentController::class, 'index']); // Lấy danh sách
     Route::get('/{id}', [PaymentController::class, 'show']); // Lấy chi tiết
@@ -86,7 +85,7 @@ Route::prefix('payments')->group(function () {
     Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
 
     // VNPay Payment
-    Route::post('/vnpay', [VNPayController::class, 'createPayment'])->name('payment.process'); 
+    Route::post('/vnpay', [VNPayController::class, 'createPayment'])->name('payment.process');
     Route::get('/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('payment.vnpayReturn');
 });
 
@@ -103,9 +102,12 @@ Route::prefix('order-statuses')->group(function () {
 
 
 // Quản lý lịch sử trạng thái đơn hàng 
-    Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
+Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
+Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
-    ->name('orders.updateStatus');
+        ->name('orders.updateStatus');
+});
+
 
 
 
@@ -119,8 +121,8 @@ Route::apiResource('coupons', CouponController::class);
 // Route::apiResource('users', AdminUserController::class);
 // sreach 
 Route::prefix('admin')->group(function () {
-Route::get('/products/search', [SearchController::class, 'searchProducts']);
- Route::get('/users/search', [SearchController::class, 'searchUsers']);
+    Route::get('/products/search', [SearchController::class, 'searchProducts']);
+    Route::get('/users/search', [SearchController::class, 'searchUsers']);
 });
 //route admin user
 Route::prefix('admin')->group(function () {
@@ -137,23 +139,23 @@ Route::prefix('admin')->group(function () {
 });
 // route login user
 
-    Route::post('/register', [ClientUserController::class, 'register']);
-    Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
-    Route::post('/login', [ClientUserController::class, 'login']);
-    Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
-    Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
-    Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
-    Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
+Route::post('/register', [ClientUserController::class, 'register']);
+Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
+Route::post('/login', [ClientUserController::class, 'login']);
+Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
+Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
+Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 
 
 // user address
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('user-addresses', [UserAddressController::class, 'index']);
-        Route::get('user-addresses/search', [UserAddressController::class, 'search']); // Thêm route này
-        Route::post('user-addresses', [UserAddressController::class, 'store']);
-        Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
-        Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
-    });
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('user-addresses', [UserAddressController::class, 'index']);
+    Route::get('user-addresses/search', [UserAddressController::class, 'search']); // Thêm route này
+    Route::post('user-addresses', [UserAddressController::class, 'store']);
+    Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
+    Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
+});
 
 
 

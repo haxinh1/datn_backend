@@ -5,6 +5,7 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -34,7 +35,7 @@ class CartItemController extends Controller
         // ✅ Nếu có user_id, lấy giỏ hàng theo user_id
         if ($userId) {
             $cartItems = CartItem::where('user_id', $userId)
-                ->with(['product', 'productVariant'])
+                ->with(['product', 'productVariant']) // Gọi cả productVariant
                 ->get();
 
             return response()->json([
@@ -46,7 +47,7 @@ class CartItemController extends Controller
         // ✅ Nếu chưa đăng nhập, lấy giỏ hàng theo session_id
         if ($sessionId) {
             $cartItems = CartItem::where('session_id', $sessionId)
-                ->with(['product', 'productVariant'])
+                ->with(['product', 'productVariant']) // Gọi cả productVariant
                 ->get();
 
             return response()->json([
@@ -64,24 +65,37 @@ class CartItemController extends Controller
     /**
      * 📌 Thêm sản phẩm vào giỏ hàng
      */
+    /**
+     * 📌 Thêm sản phẩm vào giỏ hàng (Hỗ trợ cả khách vãng lai & user đăng nhập)
+     */
     public function store(Request $request, $productId)
     {
         try {
             $user = Auth::guard('sanctum')->user();
             $userId = $user ? $user->id : null;
             $sessionId = $userId ? null : $this->getSessionId();
+            $productVariantId = $request->input('product_variant_id', null);
+            $quantity = $request->input('quantity', 1);
 
             Log::info('📌 Kiểm tra trước khi thêm vào giỏ hàng:', [
                 'Auth ID' => $userId,
-                'Session ID' => $sessionId
+                'Session ID' => $sessionId,
+                'Product ID' => $productId,
+                'Product Variant ID' => $productVariantId
             ]);
 
-            // 🛒 Lấy thông tin sản phẩm
-            $product = Product::findOrFail($productId);
-            $quantity = $request->input('quantity', 1);
+            // 🛒 Lấy thông tin sản phẩm hoặc biến thể
+            if ($productVariantId) {
+                $productVariant = ProductVariant::where('product_id', $productId)->findOrFail($productVariantId);
+                $price = $productVariant->sale_price ?? $productVariant->sell_price;
+            } else {
+                $product = Product::findOrFail($productId);
+                $price = $product->sale_price ?? $product->sell_price;
+            }
 
             // ✅ Kiểm tra sản phẩm đã có trong giỏ hàng chưa
-            $cartQuery = CartItem::where('product_id', $productId);
+            $cartQuery = CartItem::where('product_id', $productId)
+                ->where('product_variant_id', $productVariantId);
 
             if ($userId) {
                 $cartQuery->where('user_id', $userId);
@@ -98,8 +112,9 @@ class CartItemController extends Controller
                     'user_id' => $userId,
                     'session_id' => $userId ? null : $sessionId,
                     'product_id' => $productId,
+                    'product_variant_id' => $productVariantId,
                     'quantity' => $quantity,
-                    'price' => $product->sale_price ?? $product->sell_price
+                    'price' => $price
                 ]);
             }
 
@@ -108,9 +123,13 @@ class CartItemController extends Controller
                 'cart_item' => $cartItem
             ]);
         } catch (\Exception $e) {
+            Log::error('❌ Lỗi khi thêm sản phẩm vào giỏ hàng:', [
+                'error' => $e->getMessage()
+            ]);
             return response()->json(['message' => 'Lỗi khi thêm sản phẩm vào giỏ hàng'], 500);
         }
     }
+
 
     /**
      * 📌 Cập nhật số lượng sản phẩm trong giỏ hàng

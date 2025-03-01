@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Admin\App\Http\Controllers;
+namespace App\Http\Controllers\admin;
 
 
 use Illuminate\Http\Request;
@@ -10,52 +10,78 @@ use Illuminate\Http\JsonResponse;
 
 class CommentController extends Controller
 {
-    public function listComment(Request $request): JsonResponse
+
+    // lấy ra hết comment
+    public function index(Request $request): JsonResponse
     {
-        $query = Comment::join('users', 'users.id', '=', 'comments.users_id')
-            ->join('products', 'products.id', '=', 'comments.products_id')
-            ->select(
-                'comments.id',
-                'comments.products_id',
-                'users.user_name',
-                'products.name as product_name',
-                'comments.comments',
-                'comments.rating',
-                'comments.comment_date',
-                'comments.status'
-            );
+        $comments = Comment::query()
+            ->when($request->input('rating'), function ($query, $rating) {  // Lọc theo rating tối đa 5
+                return $query->where('rating', $rating);
+            })
+            ->when($request->input('status'), function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->when($request->input('created_at'), function ($query, $created_at) {
+                return $query->whereDate('created_at', $created_at);
+            })
+            ->when($request->input('users_id'), function ($query, $users_id) {
+                return $query->whereDate('users_id', $users_id);
+            })
+            ->when($request->input('users_id'), function ($query, $users_id) {
+                return $query->whereDate('users_id', $users_id);
+            })
+            ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo
+            ->paginate(10);
 
-        if ($request->has('rating_filter') && $request->get('rating_filter') != '') {
-            $query->where('comments.rating', $request->get('rating_filter'));
-        }
-
-        if ($request->has('status_filter') && $request->get('status_filter') != '') {
-            $query->where('comments.status', $request->get('status_filter'));
-        }
-
-        $listComment = $query->orderBy('comments.comment_date', 'desc')->paginate(10);
-
-        return response()->json($listComment);
+        return response()->json($comments);
     }
 
-    public function editComment($id): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $detailComment = Comment::join('users', 'users.id', '=', 'comments.users_id')
-            ->join('products', 'products.id', '=', 'comments.products_id')
-            ->select(
-                'comments.id',
-                'users.user_name',
-                'products.name as product_name',
-                'comments.comments',
-                'comments.rating',
-                'comments.comment_date',
-                'comments.status'
-            )->find($id);
+        // Validate dữ liệu đầu vào
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'user_id'    => 'required|exists:users,id',
+            'comments'   => 'required|string',
+            'rating'     => 'required|integer|min:1|max:5', // Rating bắt buộc từ 1-5 sao
+        ]);
 
+        // Kiểm tra user đã mua sản phẩm chưa
+//        $hasPurchased = Order::where('user_id', $validated['user_id'])
+//            ->where('product_id', $validated['product_id'])
+//            ->where('status', 'completed') // Chỉ xét đơn hàng đã hoàn thành
+//            ->exists();
+
+//        if (!$hasPurchased) {
+//            return response()->json([
+//                'message' => 'Bạn chưa mua sản phẩm này, không thể bình luận.'
+//            ], 403);
+//        }
+
+        // Nếu đã mua, tạo bình luận mới
+        $comment = Comment::create([
+            'products_id' => $validated['product_id'],
+            'users_id'    => $validated['user_id'],
+            'comments'    => $validated['comments'],
+            'rating'      => $validated['rating'],
+            'comment_date' => now(),
+            'status'      => 0, // Bình luận cần duyệt trước khi hiển thị
+        ]);
+
+        return response()->json([
+            'message' => 'Bình luận của bạn đã được gửi và đang chờ xét duyệt.',
+            'comment' => $comment
+        ], 201);
+    }
+
+
+
+    public function detail($id): JsonResponse
+    {
+        $detailComment = Comment::query()->find($id);
         if (!$detailComment) {
             return response()->json(['message' => 'Comment not found'], 404);
         }
-
         return response()->json($detailComment);
     }
 
@@ -63,6 +89,9 @@ class CommentController extends Controller
     {
         $request->validate([
             'status' => 'required|integer',
+            // 0 === chờ duỵyệt
+            // 1 === đã duyệt
+            // 2 ===  đã ẩn
         ]);
 
         $detailComment = Comment::find($id);
@@ -76,6 +105,8 @@ class CommentController extends Controller
         return response()->json(['message' => 'Comment updated successfully']);
     }
 
+
+    // Hàm duyệt hoặc ẩn nhiêu comment
     public function bulkAction(Request $request): JsonResponse
     {
         $request->validate([
@@ -85,8 +116,8 @@ class CommentController extends Controller
 
         $commentIds = $request->input('comment_ids');
         $action = $request->input('action');
-        $status = ($action === 'approve') ? 2 : 3;
-
+        $status = ($action === 'approve') ? 1 : 2;
+         // Duyệt là 1, ẩn là 2
         Comment::whereIn('id', $commentIds)->update(['status' => $status]);
 
         return response()->json(['message' => 'Bulk action performed successfully']);

@@ -18,6 +18,12 @@ class Comment extends Model
         'status', // Thêm cột status
     ];
 
+    protected $casts = [
+        'status' => 'integer', // Ép kiểu status thành integer
+        'rating' => 'integer', // Nếu rating cũng là số thì ép kiểu luôn
+        'comment_date' => 'datetime', // Nếu comment_date là DATETIME trong DB
+    ];
+
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'users_id');

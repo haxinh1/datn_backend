@@ -23,6 +23,7 @@ use App\Http\Controllers\clients\UserController as ClientUserController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\admin\CommentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,8 +62,8 @@ Route::resource('/stocks', StockController::class);
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
-Route::put('/cart/update/{id}', [CartItemController::class, 'update'])->name('cart.update'); 
-Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy'])->name('cart.remove'); 
+Route::put('/cart/update/{id}', [CartItemController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy'])->name('cart.remove');
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
@@ -75,7 +76,7 @@ Route::delete('/cart/remove/{productId}', [CartItemController::class, 'destroy']
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
-    
+
 });
 
 
@@ -97,7 +98,7 @@ Route::apiResource('coupons', CouponController::class);
 
 
 // Route::apiResource('users', AdminUserController::class);
-// sreach 
+// sreach
 Route::prefix('admin')->group(function () {
 Route::get('/products/search', [SearchController::class, 'searchProducts']);
  Route::get('/users/search', [SearchController::class, 'searchUsers']);
@@ -144,7 +145,7 @@ Route::prefix('payments')->group(function () {
     Route::get('/{id}', [PaymentController::class, 'show']);    // Lấy chi tiết
     Route::put('/{id}', [PaymentController::class, 'update']);  // Cập nhật
     Route::delete('/{id}', [PaymentController::class, 'destroy']); // Xóa
-    Route::post('/process', [VNPayController::class, 'createPayment'])->name('payment.process'); 
+    Route::post('/process', [VNPayController::class, 'createPayment'])->name('payment.process');
     Route::get('/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('payment.vnpayReturn');
 });
 
@@ -177,3 +178,13 @@ Route::get('coupons/search/filter', [CouponController::class, 'search']); // cou
 Route::get('coupons/{id}', [CouponController::class, 'show']);
 Route::post('coupons/create', [CouponController::class, 'store']);
 Route::put('coupons/{id}', [CouponController::class, 'update']);
+
+
+
+Route::prefix('comments')->group(function () {
+    Route::get('/', [CommentController::class, 'index']); // Lấy danh sách bình luận
+    Route::get('/{id}', [CommentController::class, 'detail']); // Lấy chi tiết bình luận
+    Route::put('/{id}', [CommentController::class, 'updateComment']); // Cập nhật trạng thái bình luận
+    Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
+    Route::post('/', [CommentController::class, 'store']); //  // Duỵyệt nhiều comment
+});

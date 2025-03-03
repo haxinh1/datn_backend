@@ -18,26 +18,25 @@ use Illuminate\Support\Facades\Log;
 class OrderController extends Controller
 {
     /**
-     * 📌 Lấy danh sách đơn hàng
+     * Lấy danh sách đơn hàng
      */
     public function index(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
+            ->get();
         return response()->json(['orders' => $orders], 200);
     }
 
     /**
-     * 📌 Đặt hàng (Thanh toán COD hoặc chuyển khoản)
+     * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
      */
     public function store(Request $request)
     {
         DB::beginTransaction();
 
         try {
-            // ✅ Lấy user từ token để đảm bảo đăng nhập
+            // Lấy user từ token để đảm bảo đăng nhập
             $user = Auth::guard('sanctum')->user();
             $userId = $user ? $user->id : null;
             $sessionId = session()->get('guest_session_id');
@@ -48,12 +47,12 @@ class OrderController extends Controller
                 'Session ID' => $sessionId
             ]);
 
-            // ✅ Nếu user đăng nhập nhưng vẫn còn session cart, hợp nhất vào tài khoản
+            // Nếu user đăng nhập nhưng vẫn còn session cart, hợp nhất vào tài khoản
             if ($userId && $sessionId) {
                 $this->mergeSessionCartToUser($userId, $sessionId);
             }
 
-            // ✅ Lấy giỏ hàng theo user hoặc session
+            // Lấy giỏ hàng theo user hoặc session
             $cartItems = CartItem::where(function ($query) use ($userId, $sessionId) {
                 if ($userId) {
                     $query->where('user_id', $userId);
@@ -66,7 +65,7 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
 
-            // ✅ Tính tổng tiền đơn hàng
+            // Tính tổng tiền đơn hàng
             $totalAmount = $cartItems->sum(function ($item) {
                 return $item->quantity * ($item->product_variant_id
                     ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
@@ -77,10 +76,10 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
             }
 
-            // ✅ Tạo đơn hàng
+            // Tạo đơn hàng
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
-                'user_id' => $userId, // ✅ Đảm bảo user_id đúng
+                'user_id' => $userId, // Đảm bảo user_id đúng
                 'session_id' => $userId ? null : $sessionId,
                 'fullname' => $request->fullname,
                 'email' => $request->email,
@@ -91,7 +90,7 @@ class OrderController extends Controller
                 'payment_id' => $request->payment_id ?? null,
             ]);
 
-            // ✅ Lưu chi tiết đơn hàng
+            // Lưu chi tiết đơn hàng
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -104,7 +103,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            // ✅ Xóa giỏ hàng sau khi đặt hàng thành công
+            //  Xóaa giỏ hàng sau khi đặt hàng thành công
             CartItem::where('user_id', $userId)
                 ->orWhere('session_id', $sessionId)
                 ->delete();
@@ -119,14 +118,14 @@ class OrderController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ Lỗi khi đặt hàng:', ['error' => $e->getMessage()]);
+            Log::error(' Lỗi khi đặt hàng:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
 
 
     /**
-     * 📌 Lấy chi tiết đơn hàng
+     *  Lấy chi tiết đơn hàng
      */
     public function show($id)
     {
@@ -140,7 +139,7 @@ class OrderController extends Controller
     }
     private function mergeSessionCartToUser($userId, $sessionId)
     {
-        Log::info('🔄 Hợp nhất giỏ hàng session vào user', [
+        Log::info(' Hợp nhất giỏ hàng session vào user', [
             'user_id' => $userId,
             'session_id' => $sessionId
         ]);
@@ -163,6 +162,6 @@ class OrderController extends Controller
         session()->forget('guest_session_id');
         session()->save();
 
-        Log::info('✅ Giỏ hàng đã được hợp nhất', ['user_id' => $userId]);
+        Log::info(' Giỏ hàng đã được hợp nhất', ['user_id' => $userId]);
     }
 }

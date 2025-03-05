@@ -23,6 +23,7 @@ use App\Http\Controllers\clients\UserController as ClientUserController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\admin\CommentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,7 +102,7 @@ Route::prefix('order-statuses')->group(function () {
 
 
 
-// Quản lý lịch sử trạng thái đơn hàng 
+// Quản lý lịch sử trạng thái đơn hàng
 Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
@@ -119,7 +120,7 @@ Route::apiResource('coupons', CouponController::class);
 
 
 // Route::apiResource('users', AdminUserController::class);
-// sreach 
+// sreach
 Route::prefix('admin')->group(function () {
     Route::get('/products/search', [SearchController::class, 'searchProducts']);
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
@@ -178,3 +179,14 @@ Route::get('coupons/search/filter', [CouponController::class, 'search']); // cou
 Route::get('coupons/{id}', [CouponController::class, 'show']);
 Route::post('coupons/create', [CouponController::class, 'store']);
 Route::put('coupons/{id}', [CouponController::class, 'update']);
+
+
+
+Route::prefix('comments')->group(function () {
+    Route::get('/', [CommentController::class, 'index']); // Lấy danh sách bình luận
+    Route::get('/{id}', [CommentController::class, 'detail']); // Lấy chi tiết bình luận
+    Route::put('/{id}', [CommentController::class, 'updateComment']); // Cập nhật trạng thái bình luận
+    Route::post('/{id}/update', [CommentController::class, 'update']); // Cập nhật trạng thái bình luận
+    Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
+    Route::post('/', [CommentController::class, 'store']); //  // Duỵyệt nhiều comment
+});

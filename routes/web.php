@@ -105,11 +105,7 @@ Route::prefix('client')->group(function () {
     Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 });
 
-Route::get('/verify', function () {
-    return view('auth.verify_email');
-})->name('verify.form');
 
-Route::post('/verify', [ClientUserController::class, 'verifyEmail'])->name('verify.email');
 
 //payment
 Route::prefix('payments')->group(function () {

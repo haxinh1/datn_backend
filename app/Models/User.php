@@ -36,6 +36,10 @@ class User extends Authenticatable
         return $this->hasMany(UserAddress::class);
     }
 
+    public function address()
+{
+    return $this->hasOne(UserAddress::class, 'user_id'); // 'user_id' là khóa ngoại trong bảng useraddress
+}
     /**
      * The attributes that should be hidden for serialization.
      *

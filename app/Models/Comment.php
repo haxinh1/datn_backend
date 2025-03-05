@@ -24,6 +24,22 @@ class Comment extends Model
         'comment_date' => 'datetime', // Nếu comment_date là DATETIME trong DB
     ];
 
+
+    public function images()
+    {
+        return $this->hasMany(CommentImage::class, 'comment_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Comment::class, 'parent_id')->with('images');
+    }
+
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'users_id');

@@ -30,6 +30,10 @@ class CommentController extends Controller
             ->when($request->input('users_id'), function ($query, $users_id) {
                 return $query->whereDate('users_id', $users_id);
             })
+            ->whereNull("parent_id") // Chỉ lấy comment gốc
+            ->with(['replies' => function ($query) {
+                $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
+            }])
             ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo
             ->paginate(10);
 

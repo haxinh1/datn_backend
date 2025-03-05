@@ -115,7 +115,6 @@ class CommentController extends Controller
             'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
         ]);
 
-//        dd($request->images);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);

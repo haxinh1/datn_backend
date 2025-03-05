@@ -185,6 +185,7 @@ Route::prefix('comments')->group(function () {
     Route::get('/', [CommentController::class, 'index']); // Lấy danh sách bình luận
     Route::get('/{id}', [CommentController::class, 'detail']); // Lấy chi tiết bình luận
     Route::put('/{id}', [CommentController::class, 'updateComment']); // Cập nhật trạng thái bình luận
+    Route::post('/{id}/update', [CommentController::class, 'update']); // Cập nhật trạng thái bình luận
     Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
     Route::post('/', [CommentController::class, 'store']); //  // Duỵyệt nhiều comment
 });

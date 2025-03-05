@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\admin;
 
 
+use App\Models\CommentImage;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CommentController extends Controller
 {
@@ -14,80 +17,53 @@ class CommentController extends Controller
     // lấy ra hết comment
     public function index(Request $request): JsonResponse
     {
-        $comments = Comment::query()
-            ->when($request->input('rating'), function ($query, $rating) {  // Lọc theo rating tối đa 5
-                return $query->where('rating', $rating);
-            })
-            ->when($request->input('status'), function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($request->input('created_at'), function ($query, $created_at) {
-                return $query->whereDate('created_at', $created_at);
-            })
-            ->when($request->input('users_id'), function ($query, $users_id) {
-                return $query->whereDate('users_id', $users_id);
-            })
-            ->when($request->input('users_id'), function ($query, $users_id) {
-                return $query->whereDate('users_id', $users_id);
-            })
-            ->whereNull("parent_id") // Chỉ lấy comment gốc
-            ->with(['replies' => function ($query) {
-                $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
-            }])
+        $query = Comment::query()->whereNull("parent_id");
+
+        // Danh sách bộ lọc
+        $filters = ['rating', 'status', 'created_at', 'users_id'];
+
+        foreach ($filters as $filter) {
+            if ($request->has($filter)) {
+                if ($filter === 'created_at') {
+                    $query->whereDate($filter, $request->input($filter));
+                } else {
+                    $query->where($filter, $request->input($filter));
+                }
+            }
+        }
+
+        // Lấy danh sách comment kèm theo replies và images
+        $comments = $query
+            ->with([
+                'replies' => function ($query) {
+                    $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
+                },
+                'images' // Lấy danh sách ảnh kèm theo mỗi comment
+            ])
             ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo
             ->paginate(10);
 
         return response()->json($comments);
     }
 
-    public function store(Request $request): JsonResponse
-    {
-        // Validate dữ liệu đầu vào
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'user_id'    => 'required|exists:users,id',
-            'comments'   => 'required|string',
-            'rating'     => 'required|integer|min:1|max:5', // Rating bắt buộc từ 1-5 sao
-        ]);
-
-        // Kiểm tra user đã mua sản phẩm chưa
-//        $hasPurchased = Order::where('user_id', $validated['user_id'])
-//            ->where('product_id', $validated['product_id'])
-//            ->where('status', 'completed') // Chỉ xét đơn hàng đã hoàn thành
-//            ->exists();
-
-//        if (!$hasPurchased) {
-//            return response()->json([
-//                'message' => 'Bạn chưa mua sản phẩm này, không thể bình luận.'
-//            ], 403);
-//        }
-
-        // Nếu đã mua, tạo bình luận mới
-        $comment = Comment::create([
-            'products_id' => $validated['product_id'],
-            'users_id'    => $validated['user_id'],
-            'comments'    => $validated['comments'],
-            'rating'      => $validated['rating'],
-            'comment_date' => now(),
-            'status'      => 0, // Bình luận cần duyệt trước khi hiển thị
-        ]);
-
-        return response()->json([
-            'message' => 'Bình luận của bạn đã được gửi và đang chờ xét duyệt.',
-            'comment' => $comment
-        ], 201);
-    }
-
-
 
     public function detail($id): JsonResponse
     {
-        $detailComment = Comment::query()->find($id);
+        $detailComment = Comment::with([
+            'replies' => function ($query) {
+                $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
+            },
+            'images' // Lấy danh sách ảnh của comment
+        ])
+            ->find($id);
+
         if (!$detailComment) {
             return response()->json(['message' => 'Comment not found'], 404);
         }
+
         return response()->json($detailComment);
     }
+
 
     public function updateComment($id, Request $request): JsonResponse
     {
@@ -126,4 +102,113 @@ class CommentController extends Controller
 
         return response()->json(['message' => 'Bulk action performed successfully']);
     }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'products_id' => 'required|exists:products,id',
+            'users_id'    => 'required|exists:users,id',
+            'comments'    => 'required|string',
+            'rating'      => 'nullable|integer|min:1|max:5',
+            'parent_id'   => 'nullable|exists:comments,id',
+            'status'      => 'nullable|integer|in:0,1', // 0: Ẩn, 1: Hiện
+            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
+        ]);
+
+//        dd($request->images);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Tạo comment
+        $comment = Comment::create([
+            'products_id'  => $request->products_id,
+            'users_id'     => $request->users_id,
+            'comments'     => $request->comments,
+            'rating'       => $request->rating,
+            'comment_date' => now(),
+            'status'       => $request->status ?? 1,
+            'parent_id'    => $request->parent_id,
+        ]);
+
+        // Xử lý ảnh nếu có
+
+
+
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $image) {
+                $path = $image->store('comments', 'public'); // Lưu ảnh vào storage/app/public/comments
+                CommentImage::create([
+                    'comment_id' => $comment->id,
+                    'image'  => $path,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Comment created successfully!',
+            'comment' => $comment->load('images'),
+        ], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $comment = Comment::find($id);
+
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found!'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'comments'  => 'sometimes|string',
+            'rating'    => 'sometimes|integer|min:1|max:5',
+            'status'    => 'sometimes|integer|in:0,1',
+            'images.*'  => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'remove_images' => 'nullable|array', // Danh sách ID ảnh cần xóa
+            'remove_images.*' => 'exists:comment_images,id', // Xác nhận ảnh tồn tại
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Cập nhật dữ liệu comment
+        $comment->update([
+            'comments'  => $request->comments ?? $comment->comments,
+            'rating'    => $request->rating ?? $comment->rating,
+            'status'    => $request->status ?? $comment->status,
+        ]);
+        // Xóa ảnh cũ nếu có yêu cầu
+        if ($request->has('remove_images')) {
+            foreach ($request->remove_images as $imageId) {
+                $image = CommentImage::find($imageId);
+                if ($image) {
+                    Storage::disk('public')->delete($image->image); // Xóa file khỏi storage
+                    $image->delete(); // Xóa bản ghi ảnh trong DB
+                }
+            }
+        }
+        // Thêm ảnh mới nếu có
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('comments', 'public'); // Lưu ảnh vào storage/app/public/comments
+                CommentImage::create([
+                    'comment_id' => $comment->id,
+                    'image'  => $path,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Comment updated successfully!',
+            'comment' => $comment->load('images'),
+        ]);
+    }
+
 }

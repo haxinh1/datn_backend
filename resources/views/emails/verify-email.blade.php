@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Xác nhận email</title>
+    <title>Xác nhận đăng ký</title>
 </head>
 <body>
-    <h1>Xin chào, {{ $user->fullname }}</h1>
-    <p>Vui lòng nhấp vào liên kết dưới đây để xác nhận email của bạn:</p>
-    <a href="{{ url('/api/verify-email?token=' . $token) }}">Xác nhận email</a>
-    <p>Nếu bạn không yêu cầu xác nhận email này, vui lòng bỏ qua email này.</p>
+    <h2>Chào bạn {{ $user->fullname  }}!</h2>
+    <p>Mã xác nhận của bạn là: <strong>{{ $code }}</strong></p>
+    <p>Vui lòng nhập mã này để xác nhận tài khoản.</p>
 </body>
 </html>

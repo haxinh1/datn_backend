@@ -61,12 +61,7 @@ class UserController extends Controller
                 'id_default' => true,
             ]);
 
-        $token = Str::random(60);
-        DB::table('email_verification_tokens')->insert([
-            'user_id' => $user->id,
-            'token' => $token,
-            'created_at' => now(),
-        ]);
+    
 
         $code = random_int(100000, 999999);
         DB::table('email_verification_codes')->insert([

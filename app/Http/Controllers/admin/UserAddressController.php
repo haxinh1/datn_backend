@@ -75,7 +75,7 @@ class UserAddressController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage.egdgdg
      */
     public function destroy($id)
     {

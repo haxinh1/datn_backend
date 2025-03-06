@@ -34,7 +34,7 @@ class UserAddressController extends Controller
     {
         $request->validate([
             'address' => 'required|string',
-            'detail_address' => 'string',
+            'detail_address' => 'nullable|string',
             'id_default' => 'boolean',
         ]);
 

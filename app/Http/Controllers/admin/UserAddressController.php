@@ -34,6 +34,7 @@ class UserAddressController extends Controller
     {
         $request->validate([
             'address' => 'required|string',
+            'detail_address' => 'string',
             'id_default' => 'boolean',
         ]);
 
@@ -46,6 +47,7 @@ class UserAddressController extends Controller
         $address = UserAddress::create([
             'user_id' => $user->id,
             'address' => $request->address,
+            'detail_address' => $request->detail_address,
             'id_default' => $request->id_default ?? false,
         ]);
 
@@ -56,6 +58,7 @@ class UserAddressController extends Controller
     {
         $request->validate([
             'address' => 'sometimes|required|string',
+            'detail_address' => 'sometimes|required|string',
             'id_default' => 'boolean',
         ]);
 
@@ -72,7 +75,7 @@ class UserAddressController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage.egdgdg
      */
     public function destroy($id)
     {

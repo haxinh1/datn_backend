@@ -62,6 +62,7 @@ class CartItemController extends Controller
     
     public function store(Request $request, $productId)
     {
+        
         try {
             $user = Auth::guard('sanctum')->user();
             $userId = $user ? $user->id : null;
@@ -84,6 +85,7 @@ class CartItemController extends Controller
                 $product = Product::findOrFail($productId);
                 $price = $product->sale_price ?? $product->sell_price;
             }
+            
 
             // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
             $cartQuery = CartItem::where('product_id', $productId)

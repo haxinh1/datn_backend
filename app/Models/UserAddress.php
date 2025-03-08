@@ -14,6 +14,7 @@ class UserAddress extends Model
         'user_id',
         'address',
         'id_default', 
+
     ];
 
     public $timestamps = false;

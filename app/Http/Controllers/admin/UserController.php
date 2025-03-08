@@ -12,13 +12,17 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::paginate(10);
-        return response()->json($users, 200);
+        $user = User::with(['address' => function ($query) {
+            $query->select('user_id', 'address'); // Chỉ lấy user_id và address
+        }])->paginate(10);
+        return response()->json($user, 200);
     }
 
     public function show($id)
     {
-        $user = User::find($id);
+        $user = User::with(['address' => function ($query) {
+            $query->select('user_id', 'address'); // Chỉ lấy user_id và address
+        }])->find($id);
         if (!$user) {
             return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
         }

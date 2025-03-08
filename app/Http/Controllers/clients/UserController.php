@@ -41,6 +41,7 @@ class UserController extends Controller
         }
 
         try {
+            $code = random_int(100000, 999999);
             $user = User::create([
                 'phone_number' => $request->phone_number,
                 'email' => $request->email,
@@ -50,66 +51,77 @@ class UserController extends Controller
                 'gender' => $request->gender,
                 'birthday' => $request->birthday,
                 'role' => 'customer',
-                'status' => 'active',
+                'status' => 'inactive',
             ]);
 
 
             UserAddress::create([
                 'user_id' => $user->id,
                 'address' => $request->address,
+                'detail_address' => $request->detail_address,
                 'id_default' => true,
             ]);
 
-        $token = Str::random(60);
-        DB::table('email_verification_tokens')->insert([
-            'user_id' => $user->id,
-            'token' => $token,
-            'created_at' => now(),
-        ]);
 
-        // Gửi email xác nhận
-        Mail::to($user->email)->send(new VerifyEmail($user, $token));
 
-        return response()->json([
-            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
-            'user' => $user
-        ], 201);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Đăng ký thất bại',
-            'errors' => $e->getMessage()
-        ], 500);
-    }
-    }
-public function verifyEmail(Request $request)
-    {
-        $request->validate([
-            'token' => 'required|string',
-        ]);
+            $code = random_int(100000, 999999);
+            DB::table('email_verification_codes')->insert([
+                'user_id' => $user->id,
+                'code' => $code,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        $tokenData = DB::table('email_verification_tokens')->where('token', $request->token)->first();
+            // Gửi email xác nhận
+            Mail::to($user->email)->send(new VerifyEmail($user, $code));
 
-        if (!$tokenData) {
             return response()->json([
-                'message' => 'Token không hợp lệ hoặc đã hết hạn'
-            ], 400);
-        }
-
-        $user = User::find($tokenData->user_id);
-        if (!$user) {
+                'message' => 'Đăng ký thành công. Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
+                'user' => $user
+            ], 201);
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Người dùng không tồn tại'
-            ], 404);
+                'message' => 'Đăng ký thất bại',
+                'errors' => $e->getMessage()
+            ], 500);
         }
+    }
+    
+    public function verifyEmail(Request $request)
+    { 
+        {
+            $request->validate([
+                'email' => 'required|email|exists:users,email',
+                'verification_code' => 'required|numeric|digits:6',
+            ]);
 
-        $user->status = 'active';
-        $user->save();
+            // Tìm user theo email
+            $user = User::where('email', $request->email)->first();
 
-        DB::table('email_verification_tokens')->where('token', $request->token)->delete();
+            if (!$user) {
+                return response()->json(['message' => 'Người dùng không tồn tại!'], 404);
+            }
 
-        return response()->json([
-            'message' => 'Xác nhận email thành công. Tài khoản của bạn đã được kích hoạt.'
-        ], 200);
+            // Tìm mã xác nhận
+            $verification_code =  DB::table('email_verification_codes')->where('user_id', $user->id)
+                ->where('code', $request->verification_code)
+                ->first();
+
+            if (!$verification_code) {
+                return response()->json(['message' => 'Mã xác nhận không hợp lệ hoặc đã hết hạn!'], 400);
+            }
+
+
+            $user->status = 'active';
+            $user->save();
+
+            DB::table('email_verification_codes')->where('code', $request->verification_code)->delete();
+
+
+            // $verification_code->delete();
+
+            return response()->json(['message' => 'Xác minh thành công . Tài khoản đã được kích hoạt!'], 200);
+        }
     }
 
     public function login(Request $request)

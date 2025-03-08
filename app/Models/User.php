@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -13,7 +16,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Các trường có thể gán hàng loạt
      *
      * @var array<int, string>
      */
@@ -31,13 +34,9 @@ class User extends Authenticatable
         'status',
         'verified_at',
     ];
-    public function addresses()
-    {
-        return $this->hasMany(UserAddress::class);
-    }
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Ẩn các thuộc tính khi serialize
      *
      * @var array<int, string>
      */
@@ -47,7 +46,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Ép kiểu các thuộc tính
      *
      * @var array<string, string>
      */
@@ -55,4 +54,22 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Quan hệ: Một user có nhiều địa chỉ
+     */
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class, 'user_id');
+    }
+
+
+    /**
+     * Lấy địa chỉ mặc định của user
+     */
+    public function defaultAddress()
+    {
+        return $this->hasOne(UserAddress::class, 'user_id')->where('id_default', true);
+    }
+    
 }

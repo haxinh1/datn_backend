@@ -33,6 +33,8 @@ class User extends Authenticatable
         'role',
         'status',
         'verified_at',
+        'total_spent',
+        'rank',
     ];
 
     /**

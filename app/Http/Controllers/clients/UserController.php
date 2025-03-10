@@ -52,6 +52,8 @@ class UserController extends Controller
                 'birthday' => $request->birthday,
                 'role' => 'customer',
                 'status' => 'inactive',
+                'total_spent' => 0,
+                'rank' => 'No Rank',
             ]);
 
 

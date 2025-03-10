@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\VNPayController;
 use App\Models\Order;
 use App\Models\CartItem;
 use App\Models\OrderItem;
@@ -37,6 +38,8 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+
+
         DB::beginTransaction();
 
         try {
@@ -63,7 +66,7 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
 
-            
+
             // Tính tổng tiền đơn hàng
             $totalAmount = $cartItems->sum(function ($item) {
                 return $item->quantity * ($item->product_variant_id
@@ -82,13 +85,13 @@ class OrderController extends Controller
                 'phone_number' => $user ? 'nullable' : 'required|string|max:20',
                 'address' => $user ? 'nullable' : 'required|string|max:255',
             ]);
-            
+
 
             // Lấy thông tin khách hàng
             $fullname = $user->fullname ?? $request->fullname;
             $email = $user->email ?? $request->email;
             $phone_number = $user->phone_number ?? $request->phone_number;
-            
+
             // Lấy địa chỉ từ bảng user_addresses
             $address = $user ? $user->addresses()->where('id_default', true)->value('address') : $request->address;
             if ($user && !$address) {
@@ -106,6 +109,29 @@ class OrderController extends Controller
                 ]);
             }
 
+            // Kiểm tra phương thức thanh toán
+            $paymentMethod = $request->input('payment_method');
+
+            if (!$paymentMethod) {
+                return response()->json(['message' => 'Thiếu phương thức thanh toán'], 400);
+            }
+
+            $paymentMethod = strtolower($request->input('payment_method'));
+
+            if (!in_array($paymentMethod, ['vnpay', 'cod'])) {
+                return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
+            }
+            $paymentMethod = $request->payment_method;
+            // Lấy ID phương thức thanh toán từ bảng payments
+            $payment = DB::table('payments')
+                ->whereRaw('LOWER(name) = ?', [strtolower($paymentMethod)])
+                ->first();
+            $paymentId = $payment ? $payment->id : null;
+
+            if (!$paymentId) {
+                return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
+            }
+
             // Tạo đơn hàng
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
@@ -116,8 +142,8 @@ class OrderController extends Controller
                 'phone_number' => $phone_number,
                 'address' => $address, // Lấy từ bảng user_addresses
                 'total_amount' => $totalAmount,
-                'status_id' => 1,
-                'payment_id' => $request->payment_id ?? null,
+                'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
+                'payment_id' => $paymentId,
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
@@ -131,17 +157,43 @@ class OrderController extends Controller
                         ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
                         : ($item->product->sale_price ?? $item->product->sell_price),
                 ]);
-                
-                if ($item->product_variant_id) {
-                    ProductVariant::where('id', $item->product_variant_id)->decrement('stock', $item->quantity);
-                } else {
-                    Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
-                }
             }
 
             // Xóa giỏ hàng sau khi đặt hàng
+            if ($paymentMethod == 'cod') {
+                CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
+                session()->forget('guest_session_id');
+            }
+
+
+            // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
+            if ($paymentMethod == 'vnpay') {
+                DB::commit(); // Commit trước khi gọi VNPay (tránh mất đơn hàng nếu lỗi)
+
+                $vnpayController = app()->make(VNPayController::class);
+                return $vnpayController->createPayment(new Request([
+                    'order_id' => $order->id,
+                    'payment_method' => $paymentMethod // 
+                ]));
+            }
+
+            // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
+            $order->update(['status_id' => 3]); // "Chờ xử lý"
+
+            // Xóa giỏ hàng sau khi đặt hàng (chỉ nếu COD)
             CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
             session()->forget('guest_session_id');
+
+            // ✅ Chỉ trừ stock nếu chọn COD
+            if ($paymentMethod == 'cod') {
+                foreach ($cartItems as $item) {
+                    if ($item->product_variant_id) {
+                        ProductVariant::where('id', $item->product_variant_id)->decrement('stock', $item->quantity);
+                    } else {
+                        Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
+                    }
+                }
+            }
 
             DB::commit();
 

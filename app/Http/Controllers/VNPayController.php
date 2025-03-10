@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CartItem;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderOrderStatus;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
@@ -36,7 +39,7 @@ class VNPayController extends Controller
             return response()->json(['message' => 'Số tiền giao dịch không hợp lệ. Phải lớn hơn 5,000 VND'], 400);
         }
 
-        $payment = Payment::where('name', 'VN Pay')->first();
+        $payment = Payment::where('name', 'VNPay')->first();
         if (!$payment) {
             return response()->json(['message' => 'Phương thức thanh toán VNPay không tồn tại'], 400);
         }
@@ -182,10 +185,26 @@ class VNPayController extends Controller
         // 🔹 Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
         if ($inputData['vnp_ResponseCode'] == '00') {
             $order = Order::findOrFail($inputData['vnp_TxnRef']);
-            $order->update([
-                'status_id' => 2,  // Đã thanh toán
-                'payment_id' => Payment::where('name', 'VN Pay')->value('id')
-            ]);
+            // ✅ Chỉ trừ stock nếu chưa trừ trước đó
+            if ($order->status_id != 2) {  // Nếu đơn hàng chưa được thanh toán
+                foreach ($order->orderItems as $item) {
+                    if ($item->product_variant_id) {
+                        ProductVariant::where('id', $item->product_variant_id)->decrement('stock', $item->quantity);
+                    } else {
+                        Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
+                    }
+                }
+
+                // Cập nhật trạng thái đơn hàng đã thanh toán
+                $order->update([
+                    'status_id' => 2,
+                    'payment_id' => Payment::where('name', 'VNPay')->value('id')
+                ]);
+            }
+
+            // ✅ Xóa giỏ hàng sau khi VNPay thanh toán thành công
+            CartItem::where('user_id', $order->user_id)->orWhere('session_id', $order->session_id)->delete();
+            session()->forget('guest_session_id');
 
             // ✅ Cập nhật trạng thái mới vào `order_order_statuses`
             OrderOrderStatus::create([

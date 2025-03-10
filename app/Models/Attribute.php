@@ -20,4 +20,8 @@ class Attribute extends Model
     public function attributeValues(){
         return $this->hasMany(AttributeValue::class);
     }
+    public function values()
+    {
+        return $this->hasMany(AttributeValue::class);
+    }
 }

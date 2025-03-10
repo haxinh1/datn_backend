@@ -70,14 +70,14 @@ class CartItemController extends Controller
             $productVariantId = $request->input('product_variant_id', null);
             $quantity = $request->input('quantity', 1);
 
-            Log::info('📌 Kiểm tra trước khi thêm vào giỏ hàng:', [
+            Log::info('Kiểm tra trước khi thêm vào giỏ hàng:', [
                 'Auth ID' => $userId,
                 'Session ID' => $sessionId,
                 'Product ID' => $productId,
                 'Product Variant ID' => $productVariantId
             ]);
 
-            /// ✅ Kiểm tra tồn kho
+            /// Kiểm tra tồn kho
             if ($productVariantId) {
                 $productVariant = ProductVariant::where('product_id', $productId)->findOrFail($productVariantId);
                 $availableStock = $productVariant->stock;
@@ -184,7 +184,7 @@ class CartItemController extends Controller
         }
 
         $cartItem = $cartQuery->first();
-        // ✅ Kiểm tra tồn kho trước khi cập nhật
+        // Kiểm tra tồn kho trước khi cập nhật
         if ($variantId) {
             $stock = ProductVariant::where('id', $variantId)->value('stock');
         } else {
@@ -243,7 +243,7 @@ class CartItemController extends Controller
             return;
         }
 
-        Log::info('🔄 Hợp nhất giỏ hàng session vào user', [
+        Log::info('Hợp nhất giỏ hàng session vào user', [
             'user_id' => $userId,
             'session_id' => $sessionId
         ]);

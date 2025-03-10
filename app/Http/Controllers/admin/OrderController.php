@@ -92,14 +92,22 @@ class OrderController extends Controller
             $email = $user->email ?? $request->email;
             $phone_number = $user->phone_number ?? $request->phone_number;
 
-            // Lấy địa chỉ từ bảng user_addresses
-            $address = $user ? $user->addresses()->where('id_default', true)->value('address') : $request->address;
-            if ($user && !$address) {
-                $address = $user->addresses()->orderByDesc('created_at')->value('address');
+            // Nếu người dùng nhập địa chỉ mới, ưu tiên địa chỉ mới
+            if ($request->filled('address')) {
+                $address = $request->address;
+            } else {
+                // Nếu không, lấy địa chỉ từ database
+                $address = $user ? $user->addresses()->where('id_default', true)->value('address') : null;
+                if ($user && !$address) {
+                    $address = $user->addresses()->orderByDesc('created_at')->value('address');
+                }
             }
+
+            // Nếu không có địa chỉ nào hợp lệ, báo lỗi
             if (!$address) {
                 return response()->json(['message' => 'Bạn chưa có địa chỉ, vui lòng cập nhật'], 400);
             }
+
 
             // Nếu user chưa có địa chỉ, lưu lại địa chỉ mới
             if ($user && !$user->addresses()->exists() && $request->address) {
@@ -184,7 +192,7 @@ class OrderController extends Controller
             CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
             session()->forget('guest_session_id');
 
-            // ✅ Chỉ trừ stock nếu chọn COD
+            // Chỉ trừ stock nếu chọn COD
             if ($paymentMethod == 'cod') {
                 foreach ($cartItems as $item) {
                     if ($item->product_variant_id) {

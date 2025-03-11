@@ -46,33 +46,42 @@ class OrderController extends Controller
             // Lấy user từ token để đảm bảo đăng nhập
             $user = Auth::guard('sanctum')->user();
             $userId = $user ? $user->id : null;
-            $sessionId = session()->get('guest_session_id');
 
-            // Nếu user đăng nhập nhưng vẫn còn session cart, hợp nhất vào tài khoản
-            if ($userId && $sessionId) {
-                $this->mergeSessionCartToUser($userId, $sessionId);
+            // Nếu user đăng nhập, lấy giỏ hàng từ database
+            if ($userId) {
+                $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
+            } else {
+                // Nếu khách vãng lai, lấy giỏ hàng từ request
+                $cartItems = collect($request->input('cart_items', []));
             }
-
-            // Lấy giỏ hàng theo user hoặc session
-            $cartItems = CartItem::where(function ($query) use ($userId, $sessionId) {
-                if ($userId) {
-                    $query->where('user_id', $userId);
-                } else {
-                    $query->where('session_id', $sessionId);
-                }
-            })->with('product', 'productVariant')->get();
-
             if ($cartItems->isEmpty()) {
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
-
-
-            // Tính tổng tiền đơn hàng
-            $totalAmount = $cartItems->sum(function ($item) {
-                return $item->quantity * ($item->product_variant_id
-                    ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
-                    : ($item->product->sale_price ?? $item->product->sell_price));
+            $cartItems = $cartItems->map(function ($item) {
+                $product = Product::find($item['product_id']);
+                if (!$product) {
+                    throw new \Exception("Sản phẩm ID {$item['product_id']} không tồn tại");
+                }
+                return $item;
             });
+
+            $totalAmount = $cartItems->sum(function ($item) {
+                $product = Product::find($item['product_id']);
+                if (!$product) {
+                    throw new \Exception("Sản phẩm ID {$item['product_id']} không tồn tại");
+                }
+
+                if (!empty($item['product_variant_id'])) {
+                    $productVariant = ProductVariant::where('product_id', $item['product_id'])
+                        ->find($item['product_variant_id']);
+                    $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
+                } else {
+                    $price = $product->sale_price ?? $product->sell_price;
+                }
+
+                return $item['quantity'] * $price;
+            });
+
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
@@ -118,18 +127,14 @@ class OrderController extends Controller
             }
 
             // Kiểm tra phương thức thanh toán
-            $paymentMethod = $request->input('payment_method');
-
+            $paymentMethod = strtolower($request->input('payment_method', ''));
             if (!$paymentMethod) {
                 return response()->json(['message' => 'Thiếu phương thức thanh toán'], 400);
             }
 
-            $paymentMethod = strtolower($request->input('payment_method'));
-
             if (!in_array($paymentMethod, ['vnpay', 'cod'])) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
-            $paymentMethod = $request->payment_method;
             // Lấy ID phương thức thanh toán từ bảng payments
             $payment = DB::table('payments')
                 ->whereRaw('LOWER(name) = ?', [strtolower($paymentMethod)])
@@ -144,7 +149,6 @@ class OrderController extends Controller
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
                 'user_id' => $userId,
-                'session_id' => $userId ? null : $sessionId,
                 'fullname' => $fullname,
                 'email' => $email,
                 'phone_number' => $phone_number,
@@ -168,11 +172,7 @@ class OrderController extends Controller
             }
 
             // Xóa giỏ hàng sau khi đặt hàng
-            if ($paymentMethod == 'cod') {
-                CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
-                session()->forget('guest_session_id');
-            }
-
+            CartItem::where('user_id', $userId)->delete();
 
             // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
             if ($paymentMethod == 'vnpay') {
@@ -187,10 +187,6 @@ class OrderController extends Controller
 
             // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
             $order->update(['status_id' => 3]); // "Chờ xử lý"
-
-            // Xóa giỏ hàng sau khi đặt hàng (chỉ nếu COD)
-            CartItem::where('user_id', $userId)->orWhere('session_id', $sessionId)->delete();
-            session()->forget('guest_session_id');
 
             // Chỉ trừ stock nếu chọn COD
             if ($paymentMethod == 'cod') {

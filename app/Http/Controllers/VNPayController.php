@@ -202,9 +202,6 @@ class VNPayController extends Controller
                 ]);
             }
 
-            // Xóa giỏ hàng sau khi VNPay thanh toán thành công
-            CartItem::where('user_id', $order->user_id)->orWhere('session_id', $order->session_id)->delete();
-            session()->forget('guest_session_id');
 
             // Cập nhật trạng thái mới vào `order_order_statuses`
             OrderOrderStatus::create([

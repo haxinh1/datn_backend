@@ -107,6 +107,8 @@ Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index']
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
         ->name('orders.updateStatus');
+    Route::put('/orders/batch-update-status', [OrderOrderStatusController::class, 'batchUpdateByStatus'])
+        ->name('orders.batchUpdateStatus');
 });
 
 

@@ -53,7 +53,7 @@ class OrderController extends Controller
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
                 Log::info('🔥 DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
-            
+
                 $cartItems = collect(session()->get('cart', [])); // Dùng "cart" thay vì "session_cart"
             }
 
@@ -173,7 +173,7 @@ class OrderController extends Controller
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $item['product_id'], 
+                    'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
                     'quantity' => $item['quantity'],
                     'sell_price' => $item['product_variant_id']

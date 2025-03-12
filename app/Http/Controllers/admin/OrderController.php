@@ -38,6 +38,7 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('🔥 DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
 
 
         DB::beginTransaction();
@@ -47,33 +48,43 @@ class OrderController extends Controller
             $user = Auth::guard('sanctum')->user();
             $userId = $user ? $user->id : null;
 
-            // Nếu user đăng nhập, lấy giỏ hàng từ database
+            // Lấy giỏ hàng dựa vào trạng thái đăng nhập
             if ($userId) {
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
-                // Nếu khách vãng lai, lấy giỏ hàng từ request
-                $cartItems = collect($request->input('cart_items', []));
+                Log::info('🔥 DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
+            
+                $cartItems = collect(session()->get('cart', [])); // Dùng "cart" thay vì "session_cart"
             }
+
+            // Kiểm tra nếu giỏ hàng trống
             if ($cartItems->isEmpty()) {
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
-            $cartItems = $cartItems->map(function ($item) {
+            // 🔥 Kiểm tra tồn kho trước khi đặt hàng
+            foreach ($cartItems as $item) {
                 $product = Product::find($item['product_id']);
                 if (!$product) {
-                    throw new \Exception("Sản phẩm ID {$item['product_id']} không tồn tại");
+                    return response()->json(['message' => "Sản phẩm ID {$item['product_id']} không tồn tại"], 400);
                 }
-                return $item;
-            });
 
+                $availableStock = $item['product_variant_id']
+                    ? ProductVariant::where('id', $item['product_variant_id'])->value('stock')
+                    : $product->stock;
+
+                if ($availableStock < $item['quantity']) {
+                    return response()->json([
+                        'message' => "Sản phẩm '{$product->name}' không đủ số lượng trong kho. Chỉ còn $availableStock sản phẩm."
+                    ], 400);
+                }
+            }
+
+            // 🏷 Tính tổng tiền đơn hàng
             $totalAmount = $cartItems->sum(function ($item) {
                 $product = Product::find($item['product_id']);
-                if (!$product) {
-                    throw new \Exception("Sản phẩm ID {$item['product_id']} không tồn tại");
-                }
 
                 if (!empty($item['product_variant_id'])) {
-                    $productVariant = ProductVariant::where('product_id', $item['product_id'])
-                        ->find($item['product_variant_id']);
+                    $productVariant = ProductVariant::where('id', $item['product_variant_id'])->first();
                     $price = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : 0;
                 } else {
                     $price = $product->sale_price ?? $product->sell_price;
@@ -81,7 +92,6 @@ class OrderController extends Controller
 
                 return $item['quantity'] * $price;
             });
-
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
@@ -97,9 +107,10 @@ class OrderController extends Controller
 
 
             // Lấy thông tin khách hàng
-            $fullname = $user->fullname ?? $request->fullname;
-            $email = $user->email ?? $request->email;
-            $phone_number = $user->phone_number ?? $request->phone_number;
+            $fullname = $user->fullname ?? $request->fullname ?? '';
+            $email = $user->email ?? $request->email ?? '';
+            $phone_number = $user->phone_number ?? $request->phone_number ?? '';
+
 
             // Nếu người dùng nhập địa chỉ mới, ưu tiên địa chỉ mới
             if ($request->filled('address')) {
@@ -162,17 +173,30 @@ class OrderController extends Controller
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'product_variant_id' => $item->product_variant_id ?? null,
-                    'quantity' => $item->quantity,
-                    'sell_price' => $item->product_variant_id
-                        ? ($item->productVariant->sale_price ?? $item->productVariant->sell_price)
-                        : ($item->product->sale_price ?? $item->product->sell_price),
+                    'product_id' => $item['product_id'], 
+                    'product_variant_id' => $item['product_variant_id'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'sell_price' => $item['product_variant_id']
+                        ? ProductVariant::where('id', $item['product_variant_id'])->value('sale_price') ?? ProductVariant::where('id', $item['product_variant_id'])->value('sell_price')
+                        : Product::where('id', $item['product_id'])->value('sale_price') ?? Product::where('id', $item['product_id'])->value('sell_price'),
                 ]);
+                // Trừ stock nếu chọn COD
+                if ($paymentMethod == 'cod') {
+                    if ($item['product_variant_id']) {
+                        ProductVariant::where('id', $item['product_variant_id'])->decrement('stock', $item['quantity']);
+                    } else {
+                        Product::where('id', $item['product_id'])->decrement('stock', $item['quantity']);
+                    }
+                }
             }
 
-            // Xóa giỏ hàng sau khi đặt hàng
-            CartItem::where('user_id', $userId)->delete();
+            // Xóa giỏ hàng sau khi đặt hàng thành công**
+            if ($userId) {
+                CartItem::where('user_id', $userId)->delete();
+            } else {
+                session()->forget('cart'); // Xóa giỏ hàng của khách vãng lai
+            }
+
 
             // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
             if ($paymentMethod == 'vnpay') {
@@ -187,17 +211,6 @@ class OrderController extends Controller
 
             // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
             $order->update(['status_id' => 3]); // "Chờ xử lý"
-
-            // Chỉ trừ stock nếu chọn COD
-            if ($paymentMethod == 'cod') {
-                foreach ($cartItems as $item) {
-                    if ($item->product_variant_id) {
-                        ProductVariant::where('id', $item->product_variant_id)->decrement('stock', $item->quantity);
-                    } else {
-                        Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
-                    }
-                }
-            }
 
             DB::commit();
 

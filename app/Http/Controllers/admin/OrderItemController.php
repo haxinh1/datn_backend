@@ -17,4 +17,3 @@ class OrderItemController extends Controller
         return response()->json($items);
     }
 }
-    

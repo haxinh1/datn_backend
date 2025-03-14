@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\OrderStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderStatusController extends Controller
 {
@@ -83,7 +85,10 @@ class OrderStatusController extends Controller
         if (!$status) {
             return response()->json(['message' => 'Trạng thái đơn hàng không tồn tại'], 404);
         }
-
+        // Không cho phép xóa các trạng thái mặc định
+        if (in_array($status->name, ['Pending', 'Completed', 'Cancelled'])) {
+            return response()->json(['message' => 'Không thể xóa trạng thái hệ thống mặc định'], 400);
+        }
         // Kiểm tra xem trạng thái có đang được sử dụng không
         if ($status->orderHistories()->exists()) {
             return response()->json(['message' => 'Không thể xóa trạng thái này vì đang được sử dụng trong đơn hàng'], 400);
@@ -92,4 +97,6 @@ class OrderStatusController extends Controller
         $status->delete();
         return response()->json(['message' => 'Trạng thái đơn hàng đã được xóa thành công'], 200);
     }
+
+    
 }

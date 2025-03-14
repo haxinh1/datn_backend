@@ -27,7 +27,28 @@ class OrderOrderStatusController extends Controller
             'data' => $orderStatuses,
         ]);
     }
+    public function indexMultiple(Request $request)
+    {
+        $orderIds = $request->input('order_ids');
 
+        if (empty($orderIds)) {
+            return response()->json(['message' => 'Không có đơn hàng nào để lấy lịch sử'], 400);
+        }
+
+        // Lấy lịch sử trạng thái của nhiều đơn hàng
+        $orderStatuses = OrderOrderStatus::whereIn('order_id', $orderIds)
+            ->with(['status', 'modifiedBy'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Phân nhóm kết quả theo từng order_id
+        $groupedStatuses = $orderStatuses->groupBy('order_id');
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $groupedStatuses,
+        ]);
+    }
     /**
      * Cập nhật trạng thái đơn hàng.
      */
@@ -43,7 +64,7 @@ class OrderOrderStatusController extends Controller
         $request->validate([
             'order_status_id' => 'required|exists:order_statuses,id',
             'note' => 'nullable|string|max:255',
-            'employee_evidence' => 'nullable|string', 
+            'employee_evidence' => 'nullable|string',
         ]);
 
         // Kiểm tra đơn hàng có tồn tại không
@@ -51,6 +72,27 @@ class OrderOrderStatusController extends Controller
         if (!$order) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
         }
+        // Kiểm tra trạng thái chuyển đổi hợp lệ
+        $validStatusTransitions = [
+            2 => [3, 8], // Đã thanh toán -> Đang xử lý hoặc Hủy đơn
+            3 => [4, 8], // Đang xử lý -> Đang giao hàng hoặc Hủy đơn
+            4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
+            5 => [7],    // Đã giao hàng -> Hoàn thành
+            9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
+            10 => [12],    // Chấp nhận trả hàng -> Đang xử lý trả hàng
+            12 => [13]    // Đang xử lý trả hàng -> Người bán đã nhận hàng
+        ];
+        // Kiểm tra trạng thái hiện tại có thể chuyển sang trạng thái mới không
+        if (
+            !isset($validStatusTransitions[$order->status_id]) ||
+            !in_array($request->order_status_id, $validStatusTransitions[$order->status_id])
+        ) {
+            return response()->json([
+                'message' => 'Không thể chuyển trạng thái từ ' . $order->status_id . ' sang ' . $request->order_status_id
+            ], 400);
+        }
+
+
 
         DB::beginTransaction();
         try {
@@ -79,6 +121,80 @@ class OrderOrderStatusController extends Controller
                 'message' => 'Lỗi khi cập nhật trạng thái đơn hàng',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+    public function batchUpdateByStatus(Request $request)
+    {
+        // Validate dữ liệu đầu vào
+        $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'integer|exists:orders,id', // Đảm bảo các ID đơn hàng là hợp lệ
+            'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13',
+            'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Lấy danh sách đơn hàng có trạng thái cần cập nhật
+            $orders = Order::whereIn('id', $request->order_ids)
+                ->where('status_id', $request->current_status)
+                ->get();
+
+            // Nếu không có đơn hàng nào thỏa mãn, trả về lỗi
+            if ($orders->isEmpty()) {
+                return response()->json([
+                    'message' => 'Không có đơn hàng nào thỏa mãn yêu cầu'
+                ], 400);
+            }
+
+            // Kiểm tra xem trạng thái mới có hợp lệ không
+            $validStatusTransitions = [
+                1 => [2],  // Chờ thanh toán -> Đã thanh toán
+                2 => [3, 8], // Đã thanh toán -> Đang xử lý hoặc Hủy đơn
+                3 => [4, 8], // Đang xử lý -> Đang giao hàng hoặc Hủy đơn
+                4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
+                5 => [7],    // Đã giao hàng -> Hoàn thành
+                9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
+                10 => [12],    // Chấp nhận trả hàng -> Đang xử lý trả hàng
+                12 => [13]    // Đang xử lý trả hàng -> Người bán đã nhận hàng
+            ];
+
+            // Kiểm tra trạng thái chuyển đổi hợp lệ
+            if (
+                !isset($validStatusTransitions[$request->current_status]) ||
+                !in_array($request->new_status, $validStatusTransitions[$request->current_status])
+            ) {
+                return response()->json([
+                    'message' => 'Không thể chuyển trạng thái từ ' . $request->current_status . ' sang ' . $request->new_status
+                ], 400);
+            }
+
+            // Lưu lịch sử trạng thái cho từng đơn hàng trong mảng
+            foreach ($orders as $order) {
+                // Lưu trạng thái vào bảng `order_order_statuses` (lịch sử trạng thái)
+                OrderOrderStatus::create([
+                    'order_id' => $order->id,
+                    'order_status_id' => $request->new_status,
+                    'modified_by' => Auth::id(),
+                    'note' => $request->note,
+                ]);
+            }
+
+            // Cập nhật trạng thái mới cho tất cả các đơn hàng
+            Order::whereIn('id', $request->order_ids)
+                ->where('status_id', $request->current_status)
+                ->update(['status_id' => $request->new_status]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Cập nhật trạng thái thành công!',
+                'updated_orders' => $orders->pluck('id') // Trả về danh sách ID đơn hàng đã cập nhật
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
 }

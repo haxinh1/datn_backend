@@ -59,8 +59,8 @@ class UserController extends Controller
         $user->role           = $validatedData['role'] ?? 'customer';
         $user->status         = $validatedData['status'] ?? 'active';
         $user->google_id      = $validatedData['google_id'] ?? null;
-        $user->rank           = 'Chưa có hạng'; 
         $user->total_spent    = 0; 
+        $user->rank           = 'No Rank'; 
         $user->save();
 
         return response()->json($user, 201);
@@ -245,10 +245,10 @@ class UserController extends Controller
     {
 
         $totalSpent = Order::where('user_id', $userId)
-            ->where('status', 'completed')
+            ->where('status_id', 'completed')
             ->sum('total_amount');
 
-        $rank = null;
+        $rank = 'No Rank';
         if ($totalSpent >= 20000000) {
             $rank = 'Diamond';
         } elseif ($totalSpent >= 10000000) {
@@ -274,7 +274,7 @@ class UserController extends Controller
             'message' => 'Cập nhật rank thành công',
             'user_id' => $userId,
             'total_spent' => $totalSpent,
-            'rank' => $rank ?? 'Chưa có hạng'
+            'rank' => $rank ?? 'No Rank'
         ]);
     }
 
@@ -288,7 +288,7 @@ class UserController extends Controller
         return response()->json([
             'user_id' => $userId,
             'total_spent' => $user->total_spent ?? 0,
-            'rank' => $user->rank ?? 'Chưa có hạng'
+            'rank' => $user->rank ?? 'No Rank'
         ]);
     }
 }

@@ -49,7 +49,15 @@ Route::resource('/brands', BrandController::class);
 //Route biến thể sản phẩm
 Route::resource('/productVariant', ProductVariantController::class);
 //Route product
-Route::resource('/products', ProductController::class);
+// Route::resource('/products', ProductController::class);
+Route::get('/products/filter', [ProductController::class, 'filterProducts']);
+Route::get('/products', [ProductController::class, 'index']); 
+Route::post('/products', [ProductController::class, 'store']); 
+Route::get('/products/{id}', [ProductController::class, 'show']); 
+Route::put('/products/{id}', [ProductController::class, 'update']); 
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
+
 //Active sản phẩm
 Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
 //Active biến thể
@@ -149,6 +157,8 @@ Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword'])
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 
 
+Route::post('/users/update-rank/{userId}', [AdminUserController::class, 'updateUserRank']);
+Route::get('/users/get-rank/{userId}', [AdminUserController::class, 'getRank']);
 // user address
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);

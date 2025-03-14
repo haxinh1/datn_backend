@@ -361,4 +361,37 @@ class ProductController extends Controller
             ], 404);
         }
     }
+    public function filterProducts(Request $request)
+{
+    $filters = $request->query();
+
+    $query = DB::table('products as p')
+        ->join('product_variants as pv', 'p.id', '=', 'pv.product_id')
+        ->join('attribute_value_product_variants as avpv', 'pv.id', '=', 'avpv.product_variant_id')
+        ->join('attribute_values as av', 'avpv.attribute_value_id', '=', 'av.id')
+        ->join('attributes as a', 'av.attribute_id', '=', 'a.id')
+        ->select(
+            'p.id as product_id',
+            'p.name',
+            'pv.id as variant_id',
+            'pv.sku as variant_sku',
+            DB::raw("GROUP_CONCAT(av.value ORDER BY av.id SEPARATOR ', ') AS attribute_values")
+        )
+        ->groupBy('p.id', 'pv.id');
+
+    if (!empty($filters)) {
+        $query->where(function ($q) use ($filters) {
+            foreach ($filters as $key => $value) {
+                $q->orWhere(function ($sub) use ($key, $value) {
+                    $sub->where('a.name', $key)
+                        ->where('av.value', $value);
+                });
+            }
+        });
+    }
+
+    $products = $query->get();
+
+    return response()->json($products);
+}
 }

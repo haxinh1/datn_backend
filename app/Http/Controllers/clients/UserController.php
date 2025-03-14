@@ -30,7 +30,8 @@ class UserController extends Controller
             'avatar' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
             'birthday' => 'nullable|date',
-            'address' => 'string',
+            'address' => 'nullable|string',
+            'detail_address' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {

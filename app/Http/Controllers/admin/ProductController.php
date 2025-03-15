@@ -251,14 +251,16 @@ class ProductController extends Controller
             }
 
             if ($request->has('attribute_values_id')) {
-                // DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
+                $data = [];
                 foreach ($request->input('attribute_values_id') as $attributeValueId) {
-                    DB::table('attribute_value_products')->insert([
+                    $data[] = [
                         'product_id' => $product->id,
                         'attribute_value_id' => $attributeValueId,
-                    ]);
+                    ];
                 }
+                DB::table('attribute_value_products')->insertOrIgnore($data);
             }
+            
 
             if ($request->has('product_variants')) {
                 foreach ($request->input('product_variants') as $variant) {

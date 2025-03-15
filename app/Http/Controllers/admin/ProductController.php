@@ -265,7 +265,7 @@ class ProductController extends Controller
             }
 
             if ($request->has('attribute_values_id')) {
-                DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
+                // DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
                 foreach ($request->input('attribute_values_id') as $attributeValueId) {
                     DB::table('attribute_value_products')->insert([
                         'product_id' => $product->id,

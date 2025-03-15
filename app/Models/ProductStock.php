@@ -23,6 +23,10 @@ class ProductStock extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+    public function stock()
+    {
+        return $this->belongsTo(Product::class, 'stock_id');
+    }
 
     public function productVariant()
     {

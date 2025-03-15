@@ -199,7 +199,7 @@ class UserController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message' => 'Mật khẩu đã được thay đổi thành công.'], 200);
+        return response()->json(['message1' => 'Mật khẩu đã được thay đổi thành công.'], 200);
     }
 
     public function forgotPassword(Request $request)

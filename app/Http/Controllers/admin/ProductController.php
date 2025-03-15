@@ -155,59 +155,45 @@ class ProductController extends Controller
     public function show(string $id)
     {
         try {
-            if (!is_numeric($id)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'ID sản phẩm không hợp lệ!'
-                ], 400);
-            }
-
             $product = Product::with([
                 'categories',
                 'galleries',
                 'atributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
-            ])->findOrFail($id);
+            ])->where('id', $id)->firstOrFail();
 
             $stocks = DB::table('product_stocks')
-                ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
-                ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
-                ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Thêm join vào bảng stocks
-                ->where('product_stocks.product_id', $id)
-                ->where('stocks.status', 1) // Kiểm tra status trong bảng stocks
-                ->select([
-                    'product_stocks.id',
-                    'products.name as product_name',
-                    'products.thumbnail as product_thumbnail',
-                    'product_stocks.quantity',
-                    'product_stocks.price',
-                    'product_variants.id as product_variant_id',
-                    'product_variants.sku as variant_sku',
-                    'product_variants.thumbnail as variant_image',
-                    'product_stocks.created_at'
-                ])
-                ->get();
+            ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
+            ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
+            ->select([
+                'product_stocks.id',
+                'products.name as product_name',
+                'products.thumbnail as product_thumbnail',
+                'product_stocks.quantity',
+                'product_stocks.price',
+                'product_variants.id as product_variant_id',
+                'product_variants.sku as variant_sku',
+                'product_variants.thumbnail as variant_image',
+                'product_stocks.created_at'
 
+            ])
+            ->where(
+                'product_stocks.product_id', $id
+            )
+            ->get();
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'product' => $product,
-                    'stocks' => $stocks
-                ]
+                'data' => $product,
+                'stocks' =>$stocks
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sản phẩm không tìm thấy!'
-            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Đã xảy ra lỗi!',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi!'.$e->getMessage(),
+            ], 404);
         }
+
     }
 
 
@@ -265,14 +251,16 @@ class ProductController extends Controller
             }
 
             if ($request->has('attribute_values_id')) {
-                DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
+                $data = [];
                 foreach ($request->input('attribute_values_id') as $attributeValueId) {
-                    DB::table('attribute_value_products')->insert([
+                    $data[] = [
                         'product_id' => $product->id,
                         'attribute_value_id' => $attributeValueId,
-                    ]);
+                    ];
                 }
+                DB::table('attribute_value_products')->insertOrIgnore($data);
             }
+            
 
             if ($request->has('product_variants')) {
                 foreach ($request->input('product_variants') as $variant) {

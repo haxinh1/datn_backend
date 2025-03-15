@@ -178,10 +178,9 @@ class ProductController extends Controller
                 'product_stocks.created_at'
 
             ])
-            ->where([
-                ['product_stocks.product_id', $id],
-                ['product_stocks.stock.status',1]
-            ])
+            ->where(
+                'product_stocks.product_id', $id
+            )
             ->get();
             return response()->json([
                 'success' => true,
@@ -194,6 +193,7 @@ class ProductController extends Controller
                 'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi!'.$e->getMessage(),
             ], 404);
         }
+
     }
 
 

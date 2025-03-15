@@ -173,9 +173,9 @@ class ProductController extends Controller
             $stocks = DB::table('product_stocks')
                 ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
                 ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
-                ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Thêm join vào bảng stocks
+                // ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Thêm join vào bảng stocks
                 ->where('product_stocks.product_id', $id)
-                ->where('stocks.status', 1) // Kiểm tra status trong bảng stocks
+                // ->where('stocks.status', 1) // Kiểm tra status trong bảng stocks
                 ->select([
                     'product_stocks.id',
                     'products.name as product_name',

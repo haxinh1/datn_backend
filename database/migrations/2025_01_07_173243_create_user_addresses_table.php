@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id(); // ID
             $table->unsignedBigInteger('user_id')->comment('ID người dùng liên kết'); // ID người dùng
             $table->text('address')->comment('Địa chỉ của người dùng'); // Địa chỉ 
-            $table->text('detail_address')->comment('Địa chỉ đầy đủ của người dùng'); // Địa chỉ 
+            $table->text('detail_address')->nullable()->comment('Địa chỉ đầy đủ của người dùng'); // Địa chỉ 
             $table->boolean('id_default')->default(false)->comment('1 nếu là địa chỉ mặc định, 0 nếu không'); // Địa chỉ mặc định
             $table->timestamps(); // created_at, updated_at
 

@@ -37,14 +37,12 @@ class ProductController extends Controller
                 'message' => 'Danh sách sản phẩm!',
                 'data' => $products,
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Lỗi khi truy xuất sản phẩm!',
             ], 500);
         }
-
     }
     /**
      * Show the form for creating a new resource.
@@ -157,44 +155,61 @@ class ProductController extends Controller
     public function show(string $id)
     {
         try {
+            if (!is_numeric($id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID sản phẩm không hợp lệ!'
+                ], 400);
+            }
+
             $product = Product::with([
                 'categories',
                 'galleries',
                 'atributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
-            ])->where('id', $id)->firstOrFail();
+            ])->findOrFail($id);
 
             $stocks = DB::table('product_stocks')
-            ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
-            ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
-            ->select([
-                'product_stocks.id',
-                'products.name as product_name',
-                'products.thumbnail as product_thumbnail',
-                'product_stocks.quantity',
-                'product_stocks.price',
-                'product_variants.id as product_variant_id',
-                'product_variants.sku as variant_sku',
-                'product_variants.thumbnail as variant_image',
-                'product_stocks.created_at'
+                ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
+                ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
+                ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Thêm join vào bảng stocks
+                ->where('product_stocks.product_id', $id)
+                ->where('stocks.status', 1) // Kiểm tra status trong bảng stocks
+                ->select([
+                    'product_stocks.id',
+                    'products.name as product_name',
+                    'products.thumbnail as product_thumbnail',
+                    'product_stocks.quantity',
+                    'product_stocks.price',
+                    'product_variants.id as product_variant_id',
+                    'product_variants.sku as variant_sku',
+                    'product_variants.thumbnail as variant_image',
+                    'product_stocks.created_at'
+                ])
+                ->get();
 
-            ])
-            ->where('product_stocks.product_id', $id)
-            ->get();
             return response()->json([
                 'success' => true,
-                'data' => $product,
-                'stocks' =>$stocks
+                'data' => [
+                    'product' => $product,
+                    'stocks' => $stocks
+                ]
             ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm không tìm thấy!'
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi!',
-            ], 404);
+                'message' => 'Đã xảy ra lỗi!',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -231,15 +246,12 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
-            // Cập nhật thông tin sản phẩm
             $product->update($datas);
 
-            // Cập nhật danh mục sản phẩm
             if ($request->has('category_id')) {
                 $product->categories()->sync($request->category_id);
             }
 
-            // Cập nhật hình ảnh sản phẩm
             if ($request->has('product_images')) {
                 ProductGalleries::where('product_id', $product->id)->delete();
                 foreach ($request->input('product_images') as $image) {
@@ -252,7 +264,6 @@ class ProductController extends Controller
                 }
             }
 
-            // Cập nhật thuộc tính sản phẩm
             if ($request->has('attribute_values_id')) {
                 DB::table('attribute_value_products')->where('product_id', $product->id)->delete();
                 foreach ($request->input('attribute_values_id') as $attributeValueId) {
@@ -263,10 +274,8 @@ class ProductController extends Controller
                 }
             }
 
-            // Xử lý biến thể sản phẩm (không xóa hết mà cập nhật hoặc thêm mới)
             if ($request->has('product_variants')) {
                 foreach ($request->input('product_variants') as $variant) {
-                    // Nếu có `id` => Cập nhật, nếu không có `id` => Tạo mới
                     if (!empty($variant['id'])) {
                         $productVariant = ProductVariant::find($variant['id']);
                         if ($productVariant) {
@@ -281,7 +290,6 @@ class ProductController extends Controller
                             ]);
                         }
                     } else {
-                        // Nếu không có `id`, tạo mới biến thể
                         $productVariant = ProductVariant::create([
                             'product_id' => $product->id,
                             'sku' => $variant['sku'] ?? null,
@@ -294,14 +302,11 @@ class ProductController extends Controller
                         ]);
                     }
 
-                    // Cập nhật thuộc tính cho biến thể
                     if (!empty($variant['attribute_values'])) {
-                        // Xóa những thuộc tính cũ nếu có
                         DB::table('attribute_value_product_variants')
                             ->where('product_variant_id', $productVariant->id)
                             ->delete();
 
-                        // Thêm lại các thuộc tính mới
                         foreach ($variant['attribute_values'] as $attributeValueId) {
                             DB::table('attribute_value_product_variants')->insert([
                                 'product_variant_id' => $productVariant->id,
@@ -362,36 +367,36 @@ class ProductController extends Controller
         }
     }
     public function filterProducts(Request $request)
-{
-    $filters = $request->query();
+    {
+        $filters = $request->query();
 
-    $query = DB::table('products as p')
-        ->join('product_variants as pv', 'p.id', '=', 'pv.product_id')
-        ->join('attribute_value_product_variants as avpv', 'pv.id', '=', 'avpv.product_variant_id')
-        ->join('attribute_values as av', 'avpv.attribute_value_id', '=', 'av.id')
-        ->join('attributes as a', 'av.attribute_id', '=', 'a.id')
-        ->select(
-            'p.id as product_id',
-            'p.name',
-            'pv.id as variant_id',
-            'pv.sku as variant_sku',
-            DB::raw("GROUP_CONCAT(av.value ORDER BY av.id SEPARATOR ', ') AS attribute_values")
-        )
-        ->groupBy('p.id', 'pv.id');
+        $query = DB::table('products as p')
+            ->join('product_variants as pv', 'p.id', '=', 'pv.product_id')
+            ->join('attribute_value_product_variants as avpv', 'pv.id', '=', 'avpv.product_variant_id')
+            ->join('attribute_values as av', 'avpv.attribute_value_id', '=', 'av.id')
+            ->join('attributes as a', 'av.attribute_id', '=', 'a.id')
+            ->select(
+                'p.id as product_id',
+                'p.name',
+                'pv.id as variant_id',
+                'pv.sku as variant_sku',
+                DB::raw("GROUP_CONCAT(av.value ORDER BY av.id SEPARATOR ', ') AS attribute_values")
+            )
+            ->groupBy('p.id', 'pv.id');
 
-    if (!empty($filters)) {
-        $query->where(function ($q) use ($filters) {
-            foreach ($filters as $key => $value) {
-                $q->orWhere(function ($sub) use ($key, $value) {
-                    $sub->where('a.name', $key)
-                        ->where('av.value', $value);
-                });
-            }
-        });
+        if (!empty($filters)) {
+            $query->where(function ($q) use ($filters) {
+                foreach ($filters as $key => $value) {
+                    $q->orWhere(function ($sub) use ($key, $value) {
+                        $sub->where('a.name', $key)
+                            ->where('av.value', $value);
+                    });
+                }
+            });
+        }
+
+        $products = $query->get();
+
+        return response()->json($products);
     }
-
-    $products = $query->get();
-
-    return response()->json($products);
-}
 }

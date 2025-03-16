@@ -15,48 +15,49 @@ class CartItemController extends Controller
 {
 
     public function index(Request $request)
-    {
-        $user = Auth::guard('sanctum')->user();
-        $userId = $user ? $user->id : null;
+{
+    // Kiểm tra nếu người dùng đã đăng nhập
+    $user = Auth::guard('sanctum')->user();
+    $userId = $user ? $user->id : null;
 
-        Log::info('Lấy giỏ hàng:', ['Auth ID' => $userId]);
+    Log::info('Lấy giỏ hàng:', ['userId' => $userId]);
 
-        if ($userId) {
-            // Nếu đã đăng nhập, lấy giỏ hàng từ database
-            $cartItems = CartItem::where('user_id', $userId)
-                ->with(['product', 'productVariant'])
-                ->get();
-
-            return response()->json([
-                'cart_items' => $cartItems,
-                'user_id' => $userId
-            ]);
-        } else {
-            // Nếu chưa đăng nhập, lấy giỏ hàng từ session
-            $sessionCart = session()->get('cart', []);
-
-            return response()->json([
-                'cart_items' => array_values($sessionCart), // Trả về mảng giá trị của session
-                'message' => 'Giỏ hàng lấy từ session'
-            ]);
-        }
+    if ($userId) {
+        // Nếu đã đăng nhập, lấy giỏ hàng từ database
+        $cartItems = CartItem::where('user_id', $userId)
+            ->with(['product', 'productVariant'])
+            ->get();
 
         return response()->json([
-            'cart_items' => [],
-            'message' => 'Không tìm thấy giỏ hàng'
-        ], 404);
+            'cart_items' => $cartItems,
+            'user_id' => $userId
+        ]);
+    } else {
+        // Nếu chưa đăng nhập, lấy giỏ hàng từ session (cho khách vãng lai)
+        $sessionCart = session()->get('cart', []);
+        return response()->json([
+            'cart_items' => array_values($sessionCart),
+            'message' => 'Giỏ hàng lấy từ session'
+        ]);
     }
+
+    return response()->json([
+        'cart_items' => [],
+        'message' => 'Không tìm thấy giỏ hàng'
+    ], 404);
+}
+
 
     public function store(Request $request, $productId)
     {
         try {
-            $user = Auth::guard('sanctum')->user();
+            $user = Auth::guard('sanctum')->user();  // Kiểm tra người dùng đã đăng nhập qua token
             $userId = $user ? $user->id : null;
             $productVariantId = $request->input('product_variant_id', null);
             $quantity = $request->input('quantity', 1);
 
             Log::info('Thêm vào giỏ hàng:', [
-                'Auth ID' => $userId,
+                'userId' => $userId,
                 'Product ID' => $productId,
                 'Product Variant ID' => $productVariantId
             ]);

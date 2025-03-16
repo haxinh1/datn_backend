@@ -177,15 +177,19 @@ class UserController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công']);
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(Request $request , $id)
     {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
+        }
         $request->validate([
             'current_password' => 'required',
             'new_password' => 'required|min:6',
             'confirm_password' => 'required|same:new_password'
         ]);
 
-        $user = $request->user();
+        // $user = $request->user();
 
 
         if (!Hash::check($request->current_password, $user->password)) {
@@ -199,7 +203,10 @@ class UserController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message1' => 'Mật khẩu đã được thay đổi thành công.'], 200);
+        return response()->json([
+            'message' => 'Mật khẩu đã được thay đổi thành công.',
+            'user_id' => $user->id
+        ], 200);
     }
 
     public function forgotPassword(Request $request)

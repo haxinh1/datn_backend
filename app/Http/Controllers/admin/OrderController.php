@@ -38,30 +38,31 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('🔥 DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
+        Log::info('DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
 
 
         DB::beginTransaction();
 
         try {
-            // Lấy user từ token để đảm bảo đăng nhập
-            $user = Auth::guard('sanctum')->user();
-            $userId = $user ? $user->id : null;
+            // Lấy userId từ frontend hoặc session
+            $userId = $request->input('user_id') ?? session()->get('user_id', null);
+            // Kiểm tra nếu đã đăng nhập
+            $user = $userId ? User::find($userId) : null;
 
-            // Lấy giỏ hàng dựa vào trạng thái đăng nhập
+            // Lấy giỏ hàng dựa vào userId
             if ($userId) {
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
-                Log::info('🔥 DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
+                Log::info('DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
 
-                $cartItems = collect(session()->get('cart', [])); // Dùng "cart" thay vì "session_cart"
+                $cartItems = collect(session()->get('cart', []));  
             }
 
             // Kiểm tra nếu giỏ hàng trống
             if ($cartItems->isEmpty()) {
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
-            // 🔥 Kiểm tra tồn kho trước khi đặt hàng
+            // Kiểm tra tồn kho trước khi đặt hàng
             foreach ($cartItems as $item) {
                 $product = Product::find($item['product_id']);
                 if (!$product) {

@@ -147,7 +147,7 @@ Route::prefix('admin')->group(function () {
 
     Route::post('/login', [AdminUserController::class, 'login']);
     Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
-    Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
+    Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 });
 // route login user
 
@@ -155,7 +155,7 @@ Route::post('/register', [ClientUserController::class, 'register']);
 Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
 Route::post('/login', [ClientUserController::class, 'login']);
 Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
+Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 

@@ -225,7 +225,17 @@ class UserController extends Controller
             'created_at' => now(),
         ]);
 
-        Mail::to($request->email)->send(new ResetPasswordMail($token));
+        $user = User::where('email', $request->email)->first();
+
+        if ($user->role == 'admin' || $user->role == 'manager') {
+
+            Mail::to($request->email)->send(new ResetPasswordMail($token, 'admin'));
+        } else {
+
+            Mail::to($request->email)->send(new ResetPasswordMail($token, 'customer'));
+        }
+
+        // Mail::to($request->email)->send(new ResetPasswordMail($token));
 
         return response()->json([
             'message' => 'Vui lòng kiểm tra email của bạn'

@@ -20,6 +20,7 @@ class Message extends Model
         'type',
         'is_read',
         'read_at',
+        'sender_type'
     ];
 
     // Mặc định timestamps đã có (created_at, updated_at)

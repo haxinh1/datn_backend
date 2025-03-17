@@ -4,6 +4,8 @@ use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
 use App\Http\Controllers\admin\BrandController;
 use App\Http\Controllers\admin\CartItemController;
+use App\Http\Controllers\admin\ChatSessionController;
+use App\Http\Controllers\admin\MessageController;
 use App\Http\Controllers\admin\ProductController;
 use App\Http\Controllers\admin\CategoryController;
 use App\Http\Controllers\admin\PaymentController;
@@ -51,10 +53,10 @@ Route::resource('/productVariant', ProductVariantController::class);
 //Route product
 // Route::resource('/products', ProductController::class);
 Route::get('/products/filter', [ProductController::class, 'filterProducts']);
-Route::get('/products', [ProductController::class, 'index']); 
-Route::post('/products', [ProductController::class, 'store']); 
-Route::get('/products/{id}', [ProductController::class, 'show']); 
-Route::put('/products/{id}', [ProductController::class, 'update']); 
+Route::get('/products', [ProductController::class, 'index']);
+Route::post('/products', [ProductController::class, 'store']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 Route::put('/products/edit/active/{id}', [ProductController::class, 'active']);
 
@@ -202,4 +204,23 @@ Route::prefix('comments')->group(function () {
     Route::post('/{id}/update', [CommentController::class, 'update']); // Cập nhật trạng thái bình luận
     Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
     Route::post('/', [CommentController::class, 'store']); //  // Duỵyệt nhiều comment
+});
+
+
+Route::prefix('chat')->group(function () {
+    // Tạo 1 phiên chat
+    Route::post('/create-session', [ChatSessionController::class, 'createSession']);
+    // Danh sách phiên chat
+    Route::get('/sessions', [ChatSessionController::class, 'getSessions']);
+    // Đóng phiên chat
+    Route::post('/close-session/{id}', [ChatSessionController::class, 'closeSession']);
+
+    // Tin nhắn
+    // Gửi tin nhắn  cho cả admin và client
+    Route::post('/send-message', [MessageController::class, 'sendMessage']);
+
+    // Lấy danh sách tin nhắn trong 1 phiên chat
+    Route::get('/messages/{chatSessionId}', [MessageController::class, 'getMessages']);
+
+    Route::post('/mark-as-read/{id}', [MessageController::class, 'markAsRead']);
 });

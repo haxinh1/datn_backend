@@ -15,6 +15,7 @@ use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -42,7 +43,6 @@ class UserController extends Controller
         }
 
         try {
-            $code = random_int(100000, 999999);
             $user = User::create([
                 'phone_number' => $request->phone_number,
                 'email' => $request->email,
@@ -68,11 +68,14 @@ class UserController extends Controller
 
 
             $code = random_int(100000, 999999);
+            $expiresTime = Carbon::now()->addMinutes(2); 
+
             DB::table('email_verification_codes')->insert([
                 'user_id' => $user->id,
                 'code' => $code,
                 'created_at' => now(),
                 'updated_at' => now(),
+                'expires_at' => $expiresTime, 
             ]);
 
             // Gửi email xác nhận
@@ -111,9 +114,12 @@ class UserController extends Controller
                 ->first();
 
             if (!$verification_code) {
-                return response()->json(['message' => 'Mã xác nhận không hợp lệ hoặc đã hết hạn!'], 400);
+                return response()->json(['message' => 'Mã xác nhận không hợp lệ '], 400);
             }
 
+            if (Carbon::now()->gt(Carbon::parse($verification_code->expires_at))) {
+                return response()->json(['message' => 'Mã xác nhận đã hết hạn!'], 400);
+            }
 
             $user->status = 'active';
             $user->save();

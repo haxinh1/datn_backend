@@ -32,6 +32,16 @@ class OrderController extends Controller
             ->get();
         return response()->json(['orders' => $orders], 200);
     }
+    // Lọc theo userId
+    public function getOrdersByUserId($userId)
+    {
+        $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['orders' => $orders], 200);
+    }
 
     /**
      * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
@@ -55,7 +65,7 @@ class OrderController extends Controller
             } else {
                 Log::info('DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
 
-                $cartItems = collect(session()->get('cart', []));  
+                $cartItems = collect(session()->get('cart', []));
             }
 
             // Kiểm tra nếu giỏ hàng trống

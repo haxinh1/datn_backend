@@ -60,7 +60,7 @@ class UserController extends Controller
         $user->status         = $validatedData['status'] ?? 'active';
         $user->google_id      = $validatedData['google_id'] ?? null;
         $user->total_spent    = 0; 
-        $user->rank           = 'No Rank'; 
+        $user->rank           = 'Đồng'; 
         $user->save();
 
         return response()->json($user, 201);
@@ -193,55 +193,5 @@ class UserController extends Controller
             'message' => 'Mật khẩu đã được thay đổi thành công.',
             'user_id' => $user->id
         ], 200);
-    }
-    public function updateUserRank($userId)
-    {
-
-        $totalSpent = Order::where('user_id', $userId)
-            ->where('status_id', 'completed')
-            ->sum('total_amount');
-
-        $rank = 'No Rank';
-        if ($totalSpent >= 20000000) {
-            $rank = 'Diamond';
-        } elseif ($totalSpent >= 10000000) {
-            $rank = 'Gold';
-        } elseif ($totalSpent >= 5000000) {
-            $rank = 'Silver';
-        } elseif ($totalSpent >= 1000000) {
-            $rank = 'Bronze';
-        }
-
-
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
-        }
-
-        $user->update([
-            'rank' => $rank,
-            'total_spent' => $totalSpent
-        ]);
-
-        return response()->json([
-            'message' => 'Cập nhật rank thành công',
-            'user_id' => $userId,
-            'total_spent' => $totalSpent,
-            'rank' => $rank ?? 'No Rank'
-        ]);
-    }
-
-    public function getRank($userId)
-    {
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
-        }
-
-        return response()->json([
-            'user_id' => $userId,
-            'total_spent' => $user->total_spent ?? 0,
-            'rank' => $user->rank ?? 'No Rank'
-        ]);
     }
 }

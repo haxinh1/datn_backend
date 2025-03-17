@@ -54,7 +54,7 @@ class UserController extends Controller
                 'role' => 'customer',
                 'status' => 'inactive',
                 'total_spent' => 0,
-                'rank' => 'No Rank',
+                'rank' => 'Đồng',
             ]);
 
 

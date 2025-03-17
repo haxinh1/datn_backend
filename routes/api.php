@@ -159,18 +159,14 @@ Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 
-
-Route::post('/users/update-rank/{userId}', [AdminUserController::class, 'updateUserRank']);
-Route::get('/users/get-rank/{userId}', [AdminUserController::class, 'getRank']);
 // user address
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);
-    Route::get('user-addresses/search', [UserAddressController::class, 'search']); // Thêm route này
+    Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']); 
     Route::post('user-addresses', [UserAddressController::class, 'store']);
     Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
 });
-
 
 
 

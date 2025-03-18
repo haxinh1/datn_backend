@@ -18,6 +18,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+
+// Chat event
 Broadcast::channel('chat.{chatSessionId}', function ($user, $chatSessionId) {
     $chatSession = ChatSession::where('id', $chatSessionId)->first();
 

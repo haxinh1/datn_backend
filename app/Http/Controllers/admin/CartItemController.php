@@ -16,10 +16,11 @@ class CartItemController extends Controller
 
     public function index(Request $request)
     {
+        // Kiểm tra nếu người dùng đã đăng nhập
         $user = Auth::guard('sanctum')->user();
         $userId = $user ? $user->id : null;
 
-        Log::info('Lấy giỏ hàng:', ['Auth ID' => $userId]);
+        Log::info('Lấy giỏ hàng:', ['userId' => $userId]);
 
         if ($userId) {
             // Nếu đã đăng nhập, lấy giỏ hàng từ database
@@ -32,13 +33,23 @@ class CartItemController extends Controller
                 'user_id' => $userId
             ]);
         } else {
-            // Nếu chưa đăng nhập, lấy giỏ hàng từ session
+            // Nếu chưa đăng nhập, lấy giỏ hàng từ session (cho khách vãng lai)
             $sessionCart = session()->get('cart', []);
 
-            return response()->json([
-                'cart_items' => array_values($sessionCart), // Trả về mảng giá trị của session
-                'message' => 'Giỏ hàng lấy từ session'
-            ]);
+            // Kiểm tra nếu giỏ hàng tồn tại trong session
+            if (!empty($sessionCart)) {
+                Log::info('Giỏ hàng lấy từ session:', ['cart' => $sessionCart]);
+
+                return response()->json([
+                    'cart_items' => array_values($sessionCart),  // Trả về mảng giá trị của sessionCart
+                    'message' => 'Giỏ hàng lấy từ session'
+                ]);
+            } else {
+                return response()->json([
+                    'cart_items' => [],
+                    'message' => 'Giỏ hàng trống'
+                ], 200);
+            }
         }
 
         return response()->json([
@@ -47,16 +58,17 @@ class CartItemController extends Controller
         ], 404);
     }
 
+
     public function store(Request $request, $productId)
     {
         try {
-            $user = Auth::guard('sanctum')->user();
+            $user = Auth::guard('sanctum')->user();  // Kiểm tra người dùng đã đăng nhập qua token
             $userId = $user ? $user->id : null;
             $productVariantId = $request->input('product_variant_id', null);
             $quantity = $request->input('quantity', 1);
 
             Log::info('Thêm vào giỏ hàng:', [
-                'Auth ID' => $userId,
+                'userId' => $userId,
                 'Product ID' => $productId,
                 'Product Variant ID' => $productVariantId
             ]);
@@ -109,35 +121,36 @@ class CartItemController extends Controller
                     'cart_item' => $cartItem ?? $existingCartItem
                 ]);
             } else {
-                // Nếu chưa đăng nhập → Lưu vào session
-                $sessionCart = session()->get('cart', []);
-                $key = $productId . '-' . ($productVariantId ?? 'default');
+                $sessionCart = session()->get('cart', []);  // Lấy giỏ hàng từ session
+                $key = $productId . '-' . ($productVariantId ?? 'default');  // Định danh sản phẩm
 
+                // Số lượng hiện tại trong giỏ hàng
                 $cartQuantity = isset($sessionCart[$key]) ? $sessionCart[$key]['quantity'] : 0;
 
-                // Kiểm tra nếu tổng số lượng vượt quá tồn kho
+                // Kiểm tra nếu tổng số lượng sản phẩm trong giỏ hàng vượt quá số lượng tồn kho
                 if (($cartQuantity + $quantity) > $availableStock) {
-                    return response()->json([
-                        'message' => 'Không đủ tồn kho. Chỉ còn ' . $availableStock . ' sản phẩm.'
-                    ], 400);
+                    return response()->json(['message' => 'Không đủ tồn kho. Chỉ còn ' . $availableStock . ' sản phẩm.'], 400);
                 }
 
+                // Cập nhật giỏ hàng (tăng số lượng sản phẩm nếu đã tồn tại trong giỏ)
                 if (isset($sessionCart[$key])) {
-                    $sessionCart[$key]['quantity'] += $quantity;
+                    $sessionCart[$key]['quantity'] += $quantity;  // Tăng số lượng
                 } else {
+                    // Nếu sản phẩm chưa có trong giỏ, thêm mới vào giỏ hàng
                     $sessionCart[$key] = [
                         'product_id' => $productId,
                         'product_variant_id' => $productVariantId,
                         'quantity' => $quantity,
-                        'price' => $price
+                        'price' => $price  // Lấy giá từ database
                     ];
                 }
 
+                // Lưu lại giỏ hàng vào session
                 session()->put('cart', $sessionCart);
 
                 return response()->json([
                     'message' => 'Sản phẩm đã thêm vào giỏ hàng (Session)',
-                    'cart_items' => array_values($sessionCart)
+                    'cart_items' => array_values($sessionCart)  // Trả về giỏ hàng đã được cập nhật
                 ]);
             }
         } catch (\Exception $e) {

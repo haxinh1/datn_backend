@@ -86,6 +86,7 @@ Route::prefix('orders')->group(function () {
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
+    Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
 });
 
 Route::prefix('payments')->group(function () {
@@ -149,7 +150,7 @@ Route::prefix('admin')->group(function () {
 
     Route::post('/login', [AdminUserController::class, 'login']);
     Route::post('/logout', [AdminUserController::class, 'logout'])->middleware('auth:sanctum');
-    Route::post('/change-password', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
+    Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 });
 // route login user
 
@@ -157,22 +158,18 @@ Route::post('/register', [ClientUserController::class, 'register']);
 Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
 Route::post('/login', [ClientUserController::class, 'login']);
 Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('/change-password', [ClientUserController::class, 'changePassword'])->middleware('auth:sanctum');
+Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 
-
-Route::post('/users/update-rank/{userId}', [AdminUserController::class, 'updateUserRank']);
-Route::get('/users/get-rank/{userId}', [AdminUserController::class, 'getRank']);
 // user address
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);
-    Route::get('user-addresses/search', [UserAddressController::class, 'search']); // Thêm route này
+    Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']); 
     Route::post('user-addresses', [UserAddressController::class, 'store']);
     Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
 });
-
 
 
 

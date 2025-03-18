@@ -32,36 +32,47 @@ class OrderController extends Controller
             ->get();
         return response()->json(['orders' => $orders], 200);
     }
+    // Lọc theo userId
+    public function getOrdersByUserId($userId)
+    {
+        $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['orders' => $orders], 200);
+    }
 
     /**
      * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
      */
     public function store(Request $request)
     {
-        Log::info('🔥 DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
+        Log::info('DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
 
 
         DB::beginTransaction();
 
         try {
-            // Lấy user từ token để đảm bảo đăng nhập
-            $user = Auth::guard('sanctum')->user();
-            $userId = $user ? $user->id : null;
+            // Lấy userId từ frontend hoặc session
+            $userId = $request->input('user_id') ?? session()->get('user_id', null);
+            // Kiểm tra nếu đã đăng nhập
+            $user = $userId ? User::find($userId) : null;
 
-            // Lấy giỏ hàng dựa vào trạng thái đăng nhập
+            // Lấy giỏ hàng dựa vào userId
             if ($userId) {
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
-                Log::info('🔥 DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
+                Log::info('DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
 
-                $cartItems = collect(session()->get('cart', [])); // Dùng "cart" thay vì "session_cart"
+                $cartItems = collect(session()->get('cart', []));
             }
 
             // Kiểm tra nếu giỏ hàng trống
             if ($cartItems->isEmpty()) {
                 return response()->json(['message' => 'Giỏ hàng trống'], 400);
             }
-            // 🔥 Kiểm tra tồn kho trước khi đặt hàng
+            // Kiểm tra tồn kho trước khi đặt hàng
             foreach ($cartItems as $item) {
                 $product = Product::find($item['product_id']);
                 if (!$product) {
@@ -143,6 +154,12 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Thiếu phương thức thanh toán'], 400);
             }
 
+            // Kiểm tra nếu khách vãng lai, chỉ cho phép VNPay
+            if (!$userId && $paymentMethod != 'vnpay') {
+                return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay'], 400);
+            }
+
+            // Kiểm tra nếu phương thức thanh toán không hợp lệ (cho phép cả VNPay và COD cho người dùng đã đăng nhập)
             if (!in_array($paymentMethod, ['vnpay', 'cod'])) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }

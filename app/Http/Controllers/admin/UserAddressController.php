@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class UserAddressController extends Controller
 {
-  
+
     /**
      * Display a listing of the resource.
      */
@@ -25,7 +25,7 @@ class UserAddressController extends Controller
     /**
      * Show the form for creating a new resource.fssfdgdgd
      */
-  
+
 
     /**
      * Store a newly created resource in storage.
@@ -39,7 +39,7 @@ class UserAddressController extends Controller
         ]);
 
         $user = Auth::user();
-       
+
         if ($request->id_default) {
             UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
@@ -53,7 +53,17 @@ class UserAddressController extends Controller
 
         return response()->json($address, 201);
     }
-   
+    public function show($user_id)
+    {
+        $address = UserAddress::where('user_id', $user_id)->get();
+
+        if ($address->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy địa chỉ cho người dùng với ID này.'], 404);
+        }
+
+        return response()->json($address, 200);
+    }
+
     public function update(Request $request,  $id)
     {
         $request->validate([

@@ -15,6 +15,7 @@ use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetTokens;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -42,7 +43,6 @@ class UserController extends Controller
         }
 
         try {
-            $code = random_int(100000, 999999);
             $user = User::create([
                 'phone_number' => $request->phone_number,
                 'email' => $request->email,
@@ -54,7 +54,7 @@ class UserController extends Controller
                 'role' => 'customer',
                 'status' => 'inactive',
                 'total_spent' => 0,
-                'rank' => 'No Rank',
+                'rank' => 'Đồng',
             ]);
 
 
@@ -68,11 +68,14 @@ class UserController extends Controller
 
 
             $code = random_int(100000, 999999);
+            $expiresTime = Carbon::now()->addMinutes(2); 
+
             DB::table('email_verification_codes')->insert([
                 'user_id' => $user->id,
                 'code' => $code,
                 'created_at' => now(),
                 'updated_at' => now(),
+                'expires_at' => $expiresTime, 
             ]);
 
             // Gửi email xác nhận
@@ -111,9 +114,12 @@ class UserController extends Controller
                 ->first();
 
             if (!$verification_code) {
-                return response()->json(['message' => 'Mã xác nhận không hợp lệ hoặc đã hết hạn!'], 400);
+                return response()->json(['message' => 'Mã xác nhận không hợp lệ '], 400);
             }
 
+            if (Carbon::now()->gt(Carbon::parse($verification_code->expires_at))) {
+                return response()->json(['message' => 'Mã xác nhận đã hết hạn!'], 400);
+            }
 
             $user->status = 'active';
             $user->save();
@@ -177,15 +183,19 @@ class UserController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công']);
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(Request $request , $id)
     {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
+        }
         $request->validate([
             'current_password' => 'required',
             'new_password' => 'required|min:6',
             'confirm_password' => 'required|same:new_password'
         ]);
 
-        $user = $request->user();
+        // $user = $request->user();
 
 
         if (!Hash::check($request->current_password, $user->password)) {
@@ -199,7 +209,10 @@ class UserController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message1' => 'Mật khẩu đã được thay đổi thành công.'], 200);
+        return response()->json([
+            'message' => 'Mật khẩu đã được thay đổi thành công.',
+            'user_id' => $user->id
+        ], 200);
     }
 
     public function forgotPassword(Request $request)
@@ -218,7 +231,17 @@ class UserController extends Controller
             'created_at' => now(),
         ]);
 
-        Mail::to($request->email)->send(new ResetPasswordMail($token));
+        $user = User::where('email', $request->email)->first();
+
+        if ($user->role == 'admin' || $user->role == 'manager') {
+
+            Mail::to($request->email)->send(new ResetPasswordMail($token, 'admin'));
+        } else {
+
+            Mail::to($request->email)->send(new ResetPasswordMail($token, 'customer'));
+        }
+
+        // Mail::to($request->email)->send(new ResetPasswordMail($token));
 
         return response()->json([
             'message' => 'Vui lòng kiểm tra email của bạn'

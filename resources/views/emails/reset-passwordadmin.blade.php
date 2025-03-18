@@ -22,14 +22,14 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-
+/* 
         .header {
             background-color: #4267b2;
             color: white;
             padding: 20px;
             font-size: 24px;
             border-radius: 10px 10px 0 0;
-        }
+        } */
 
         .content {
             margin-top: 20px;

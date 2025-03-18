@@ -17,17 +17,23 @@ class ResetPasswordMail extends Mailable
      * Create a new message instance.
      */
     public $token;
+    public $role;
 
-    public function __construct($token)
+    public function __construct($token, $role)
     {
         $this->token = $token;
+        $this->role = $role;
     }
 
     public function build()
     {
+        if ($this->role == 'admin' || $this->role == 'manager') {
+            return $this->subject('Đặt lại mật khẩu')
+                ->view('emails.reset-passwordadmin')
+                ->with(['token' => $this->token]);
+        }
         return $this->subject('Đặt lại mật khẩu')
-                    ->view('emails.reset-password')
-                    ->with(['token' => $this->token]);
+            ->view('emails.reset-password')
+            ->with(['token' => $this->token]);
     }
-   
 }

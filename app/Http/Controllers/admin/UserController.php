@@ -37,7 +37,7 @@ class UserController extends Controller
             'phone_number'   => 'required|unique:users,phone_number|max:20',
             'email'          => 'nullable|email|unique:users,email|max:100',
             'password'       => 'required|min:6',
-            'fullname'       => 'nullable|max:100',
+            'fullname'       => 'required|max:100',
             'avatar'         => 'nullable|url',
             'gender'         => ['nullable', Rule::in(['male', 'female', 'other'])],
             'birthday'       => 'nullable|date',
@@ -60,7 +60,7 @@ class UserController extends Controller
         $user->status         = $validatedData['status'] ?? 'active';
         $user->google_id      = $validatedData['google_id'] ?? null;
         $user->total_spent    = 0; 
-        $user->rank           = 'No Rank'; 
+        $user->rank           = 'Đồng'; 
         $user->save();
 
         return response()->json($user, 201);
@@ -73,86 +73,32 @@ class UserController extends Controller
             return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
         }
 
-        // $validatedData = $request->validate([
-        //     'phone_number'   => 'sometimes|required|max:20|unique:users,phone_number,'.$user->id,
-        //     'email'          => 'sometimes|nullable|email|max:100|unique:users,email,'.$user->id,
-        //     'password'       => 'sometimes|required|min:6',
-        //     'fullname'       => 'sometimes|nullable|max:100',
-        //     'avatar'         => 'sometimes|nullable|url',
-        //     'gender'         => ['sometimes','nullable', Rule::in(['male', 'female', 'other'])],
-        //     'birthday'       => 'sometimes|nullable|date',
-        //     'loyalty_points' => 'sometimes|nullable|integer|min:0',
-        //     'role'           => ['sometimes','nullable', Rule::in(['customer', 'admin', 'manager'])],
-        //     'status'         => ['sometimes','nullable', Rule::in(['active', 'inactive', 'banned'])],
-        //     'google_id'      => 'sometimes|nullable|numeric',
-        // ]);
-
-        // if(isset($validatedData['phone_number'])) {
-        //     $user->phone_number = $validatedData['phone_number'];
-        // }
-        // if(array_key_exists('email', $validatedData)) {
-        //     $user->email = $validatedData['email'];
-        // }
-        // if(isset($validatedData['password'])) {
-        //     $user->password = Hash::make($validatedData['password']);
-        // }
-        // if(isset($validatedData['fullname'])) {
-        //     $user->fullname = $validatedData['fullname'];
-        // }
-        // if(isset($validatedData['avatar'])) {
-        //     $user->avatar = $validatedData['avatar'];
-        // }
-        // if(isset($validatedData['gender'])) {
-        //     $user->gender = $validatedData['gender'];
-        // }
-        // if(isset($validatedData['birthday'])) {
-        //     $user->birthday = $validatedData['birthday'];
-        // }
-        // if(isset($validatedData['loyalty_points'])) {
-        //     $user->loyalty_points = $validatedData['loyalty_points'];
-        // }
-        // if(isset($validatedData['role'])) {
-        //     $user->role = $validatedData['role'];
-        // }
-        // if(isset($validatedData['status'])) {
-        //     $user->status = $validatedData['status'];
-        // }
-        // if(isset($validatedData['google_id'])) {
-        //     $user->google_id = $validatedData['google_id'];
-        // }
-
-        if ($request->has('phone_number')) {
-            $user->phone_number = $request->phone_number;
+        $validatedData = $request->validate([
+            'phone_number'   => 'sometimes|regex:/^0[0-9]{9}$/|required|max:20|unique:users,phone_number,'.$user->id,
+            'email'          => 'sometimes|required|email|max:100|unique:users,email,'.$user->id,
+            'fullname'       => 'sometimes|required|max:100',
+            'avatar'         => 'sometimes|nullable|url',
+            'gender'         => ['sometimes','nullable', Rule::in(['male', 'female', 'other'])],
+            'birthday'       => 'sometimes|nullable|date',
+        ]);
+        
+        if(isset($validatedData['phone_number'])) {
+            $user->phone_number = $validatedData['phone_number'];
         }
-        if ($request->has('email')) {
-            $user->email = $request->email;
+        if(array_key_exists('email', $validatedData)) {
+            $user->email = $validatedData['email'];
         }
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->password);
+        if(isset($validatedData['fullname'])) {
+            $user->fullname = $validatedData['fullname'];
         }
-        if ($request->has('fullname')) {
-            $user->fullname = $request->fullname;
+        if(isset($validatedData['avatar'])) {
+            $user->avatar = $validatedData['avatar'];
         }
-        if ($request->has('avatar')) {
-            $user->avatar = $request->avatar;
+        if(isset($validatedData['gender'])) {
+            $user->gender = $validatedData['gender'];
         }
-        if ($request->has('gender')) {
-            $user->gender = $request->gender;
-        }
-        if ($request->has('birthday')) {
-            $user->birthday = $request->birthday;
-        }
-        if ($request->has('loyalty_points')) {
-            $user->loyalty_points = $request->loyalty_points;
-        }
-        if ($request->has('role')) {
-            $user->role = $request->role;
-        }
-        if ($request->has('status')) {
-            $user->status = $request->status;
-        }
-        if ($request->has('google_id')) {
-            $user->google_id = $request->google_id;
+        if(isset($validatedData['birthday'])) {
+            $user->birthday = $validatedData['birthday'];
         }
 
         $user->save();
@@ -217,15 +163,19 @@ class UserController extends Controller
     }
 
 
-    public function changePassword(Request $request)
+    public function changePassword(Request $request , $id)
     {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
+        }
         $request->validate([
             'current_password' => 'required',
             'new_password' => 'required|min:6',
             'confirm_password' => 'required|same:new_password'
         ]);
 
-        $user = $request->user();
+        // $user = $request->user();
 
 
         if (!Hash::check($request->current_password, $user->password)) {
@@ -239,56 +189,9 @@ class UserController extends Controller
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message' => 'Mật khẩu đã được thay đổi thành công.'], 200);
-    }
-    public function updateUserRank($userId)
-    {
-
-        $totalSpent = Order::where('user_id', $userId)
-            ->where('status_id', 'completed')
-            ->sum('total_amount');
-
-        $rank = 'No Rank';
-        if ($totalSpent >= 20000000) {
-            $rank = 'Diamond';
-        } elseif ($totalSpent >= 10000000) {
-            $rank = 'Gold';
-        } elseif ($totalSpent >= 5000000) {
-            $rank = 'Silver';
-        } elseif ($totalSpent >= 1000000) {
-            $rank = 'Bronze';
-        }
-
-
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
-        }
-
-        $user->update([
-            'rank' => $rank,
-            'total_spent' => $totalSpent
-        ]);
-
         return response()->json([
-            'message' => 'Cập nhật rank thành công',
-            'user_id' => $userId,
-            'total_spent' => $totalSpent,
-            'rank' => $rank ?? 'No Rank'
-        ]);
-    }
-
-    public function getRank($userId)
-    {
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
-        }
-
-        return response()->json([
-            'user_id' => $userId,
-            'total_spent' => $user->total_spent ?? 0,
-            'rank' => $user->rank ?? 'No Rank'
-        ]);
+            'message' => 'Mật khẩu đã được thay đổi thành công.',
+            'user_id' => $user->id
+        ], 200);
     }
 }

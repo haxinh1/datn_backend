@@ -60,9 +60,10 @@ class MessageController extends Controller
             'type' => $request->type ?? 'text', // Loại tin nhắn, mặc định là "text"
         ]);
 
+
+        // Phats ra event để client bắt web socket
         broadcast(new MessageSent($message))->toOthers();
 
-        // Trả về phản hồi JSON với dữ liệu tin nhắn vừa tạo
         return response()->json(['message' => 'Message sent', 'data' => $message]);
     }
 

@@ -77,7 +77,8 @@
 <body>
     <div class="container">
         <div class="header">
-            Đặt lại mật khẩu
+            <h2>  Đặt lại mật khẩu</h2>
+          
         </div>
 
         <div class="content">

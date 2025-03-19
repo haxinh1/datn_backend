@@ -48,24 +48,24 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('DEBUG - Toàn bộ session khi đặt hàng:', session()->all());
+        Log::info('DEBUG - Toàn bộ giỏ hàng khi đặt hàng:', $request->cart_items);  // Giỏ hàng gửi từ frontend
 
 
         DB::beginTransaction();
 
         try {
-            // Lấy userId từ frontend hoặc session
-            $userId = $request->input('user_id') ?? session()->get('user_id', null);
+            // Lấy userId từ frontend hoặc local
+            $userId = $request->input('user_id') ?? null;
+
             // Kiểm tra nếu đã đăng nhập
             $user = $userId ? User::find($userId) : null;
 
-            // Lấy giỏ hàng dựa vào userId
+            // Nếu người dùng đã đăng nhập, lấy giỏ hàng từ database
             if ($userId) {
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
-            } else {
-                Log::info('DEBUG - Giỏ hàng trong session khi đặt hàng:', ['cart' => session()->get('cart')]);
-
-                $cartItems = collect(session()->get('cart', []));
+            } else {    
+                // Giỏ hàng sẽ được lấy từ session khi khách chưa đăng nhập
+                $cartItems = collect($request->input('cart_items'));  // Nhận giỏ hàng từ frontend
             }
 
             // Kiểm tra nếu giỏ hàng trống
@@ -210,11 +210,8 @@ class OrderController extends Controller
             // Xóa giỏ hàng sau khi đặt hàng thành công**
             if ($userId) {
                 CartItem::where('user_id', $userId)->delete();
-            } else {
-                session()->forget('cart'); // Xóa giỏ hàng của khách vãng lai
-            }
-
-
+            } 
+        
             // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
             if ($paymentMethod == 'vnpay') {
                 DB::commit(); // Commit trước khi gọi VNPay (tránh mất đơn hàng nếu lỗi)

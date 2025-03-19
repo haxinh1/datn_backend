@@ -5,13 +5,14 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\stocks\StoreStockRequest;
 use App\Http\Requests\stocks\UpdateStockRequest;
+use App\Imports\ProductStockImport;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
 use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockController extends Controller
 {
@@ -383,5 +384,40 @@ class StockController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $import = new ProductStockImport();
+            Excel::import($import, $request->file('file'));
+            
+            if (!empty($import->errors)) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra trong quá trình nhập kho.',
+                    'errors' => $import->errors,
+                ], 422);
+            }
+            
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Nhập kho thành công!',
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi hệ thống, vui lòng thử lại.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

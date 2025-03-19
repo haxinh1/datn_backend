@@ -28,7 +28,8 @@ class ProductStocksExport implements FromCollection, WithHeadings
                         WHEN stocks.status = -1 THEN 'Bị hủy' 
                         ELSE 'Không xác định' 
                      END as stock_status"),
-            'product_stocks.stock_id'
+            'product_stocks.stock_id',
+            DB::raw("DATE_FORMAT(product_stocks.created_at, '%d-%m-%Y') as formatted_created_at") // Định dạng ngày
         ])
         ->get();
     }
@@ -41,11 +42,12 @@ class ProductStocksExport implements FromCollection, WithHeadings
         return [
             "ID", 
             "Tên sản phẩm", 
-            "Tên biến thể", 
+            "Id biến thể", 
             "Số lượng", 
             "Giá", 
             "Trạng thái kho", 
-            "Mã kho"
+            "Mã kho",
+            "Ngày nhập",
         ];
     }
 }

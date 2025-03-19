@@ -69,6 +69,7 @@ Route::put('/productVariant/edit/active/{id}', [ProductVariantController::class,
 //Nhập kho
 Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 Route::resource('/stocks', StockController::class);
+Route::post('/import-stock', [StockController::class, 'import']);
 
 Route::get('/export-product-stocks', function () {
     return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');

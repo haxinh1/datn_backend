@@ -42,14 +42,38 @@ class OrderController extends Controller
 
         return response()->json(['orders' => $orders], 200);
     }
+    public function completedOrders(Request $request)
+    {
+        $orders = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
+            ->where('status_id', 7)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json(['message' => 'No completed orders found.'], 404);
+        }
+
+        return response()->json(['orders' => $orders], 200);
+    }
+
+    public function show($id)
+    {
+        // Lấy đơn hàng theo ID
+        $order = Order::with(['orderItems.product', 'payment', 'status', 'orderStatuses'])
+            ->where('id', $id)
+            ->first();
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+        return response()->json(['order' => $order], 200);
+    }
 
     /**
      * Đặt hàng (Thanh toán COD hoặc chuyển khoản)
      */
     public function store(Request $request)
     {
-        Log::info('DEBUG - Toàn bộ giỏ hàng khi đặt hàng:', $request->cart_items);  // Giỏ hàng gửi từ frontend
-
+        Log::info('DEBUG - Toàn bộ giỏ hàng khi đặt hàng:', ['cart_items' => $request->cart_items]);
 
         DB::beginTransaction();
 
@@ -63,7 +87,7 @@ class OrderController extends Controller
             // Nếu người dùng đã đăng nhập, lấy giỏ hàng từ database
             if ($userId) {
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
-            } else {    
+            } else {
                 // Giỏ hàng sẽ được lấy từ session khi khách chưa đăng nhập
                 $cartItems = collect($request->input('cart_items'));  // Nhận giỏ hàng từ frontend
             }
@@ -210,8 +234,8 @@ class OrderController extends Controller
             // Xóa giỏ hàng sau khi đặt hàng thành công**
             if ($userId) {
                 CartItem::where('user_id', $userId)->delete();
-            } 
-        
+            }
+
             // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
             if ($paymentMethod == 'vnpay') {
                 DB::commit(); // Commit trước khi gọi VNPay (tránh mất đơn hàng nếu lỗi)

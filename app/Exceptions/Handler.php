@@ -30,14 +30,7 @@ class Handler extends ExceptionHandler
 
 
     // mặc định là viết api
-    public function render($request, \Throwable $exception)
-    {
-        // Trả về JSON response mặc định
-        return response()->json([
-            'message' => $exception->getMessage(),
-            'status' => $exception->getCode() ?: 500,
-        ], $exception->getCode() ?: 500);
-    }
+   
 
 
 }

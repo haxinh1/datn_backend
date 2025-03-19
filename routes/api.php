@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\ProductStocksExport;
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
 use App\Http\Controllers\admin\BrandController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
+use Maatwebsite\Excel\Facades\Excel;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,7 +70,10 @@ Route::put('/productVariant/edit/active/{id}', [ProductVariantController::class,
 Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 Route::resource('/stocks', StockController::class);
 
-
+Route::get('/export-product-stocks', function () {
+    return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');
+    
+});
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');

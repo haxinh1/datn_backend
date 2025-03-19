@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\ProductStocksExport;
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
 use App\Http\Controllers\admin\BrandController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\clients\UserController as ClientUserController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Maatwebsite\Excel\Facades\Excel;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +38,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
 
 //Route thuộc tính
 Route::apiResource('/attributes', AttributeController::class);

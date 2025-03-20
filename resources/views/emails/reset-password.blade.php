@@ -23,13 +23,13 @@
             text-align: center;
         }
 
-        .header {
+        /* .header {
             background-color: #4267b2;
             color: white;
             padding: 20px;
             font-size: 24px;
             border-radius: 10px 10px 0 0;
-        }
+        } */
 
         .content {
             margin-top: 20px;
@@ -77,7 +77,7 @@
 <body>
     <div class="container">
         <div class="header">
-            Đặt lại mật khẩu
+            <h2>  Đặt lại mật khẩu</h2>
         </div>
 
         <div class="content">

@@ -82,18 +82,18 @@ Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 
 Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::class, 'destroy'])->name('cart.remove');
 
 
-// Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
 Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('orders.view'); // Danh sách đơn hàng
     Route::post('/place', [OrderController::class, 'store'])->name('orders.place'); // Đặt hàng
     Route::get('/{id}', [OrderController::class, 'show'])->name('orders.show'); // Chi tiết đơn hàng
-    Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus'); // Cập nhật trạng thái
     Route::get('{orderId}/items', [OrderItemController::class, 'index']);
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
 });
+
+Route::get('/completed', [OrderController::class, 'completedOrders']);
 
 Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']); // Tạo mới

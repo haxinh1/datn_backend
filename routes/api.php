@@ -180,7 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-// Category api
+// Category apiii
 
 
 // Api url = "baseUrl/api/categories"

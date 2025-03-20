@@ -77,7 +77,9 @@ class OrderOrderStatusController extends Controller
             2 => [3, 8], // Đã thanh toán -> Đang xử lý hoặc Hủy đơn
             3 => [4, 8], // Đang xử lý -> Đang giao hàng hoặc Hủy đơn
             4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
-            5 => [7],    // Đã giao hàng -> Hoàn thành
+            5 => [7, 9],    // Đã giao hàng -> Hoàn thành hoặc chờ xử lí trả hàng
+            6 => [4, 8],    // Giao hàng thất bại -> Giao hàng lại hoặc hủy đơn
+            7 => [9], // Đã hoàn thành -> Chờ xử lí trả hàng
             9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
             10 => [12],    // Chấp nhận trả hàng -> Đang xử lý trả hàng
             12 => [13]    // Đang xử lý trả hàng -> Người bán đã nhận hàng

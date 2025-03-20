@@ -57,14 +57,15 @@ class UserController extends Controller
                 'rank' => 'Đồng',
             ]);
 
-
+         if($request->filled('address') && $request->filled('detail_address')) {
             UserAddress::create([
                 'user_id' => $user->id,
                 'address' => $request->address,
                 'detail_address' => $request->detail_address,
                 'id_default' => true,
             ]);
-
+         }
+        
 
 
             $code = random_int(100000, 999999);

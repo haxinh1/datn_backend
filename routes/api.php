@@ -172,6 +172,7 @@ Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);
     Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']); 
+    Route::get('useraddress-addresses/{id}', [UserAddressController::class, 'showidAdress']); 
     Route::post('user-addresses', [UserAddressController::class, 'store']);
     Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);

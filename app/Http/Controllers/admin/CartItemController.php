@@ -89,7 +89,7 @@ class CartItemController extends Controller
             }
 
             if ($userId) {
-                // Nếu đã đăng nhập → Lưu vào database
+                // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
                 $existingCartItem = CartItem::where('product_id', $productId)
                     ->where('product_variant_id', $productVariantId)
                     ->where('user_id', $userId)

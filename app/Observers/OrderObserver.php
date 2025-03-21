@@ -31,7 +31,7 @@ class OrderObserver
             } elseif ($totalSpent >= 5000000) {
                 $rank = 'Bạc';
             } else {
-                $rank = 'Đồng';
+                $rank = 'Thành Viên';
             }
             $user = User::where('id', $order->user_id)->first();
             if ($user) {

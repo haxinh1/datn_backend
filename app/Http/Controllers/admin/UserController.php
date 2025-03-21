@@ -59,8 +59,8 @@ class UserController extends Controller
         $user->role           = $validatedData['role'] ?? 'customer';
         $user->status         = $validatedData['status'] ?? 'active';
         $user->google_id      = $validatedData['google_id'] ?? null;
-        $user->total_spent    = 0; 
-        $user->rank           = 'Đồng'; 
+        $user->total_spent    = 0;
+        $user->rank           = 'Thành Viên';
         $user->save();
 
         return response()->json($user, 201);
@@ -74,31 +74,39 @@ class UserController extends Controller
         }
 
         $validatedData = $request->validate([
-            'phone_number'   => 'sometimes|regex:/^0[0-9]{9}$/|required|max:20|unique:users,phone_number,'.$user->id,
-            'email'          => 'sometimes|required|email|max:100|unique:users,email,'.$user->id,
+            'phone_number'   => 'sometimes|regex:/^0[0-9]{9}$/|required|max:20|unique:users,phone_number,' . $user->id,
+            'email'          => 'sometimes|required|email|max:100|unique:users,email,' . $user->id,
             'fullname'       => 'sometimes|required|max:100',
             'avatar'         => 'sometimes|nullable|url',
-            'gender'         => ['sometimes','nullable', Rule::in(['male', 'female', 'other'])],
+            'gender'         => ['sometimes', 'nullable', Rule::in(['male', 'female', 'other'])],
             'birthday'       => 'sometimes|nullable|date',
+            'role'           => ['sometimes', Rule::in(['customer', 'admin', 'manager'])], 
+            'status'         => ['sometimes', Rule::in(['active', 'inactive'])], 
         ]);
-        
-        if(isset($validatedData['phone_number'])) {
+
+        if (isset($validatedData['phone_number'])) {
             $user->phone_number = $validatedData['phone_number'];
         }
-        if(array_key_exists('email', $validatedData)) {
+        if (array_key_exists('email', $validatedData)) {
             $user->email = $validatedData['email'];
         }
-        if(isset($validatedData['fullname'])) {
+        if (isset($validatedData['fullname'])) {
             $user->fullname = $validatedData['fullname'];
         }
-        if(isset($validatedData['avatar'])) {
+        if (isset($validatedData['avatar'])) {
             $user->avatar = $validatedData['avatar'];
         }
-        if(isset($validatedData['gender'])) {
+        if (isset($validatedData['gender'])) {
             $user->gender = $validatedData['gender'];
         }
-        if(isset($validatedData['birthday'])) {
+        if (isset($validatedData['birthday'])) {
             $user->birthday = $validatedData['birthday'];
+        }
+        if (isset($validatedData['role'])) {
+            $user->role = $validatedData['role']; 
+        }
+        if (isset($validatedData['status'])) {
+            $user->status = $validatedData['status'];
         }
 
         $user->save();
@@ -163,7 +171,7 @@ class UserController extends Controller
     }
 
 
-    public function changePassword(Request $request , $id)
+    public function changePassword(Request $request, $id)
     {
         $user = User::find($id);
         if (!$user) {

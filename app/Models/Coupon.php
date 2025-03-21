@@ -10,7 +10,7 @@ class Coupon extends Model
 {
     use HasFactory, SoftDeletes;
 
-    
+
     protected $fillable = [
         'code',
         'title',
@@ -23,9 +23,12 @@ class Coupon extends Model
         'is_active',
         'start_date',
         'end_date',
+
+
+
     ];
 
-    
+
     protected $casts = [
         'discount_value' => 'float',
         'usage_limit' => 'integer',

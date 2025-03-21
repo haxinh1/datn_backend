@@ -184,8 +184,19 @@ class CommentController extends Controller
     {
         $comment = Comment::find($id);
 
+        $comment = Comment::find($id);
+
         if (!$comment) {
             return response()->json(['message' => 'Comment not found!'], 404);
+        }
+
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found!'], 404);
+        }
+
+
+        if (auth()->id() !== $comment->user_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $validator = Validator::make($request->all(), [

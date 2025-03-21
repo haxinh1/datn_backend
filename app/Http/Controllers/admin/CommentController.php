@@ -122,6 +122,20 @@ class CommentController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+
+        // 🛑 Kiểm tra xem user đã có comment cho sản phẩm này chưa
+        $existingComment = Comment::where('products_id', $request->products_id)
+            ->where('users_id', $userId)
+            ->whereNull('parent_id') // Đảm bảo chỉ kiểm tra comment chính, không tính reply
+            ->exists();
+
+        if ($existingComment) {
+            return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
+        }
+
+        // Kiểm tra xem người dùng đã mua sản phẩm này hayt chưa
+
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }

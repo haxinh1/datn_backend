@@ -151,6 +151,7 @@ Route::prefix('admin')->group(function () {
 Route::prefix('admin')->group(function () {
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
     Route::get('/users', [AdminUserController::class, 'index']);
+    Route::get('/users/customer', [AdminUserController::class, 'index1']);
     Route::get('/users/{id}', [AdminUserController::class, 'show']);
     Route::post('/users', [AdminUserController::class, 'store']);
     Route::put('/users/{id}', [AdminUserController::class, 'update']);

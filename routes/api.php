@@ -95,6 +95,8 @@ Route::prefix('orders')->group(function () {
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
 });
 
+Route::get('/completed', [OrderController::class, 'completedOrders']);
+
 Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']); // Tạo mới
     Route::get('/', [PaymentController::class, 'index']); // Lấy danh sách
@@ -172,6 +174,8 @@ Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);
     Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']);
+    Route::get('useraddress-addresses/{id}', [UserAddressController::class, 'showidAdress']);
+    Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']);
     Route::post('user-addresses', [UserAddressController::class, 'store']);
     Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
@@ -179,7 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-// Category api
+// Category apiii
 
 
 // Api url = "baseUrl/api/categories"

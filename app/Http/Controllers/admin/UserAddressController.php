@@ -37,22 +37,39 @@ class UserAddressController extends Controller
             'detail_address' => 'nullable|string',
             'id_default' => 'boolean',
         ]);
-
+    
         $user = Auth::user();
 
-        if ($request->id_default) {
+        $Address = UserAddress::where('user_id', $user->id)->exists();
+
+        $idDefault = !$Address ? true : ($request->id_default ?? false);
+    
+
+        if ($idDefault) {
             UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
-
+    
+        // Tạo địa chỉ mới
         $address = UserAddress::create([
             'user_id' => $user->id,
             'address' => $request->address,
             'detail_address' => $request->detail_address,
-            'id_default' => $request->id_default ?? false,
+            'id_default' => $idDefault,
         ]);
-
+    
         return response()->json($address, 201);
     }
+    public function showidAdress($id)
+    {
+        $address = UserAddress::find($id);
+
+        if (!$address) {
+            return response()->json(['message' => 'Không tìm thấy địa chỉ.'], 404);
+        }
+
+        return response()->json($address, 200);
+    }
+
     public function show($user_id)
     {
         $address = UserAddress::where('user_id', $user_id)->get();

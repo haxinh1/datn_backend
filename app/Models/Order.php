@@ -68,10 +68,8 @@ class Order extends Model
 
     public static function hasPurchasedProduct($userId, $productId)
     {
-        $completedStatus = OrderStatus::where('name', 'Completed')->value('id'); // Lấy ID trạng thái "Completed"
-
         return self::where('user_id', $userId)
-            ->where('status_id', $completedStatus)
+            ->where('status_id', 7)
             ->whereHas('orderItems', function ($query) use ($productId) {
                 $query->where('product_id', $productId);
             })

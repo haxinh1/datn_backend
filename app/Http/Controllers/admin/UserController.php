@@ -15,7 +15,15 @@ class UserController extends Controller
     {
         $user = User::with(['address' => function ($query) {
             $query->select('user_id', 'address', 'detail_address');
-        }])->get();
+        }])->where('role', 'admin')->orWhere('role', 'manager')->get();
+        return response()->json($user, 200);
+    }
+    
+    public function index1()
+    {
+        $user = User::with(['address' => function ($query) {
+            $query->select('user_id', 'address', 'detail_address');
+        }])->where('role', 'customer')->get();
         return response()->json($user, 200);
     }
 

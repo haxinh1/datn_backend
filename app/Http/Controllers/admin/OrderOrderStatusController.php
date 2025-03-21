@@ -156,7 +156,7 @@ class OrderOrderStatusController extends Controller
             }
 
             // Kiểm tra xem trạng thái mới có hợp lệ không
-            $validStatusTransitions = [
+            $validStatusTransitions = [ 
                 2 => [3, 8], // Đã thanh toán -> Đang xử lý hoặc Hủy đơn
                 3 => [4, 8], // Đang xử lý -> Đang giao hàng hoặc Hủy đơn
                 4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại

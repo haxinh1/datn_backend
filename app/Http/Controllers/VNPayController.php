@@ -182,42 +182,77 @@ class VNPayController extends Controller
             ], 400);
         }
 
-        // 🔹 Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
+        // Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
         if ($inputData['vnp_ResponseCode'] == '00') {
-            $order = Order::findOrFail($inputData['vnp_TxnRef']);
-            // Chỉ trừ stock nếu chưa trừ trước đó
-            if ($order->status_id != 2) {  // Nếu đơn hàng chưa được thanh toán
+            $order = Order::find($inputData['vnp_TxnRef']);
+
+            // Kiểm tra nếu không tìm thấy đơn hàng
+            if (!$order) {
+                Log::error("Order not found for TxnRef: {$inputData['vnp_TxnRef']}");
+                return response()->json(['message' => 'Đơn hàng không tồn tại'], 404);
+            }
+
+            // Thêm log để kiểm tra trạng thái đơn hàng trước khi cập nhật
+            Log::info("Order ID: {$order->id}, Current Status: {$order->status_id}");
+
+            // Kiểm tra nếu trạng thái của đơn hàng chưa phải là đã thanh toán (status_id = 1)
+            if ($order->status_id !== 1) {
+                Log::info("Order status is already updated. Current status: {$order->status_id}");
+                return response()->json(['message' => 'Đơn hàng đã được cập nhật trạng thái'], 200);
+            }
+
+            try {
+                // Cập nhật trạng thái đơn hàng thành 2 (Đã thanh toán)
+                $order->update(['status_id' => 2]);
+
+
+                // Log sau khi cập nhật
+                Log::info("Order ID: {$order->id}, Updated Status: {$order->status_id}");
+
+                // Trừ stock cho các sản phẩm trong đơn hàng
                 foreach ($order->orderItems as $item) {
                     if ($item->product_variant_id) {
-                        ProductVariant::where('id', $item->product_variant_id)->decrement('stock', $item->quantity);
+                        // Nếu có variant, trừ stock từ product_variant
+                        ProductVariant::where('id', $item->product_variant_id)
+                            ->decrement('stock', $item->quantity);
+                        Log::info("Decreased stock for ProductVariant ID: {$item->product_variant_id}, Quantity: {$item->quantity}");
                     } else {
-                        Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
+                        // Nếu không có variant, trừ stock từ product
+                        Product::where('id', $item->product_id)
+                            ->decrement('stock', $item->quantity);
+                        Log::info("Decreased stock for Product ID: {$item->product_id}, Quantity: {$item->quantity}");
                     }
                 }
 
-                // Cập nhật trạng thái đơn hàng đã thanh toán
-                $order->update([
-                    'status_id' => 2,
-                    'payment_id' => Payment::where('name', 'VNPay')->value('id')
+                // Lưu lịch sử trạng thái đơn hàng
+                OrderOrderStatus::create([
+                    'order_id' => $order->id,
+                    'order_status_id' => 2, // Trạng thái "Đã thanh toán"
+                    'note' => 'Thanh toán VNPay thành công.',
                 ]);
+
+                return redirect()->away(
+                    'http://localhost:5173/thanks?' . http_build_query([
+                        'success' => 'true',
+                        'order_id' => $order->id,
+                        'vnp_OrderInfo' => 'Thanh toan don hang ' . $order->code,
+                        'vnp_Amount' => $order->total_amount * 100,
+                        'vnp_ResponseCode' => '00',
+                        'vnp_CardType' => 'ATM'
+                    ])
+                );
+            } catch (\Exception $e) {
+                Log::error("Error updating order status for Order ID: {$order->id}, Error: " . $e->getMessage());
+                return response()->json(['message' => 'Lỗi hệ thống khi cập nhật trạng thái'], 500);
             }
-
-
-            // Cập nhật trạng thái mới vào `order_order_statuses`
-            OrderOrderStatus::create([
-                'order_id' => $order->id,
-                'order_status_id' => 2, // Trạng thái "Đã thanh toán"
-                'note' => 'Thanh toán VNPay thành công.',
-            ]);
-
-            return response()->json([
-                'message' => 'Thanh toán thành công',
-                'order' => $order
-            ], 200);
         } else {
-            return response()->json([
-                'message' => 'Thanh toán không thành công'
-            ], 400);
+            return redirect()->away(
+                'http://localhost:5173/thanks?' . http_build_query([
+                    'success' => 'false',
+                    'order_id' => $order->id ?? '',
+                    'vnp_ResponseCode' => $inputData['vnp_ResponseCode'] ?? 'unknown'
+                ])
+            );
         }
     }
 }

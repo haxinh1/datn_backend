@@ -4,6 +4,7 @@ namespace App\Http\Controllers\admin;
 
 
 use App\Models\CommentImage;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
@@ -104,6 +105,15 @@ class CommentController extends Controller
 
     public function store(Request $request)
     {
+
+        // Check xem gười dùng đã đăg hập chưa
+
+        $userId = auth()->id();
+        if (!$userId) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        $user = auth()->user();
+
         $validator = Validator::make($request->all(), [
             'products_id' => 'required|exists:products,id',
 //            'users_id'    => 'required|exists:users,id',  // Bỏ để lấy user đang đăng nhập thay vì hư trước khi chưa có auth
@@ -115,25 +125,22 @@ class CommentController extends Controller
         ]);
 
 
-        // Check xem gười dùng đã đăg hập chưa
+        $productId = $request->input('products_id');
+        if ($user && $user->role === "customer") {
+            //  Kiểm tra xem user đã có comment cho sản phẩm này chưa
+            $existingComment = Comment::where('products_id', $request->products_id)
+                ->where('users_id', $userId)
+                ->whereNull('parent_id') // Đảm bảo chỉ kiểm tra comment chính, không tính reply
+                ->exists();
 
-        $userId = auth()->id();
-        if (!$userId) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            if ($existingComment) {
+                return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
+            }
+            // Kiểm tra xem người dùng đã mua sản phẩm này hay chưa
+            if (!Order::hasPurchasedProduct($userId, $productId)) {
+                return response()->json(['error' => 'You must purchase this product to comment'], 403);
+            }
         }
-
-
-        // 🛑 Kiểm tra xem user đã có comment cho sản phẩm này chưa
-        $existingComment = Comment::where('products_id', $request->products_id)
-            ->where('users_id', $userId)
-            ->whereNull('parent_id') // Đảm bảo chỉ kiểm tra comment chính, không tính reply
-            ->exists();
-
-        if ($existingComment) {
-            return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
-        }
-
-        // Kiểm tra xem người dùng đã mua sản phẩm này hayt chưa
 
 
         if ($validator->fails()) {

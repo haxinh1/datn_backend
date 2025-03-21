@@ -9,6 +9,8 @@ use App\Models\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Events\OrderStatusUpdated;
+
 
 class OrderOrderStatusController extends Controller
 {
@@ -110,6 +112,9 @@ class OrderOrderStatusController extends Controller
             // Cập nhật trạng thái đơn hàng trong bảng `orders`
             $order->update(['status_id' => $request->order_status_id]);
 
+            // Phát sự kiện để cập nhật trạng thái thời gian thực
+            event(new OrderStatusUpdated($order)); // Phát sự kiện OrderStatusUpdated
+
             DB::commit();
 
             return response()->json([
@@ -152,7 +157,6 @@ class OrderOrderStatusController extends Controller
 
             // Kiểm tra xem trạng thái mới có hợp lệ không
             $validStatusTransitions = [
-                1 => [2],  // Chờ thanh toán -> Đã thanh toán
                 2 => [3, 8], // Đã thanh toán -> Đang xử lý hoặc Hủy đơn
                 3 => [4, 8], // Đang xử lý -> Đang giao hàng hoặc Hủy đơn
                 4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
@@ -181,6 +185,8 @@ class OrderOrderStatusController extends Controller
                     'modified_by' => Auth::id(),
                     'note' => $request->note,
                 ]);
+                // Phát sự kiện để cập nhật trạng thái thời gian thực
+                event(new OrderStatusUpdated($order)); // Phát sự kiện OrderStatusUpdated
             }
 
             // Cập nhật trạng thái mới cho tất cả các đơn hàng
@@ -199,4 +205,7 @@ class OrderOrderStatusController extends Controller
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
+
+
+    // cập nhật trạng thái hoàn thành sau 7 ngày 
 }

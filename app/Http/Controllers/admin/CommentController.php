@@ -4,6 +4,7 @@ namespace App\Http\Controllers\admin;
 
 
 use App\Models\CommentImage;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
@@ -19,9 +20,7 @@ class CommentController extends Controller
     {
         $query = Comment::query()->whereNull("parent_id");
 
-        // Danh sách bộ lọc
         $filters = ['rating', 'status', 'created_at', 'users_id'];
-
         foreach ($filters as $filter) {
             if ($request->has($filter)) {
                 if ($filter === 'created_at') {
@@ -32,15 +31,15 @@ class CommentController extends Controller
             }
         }
 
-        // Lấy danh sách comment kèm theo replies và images
         $comments = $query
             ->with([
+                'user',  // 🟢 Thêm thông tin user của comment
                 'replies' => function ($query) {
-                    $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
+                    $query->with('user')->orderBy('created_at', 'asc'); // 🟢 Lấy user của replies
                 },
-                'images' // Lấy danh sách ảnh kèm theo mỗi comment
+                'images'
             ])
-            ->orderBy('created_at', 'desc') // Sắp xếp theo thời gian tạo
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return response()->json($comments);
@@ -49,13 +48,15 @@ class CommentController extends Controller
 
     public function detail($id): JsonResponse
     {
+        // Có thể phân biiệt đựược role user khi lấy cả user ra
+
         $detailComment = Comment::with([
+            'user', // 🟢 Thêm thông tin user
             'replies' => function ($query) {
-                $query->orderBy('created_at', 'asc'); // Sắp xếp replies theo thời gian
+                $query->with('user')->orderBy('created_at', 'asc'); // 🟢 Lấy user của replies
             },
-            'images' // Lấy danh sách ảnh của comment
-        ])
-            ->find($id);
+            'images'
+        ])->find($id);
 
         if (!$detailComment) {
             return response()->json(['message' => 'Comment not found'], 404);
@@ -63,7 +64,6 @@ class CommentController extends Controller
 
         return response()->json($detailComment);
     }
-
 
     public function updateComment($id, Request $request): JsonResponse
     {
@@ -105,15 +105,42 @@ class CommentController extends Controller
 
     public function store(Request $request)
     {
+
+        // Check xem gười dùng đã đăg hập chưa
+
+        $userId = auth()->id();
+        if (!$userId) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        $user = auth()->user();
+
         $validator = Validator::make($request->all(), [
             'products_id' => 'required|exists:products,id',
-            'users_id'    => 'required|exists:users,id',
+//            'users_id'    => 'required|exists:users,id',  // Bỏ để lấy user đang đăng nhập thay vì hư trước khi chưa có auth
             'comments'    => 'required|string',
             'rating'      => 'nullable|integer|min:1|max:5',
-            'parent_id'   => 'nullable|exists:comments,id',
+            'parent_id'   => 'nullable|exists:comments,id', // parent_id là null thì là bình luận còn k thì là reply
             'status'      => 'nullable|integer|in:0,1', // 0: Ẩn, 1: Hiện
             'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
         ]);
+
+
+        $productId = $request->input('products_id');
+        if ($user && $user->role === "customer") {
+            //  Kiểm tra xem user đã có comment cho sản phẩm này chưa
+            $existingComment = Comment::where('products_id', $request->products_id)
+                ->where('users_id', $userId)
+                ->whereNull('parent_id') // Đảm bảo chỉ kiểm tra comment chính, không tính reply
+                ->exists();
+
+            if ($existingComment) {
+                return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
+            }
+            // Kiểm tra xem người dùng đã mua sản phẩm này hay chưa
+            if (!Order::hasPurchasedProduct($userId, $productId)) {
+                return response()->json(['error' => 'You must purchase this product to comment'], 403);
+            }
+        }
 
 
         if ($validator->fails()) {
@@ -123,18 +150,14 @@ class CommentController extends Controller
         // Tạo comment
         $comment = Comment::create([
             'products_id'  => $request->products_id,
-            'users_id'     => $request->users_id,
+            'users_id'     => $userId,
             'comments'     => $request->comments,
             'rating'       => $request->rating,
             'comment_date' => now(),
             'status'       => $request->status ?? 1,
             'parent_id'    => $request->parent_id,
         ]);
-
         // Xử lý ảnh nếu có
-
-
-
         if ($request->hasFile('images')) {
             $files = $request->file('images');
             if (!is_array($files)) {
@@ -149,6 +172,7 @@ class CommentController extends Controller
                 ]);
             }
         }
+
 
         return response()->json([
             'message' => 'Comment created successfully!',
@@ -209,5 +233,36 @@ class CommentController extends Controller
             'comment' => $comment->load('images'),
         ]);
     }
+
+    public function getCommentsByProduct(Request $request, $productId): JsonResponse
+    {
+        $query = Comment::where('products_id', $productId)->whereNull("parent_id");
+
+        $filters = ['rating', 'status', 'created_at', 'users_id'];
+        foreach ($filters as $filter) {
+            if ($request->has($filter)) {
+                if ($filter === 'created_at') {
+                    $query->whereDate($filter, $request->input($filter));
+                } else {
+                    $query->where($filter, $request->input($filter));
+                }
+            }
+        }
+
+        $comments = $query
+            ->with([
+                'user', // 🟢 Thêm thông tin user
+                'replies' => function ($query) {
+                    $query->with('user')->orderBy('created_at', 'asc'); // 🟢 Lấy user của replies
+                },
+                'images'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($comments);
+    }
+
+
 
 }

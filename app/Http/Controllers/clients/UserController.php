@@ -54,7 +54,7 @@ class UserController extends Controller
                 'role' => 'customer',
                 'status' => 'inactive',
                 'total_spent' => 0,
-                'rank' => 'Đồng',
+                'rank' => 'Thành Viên',
             ]);
 
          if($request->filled('address') && $request->filled('detail_address')) {

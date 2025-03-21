@@ -73,7 +73,7 @@ Route::post('/import-stock', [StockController::class, 'import']);
 
 Route::get('/export-product-stocks', function () {
     return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');
-    
+
 });
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
@@ -171,7 +171,7 @@ Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 // user address
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-addresses', [UserAddressController::class, 'index']);
-    Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']); 
+    Route::get('user-addresses/{user_id}', [UserAddressController::class, 'show']);
     Route::post('user-addresses', [UserAddressController::class, 'store']);
     Route::put('user-addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
@@ -206,7 +206,8 @@ Route::prefix('comments')->group(function () {
     Route::put('/{id}', [CommentController::class, 'updateComment']); // Cập nhật trạng thái bình luận
     Route::post('/{id}/update', [CommentController::class, 'update']); // Cập nhật trạng thái bình luận
     Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
-    Route::post('/', [CommentController::class, 'store']); //  // Duỵyệt nhiều comment
+    Route::post('/', [CommentController::class, 'store']); //  Tạo commet
+    Route::get('/product/{productId}', [CommentController::class, 'getCommentsByProduct']);
 });
 
 

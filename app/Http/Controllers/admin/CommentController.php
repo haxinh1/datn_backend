@@ -130,11 +130,7 @@ class CommentController extends Controller
             'status'       => $request->status ?? 1,
             'parent_id'    => $request->parent_id,
         ]);
-
         // Xử lý ảnh nếu có
-
-
-
         if ($request->hasFile('images')) {
             $files = $request->file('images');
             if (!is_array($files)) {
@@ -209,5 +205,37 @@ class CommentController extends Controller
             'comment' => $comment->load('images'),
         ]);
     }
+
+
+    public function getCommentsByProduct(Request $request, $productId): JsonResponse
+    {
+        $query = Comment::where('products_id', $productId)->whereNull("parent_id");
+
+
+        $filters = ['rating', 'status', 'created_at', 'users_id'];
+
+        foreach ($filters as $filter) {
+            if ($request->has($filter)) {
+                if ($filter === 'created_at') {
+                    $query->whereDate($filter, $request->input($filter));
+                } else {
+                    $query->where($filter, $request->input($filter));
+                }
+            }
+        }
+
+        $comments = $query
+            ->with([
+                'replies' => function ($query) {
+                    $query->orderBy('created_at', 'asc');
+                },
+                'images'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($comments);
+    }
+
 
 }

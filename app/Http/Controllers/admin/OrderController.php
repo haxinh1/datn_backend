@@ -28,7 +28,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
-            ->orderBy('id', 'asc')  
+            ->orderBy('id', 'asc')
             ->get();
         return response()->json(['orders' => $orders], 200);
     }
@@ -55,6 +55,20 @@ class OrderController extends Controller
 
         return response()->json(['orders' => $orders], 200);
     }
+    public function acceptedReturnOrders(Request $request)
+    {
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+            ->where('status_id', 10)  // Trạng thái "Chấp nhận trả hàng"
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json(['message' => 'No orders accepted for return found.'], 404);
+        }
+
+        return response()->json(['orders' => $orders], 200);
+    }
+
 
     public function show($id)
     {

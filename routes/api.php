@@ -96,6 +96,8 @@ Route::prefix('orders')->group(function () {
 });
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
+Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
+
 
 Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']); // Tạo mới

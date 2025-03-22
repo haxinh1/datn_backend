@@ -23,7 +23,7 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'parent_id' => 'nullable|exists:payments,id', // ✅ parent_id phải tồn tại hoặc null
+            'parent_id' => 'nullable|exists:payments,id',
             'name' => 'required|string|max:255',
             'logo' => 'nullable|string|max:255',
             'is_active' => 'boolean',
@@ -75,7 +75,7 @@ class PaymentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'parent_id' => 'nullable|exists:payments,id', // ✅ Cho phép cập nhật parent_id
+            'parent_id' => 'nullable|exists:payments,id', // Cho phép cập nhật parent_id
             'name' => 'sometimes|string|max:255',
             'logo' => 'sometimes|string|max:255',
             'is_active' => 'boolean',
@@ -94,21 +94,5 @@ class PaymentController extends Controller
             'message' => 'Cập nhật phương thức thanh toán thành công',
             'data' => $payment
         ], 200);
-    }
-
-    /**
-     * Xóa phương thức thanh toán
-     */
-    public function destroy($id)
-    {
-        $payment = Payment::find($id);
-
-        if (!$payment) {
-            return response()->json(['message' => 'Không tìm thấy phương thức thanh toán'], 404);
-        }
-
-        $payment->delete();
-
-        return response()->json(['message' => 'Phương thức thanh toán đã bị xóa'], 200);
     }
 }

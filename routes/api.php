@@ -103,7 +103,6 @@ Route::prefix('orders')->group(function () {
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
 
-Route::post('/shipping-fee', [ShippingController::class, 'calculateShippingFee']);
 
 
 Route::prefix('payments')->group(function () {

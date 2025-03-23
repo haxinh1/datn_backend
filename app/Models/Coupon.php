@@ -23,8 +23,8 @@ class Coupon extends Model
         'is_active',
         'start_date',
         'end_date',
-
-
+        'rank',
+        'coupon_type'
 
     ];
 
@@ -39,6 +39,14 @@ class Coupon extends Model
         'end_date' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'coupon_user');
+    }
+
 
     /*Kiem tra het han chua*/
     public function isExpired()

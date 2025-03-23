@@ -16,9 +16,9 @@ class AutoCompleteOrders extends Command
     {
         $this->info('Đang kiểm tra đơn hàng cần cập nhật trạng thái...');
 
-        // Lấy tất cả đơn hàng đang ở trạng thái 5 (đã giao hàng) trên 7 ngày
+        // Lấy tất cả đơn hàng đang ở trạng thái 5 (đã giao hàng) trên 1 ngày
         $orders = Order::where('status_id', 5)
-            ->where('updated_at', '<=', Carbon::now()->subDays(7))
+            ->where('updated_at', '<=', Carbon::now()->subDays(1))
             ->get();
 
         if ($orders->isEmpty()) {

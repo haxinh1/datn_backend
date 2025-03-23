@@ -183,7 +183,13 @@ class CartItemController extends Controller
                 return response()->json(['message' => 'Số lượng sản phẩm trong kho không đủ'], 400);
             }
 
-            $cartItem->update(['quantity' => $request->quantity]);
+            if ($request->input('add_quantity', false)) {
+                // Nếu có thêm `add_quantity` trong request, cộng thêm vào số lượng hiện tại
+                $cartItem->increment('quantity', $request->quantity);  // Tăng thêm số lượng
+            } else {
+                // Nếu không, thay thế số lượng cũ bằng số lượng mới
+                $cartItem->update(['quantity' => $request->quantity]);
+            }
             return response()->json(['message' => 'Cập nhật số lượng thành công']);
         } else {
             // Nếu chưa đăng nhập → Cập nhật session
@@ -201,8 +207,11 @@ class CartItemController extends Controller
                 return response()->json(['message' => 'Số lượng sản phẩm trong kho không đủ'], 400);
             }
 
-            // Cập nhật số lượng trong giỏ hàng
-            $cartItems[$key]['quantity'] = $request->quantity;
+            $oldQuantity = $cartItems[$key]['quantity'];
+
+            // Cập nhật số lượng mới
+            $cartItems[$key]['quantity'] = $oldQuantity + $request->quantity;
+
 
             return response()->json(['message' => 'Cập nhật số lượng thành công (Frontend)', 'cart_items' => $cartItems]);
         }
@@ -240,6 +249,26 @@ class CartItemController extends Controller
             unset($cartItems[$key]);
 
             return response()->json(['message' => 'Sản phẩm đã được xóa (Frontend)', 'cart_items' => $cartItems]);
+        }
+    }
+    public function destroyAll(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+        $userId = $user ? $user->id : null;
+
+        if ($userId) {
+            // Nếu đã đăng nhập → Xóa tất cả sản phẩm trong giỏ hàng từ database
+            CartItem::where('user_id', $userId)->delete();
+
+            return response()->json(['message' => 'Giỏ hàng đã được xóa (Database)']);
+        } else {
+            // Nếu chưa đăng nhập → Xóa tất cả sản phẩm trong giỏ hàng từ frontend (localStorage)
+            $cartItems = $request->input('cart_items', []);  // Nhận giỏ hàng từ frontend
+
+            // Xóa toàn bộ giỏ hàng
+            $cartItems = [];
+
+            return response()->json(['message' => 'Giỏ hàng đã được xóa (Frontend)', 'cart_items' => $cartItems]);
         }
     }
 }

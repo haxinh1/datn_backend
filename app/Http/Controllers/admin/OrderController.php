@@ -4,6 +4,7 @@ namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\VNPayController;
+use App\Http\Controllers\ShippingController; 
 use App\Models\Order;
 use App\Models\CartItem;
 use App\Models\OrderItem;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
+
 
 
 class OrderController extends Controller
@@ -196,6 +198,15 @@ class OrderController extends Controller
             if (!$userId && $paymentMethod != 'vnpay') {
                 return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay'], 400);
             }
+            // Gọi API tính phí vận chuyển từ ShippingController
+            $shippingController = new ShippingController();
+            $shippingFee = $shippingController->calculateShippingFee([
+                'district_id' => $request->district_id, // ID Quận/Huyện nhận hàng
+                'ward_id' => $request->ward_id         // ID Phường/Xã nhận hàng
+            ]);
+
+            // Cộng phí vận chuyển vào tổng số tiền
+            $totalAmount += $shippingFee;  // Cộng phí vận chuyển vào tổng tiền đơn hàng
 
             // Kiểm tra nếu phương thức thanh toán không hợp lệ (cho phép cả VNPay và COD cho người dùng đã đăng nhập)
             if (!in_array($paymentMethod, ['vnpay', 'cod'])) {

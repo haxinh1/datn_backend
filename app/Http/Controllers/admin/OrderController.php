@@ -28,7 +28,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
-            ->orderBy('id', 'asc')
+            ->orderBy('created_at', 'desc')
             ->get();
         return response()->json(['orders' => $orders], 200);
     }

@@ -94,12 +94,11 @@ class OrderOrderStatusController extends Controller
 
         DB::beginTransaction();
         try {
-            $userId = $request->modified_by ?? null; 
-            // Kiểm tra nếu người dùng đã đăng nhập thì lấy ID người dùng
+            $userId = $request->input('user_id') ?? null;
             $orderOrderStatus = OrderOrderStatus::create([
                 'order_id' => $orderId,
                 'order_status_id' => $request->order_status_id,
-                'modified_by' => $userId,  // Lưu `modified_by` từ frontend
+                'modified_by' =>  $userId,                 
                 'employee_evidence' => $request->employee_evidence ?? '', // Tránh null nếu dùng kiểu string
             ]);
 

@@ -79,8 +79,12 @@ Route::get('/export-product-stocks', function () {
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
-Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+});
 Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::class, 'destroy'])->name('cart.remove');
+Route::delete('/cart/destroy-all', [CartItemController::class, 'destroyAll'])->name('cart.destroyAll');
+
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)

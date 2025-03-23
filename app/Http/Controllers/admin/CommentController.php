@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -107,12 +108,11 @@ class CommentController extends Controller
     {
 
         // Check xem gười dùng đã đăg hập chưa
-
-        $userId = auth()->id();
-        if (!$userId) {
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        $user = auth()->user();
+        $userId = $user->id;
 
         $validator = Validator::make($request->all(), [
             'products_id' => 'required|exists:products,id',
@@ -141,7 +141,6 @@ class CommentController extends Controller
                 return response()->json(['error' => 'You must purchase this product to comment'], 403);
             }
         }
-
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -182,7 +181,6 @@ class CommentController extends Controller
 
     public function update(Request $request, $id)
     {
-        $comment = Comment::find($id);
 
         $comment = Comment::find($id);
 
@@ -194,8 +192,12 @@ class CommentController extends Controller
             return response()->json(['message' => 'Comment not found!'], 404);
         }
 
+        $user = Auth::guard('sanctum')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-        if (auth()->id() !== $comment->user_id) {
+        if ($user !== $comment->user_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

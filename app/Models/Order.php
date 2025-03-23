@@ -76,5 +76,4 @@ class Order extends Model
             ->exists();
     }
 
-
 }

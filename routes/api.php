@@ -27,6 +27,7 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
+use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 
 /*
@@ -98,6 +99,8 @@ Route::prefix('orders')->group(function () {
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
 
+Route::post('/shipping-fee', [ShippingController::class, 'calculateShippingFee']);
+
 
 Route::prefix('payments')->group(function () {
     Route::post('/', [PaymentController::class, 'store']); // Tạo mới
@@ -126,9 +129,9 @@ Route::prefix('order-statuses')->group(function () {
 // Quản lý lịch sử trạng thái đơn hàng
 Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
 Route::post('/orders/multiple-statuses', [OrderOrderStatusController::class, 'indexMultiple']);
-Route::middleware('auth:sanctum')->group(function () {
-    Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
+Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
         ->name('orders.updateStatus');
+Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/batch-update-status', [OrderOrderStatusController::class, 'batchUpdateByStatus'])
         ->name('orders.batchUpdateStatus');
 });

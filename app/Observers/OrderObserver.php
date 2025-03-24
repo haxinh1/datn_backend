@@ -22,20 +22,24 @@ class OrderObserver
 
             $totalSpent = Order::where('user_id', $order->user_id)->sum('total_amount');
 
+            $point = ($totalSpent * 2) / 100;
 
-            $rank = 'Đồng';
+            $rank = 'Thành Viên';
             if ($totalSpent >= 20000000) {
                 $rank = 'Kim Cương';
             } elseif ($totalSpent >= 10000000) {
                 $rank = 'Vàng';
             } elseif ($totalSpent >= 5000000) {
                 $rank = 'Bạc';
+            }else if($totalSpent >= 2000000){
+               $rank = 'Đồng';
             } else {
                 $rank = 'Thành Viên';
             }
             $user = User::where('id', $order->user_id)->first();
             if ($user) {
-                if ($user->rank !== $rank || $user->total_spent !== $totalSpent) {
+                if ($user->rank !== $rank || $user->total_spent !== $totalSpent || $user->loyalty_points !== $point) {
+                    $user->loyalty_points = $point;
                     $user->rank = $rank;
                     $user->total_spent = $totalSpent;
                     $user->save();

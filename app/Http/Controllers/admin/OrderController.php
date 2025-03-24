@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderMail;
 
 
 class OrderController extends Controller
@@ -154,7 +156,6 @@ class OrderController extends Controller
                 'address' => $user ? 'nullable' : 'required|string|max:255',
             ]);
 
-
             // Lấy thông tin khách hàng
             $fullname = $user->fullname ?? $request->fullname ?? '';
             $email = $user->email ?? $request->email ?? '';
@@ -263,7 +264,6 @@ class OrderController extends Controller
 
             // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
             $order->update(['status_id' => 3]); // "Chờ xử lý"
-
             DB::commit();
 
             return response()->json(['message' => 'Đặt hàng thành công!', 'order' => $order], 201);

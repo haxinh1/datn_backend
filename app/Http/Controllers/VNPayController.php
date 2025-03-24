@@ -11,6 +11,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderMail;
 
 class VNPayController extends Controller
 {
@@ -183,9 +185,11 @@ class VNPayController extends Controller
         }
 
         // Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
-        if ($inputData['vnp_ResponseCode'] == '00') {
+        if ($inputData['vnp_ResponseCode'] == 00) {
             $order = Order::find($inputData['vnp_TxnRef']);
-
+          
+       
+      
             // Kiểm tra nếu không tìm thấy đơn hàng
             if (!$order) {
                 Log::error("Order not found for TxnRef: {$inputData['vnp_TxnRef']}");
@@ -230,7 +234,9 @@ class VNPayController extends Controller
                     'order_status_id' => 2, // Trạng thái "Đã thanh toán"
                     'note' => 'Thanh toán VNPay thành công.',
                 ]);
-
+             if($order->user_id == null){
+                Mail::to($order->email)->send(new OrderMail($order));   
+             }
                 return redirect()->away(
                     'http://localhost:5173/thanks?' . http_build_query([
                         'success' => 'true',

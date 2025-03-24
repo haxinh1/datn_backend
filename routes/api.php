@@ -27,6 +27,7 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
+use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 
 /*
@@ -78,8 +79,12 @@ Route::get('/export-product-stocks', function () {
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
-Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+});
 Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::class, 'destroy'])->name('cart.remove');
+Route::delete('/cart/destroy-all', [CartItemController::class, 'destroyAll'])->name('cart.destroyAll');
+
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
@@ -97,6 +102,7 @@ Route::prefix('orders')->group(function () {
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
+
 
 
 Route::prefix('payments')->group(function () {
@@ -126,9 +132,9 @@ Route::prefix('order-statuses')->group(function () {
 // Quản lý lịch sử trạng thái đơn hàng
 Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
 Route::post('/orders/multiple-statuses', [OrderOrderStatusController::class, 'indexMultiple']);
-Route::middleware('auth:sanctum')->group(function () {
-    Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
+Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
         ->name('orders.updateStatus');
+Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/batch-update-status', [OrderOrderStatusController::class, 'batchUpdateByStatus'])
         ->name('orders.batchUpdateStatus');
 });

@@ -60,7 +60,10 @@ class CouponController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
+        $data = $request->only([
+            'code', 'title', 'description', 'discount_type', 'discount_value',
+            'usage_limit', 'start_date', 'end_date', 'is_active', 'coupon_type', 'rank', 'user_ids'
+        ]);
 
         $validator = Validator::make($data, [
             'code' => 'required|string|max:50|unique:coupons',
@@ -72,9 +75,11 @@ class CouponController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'boolean',
+            'coupon_type' => 'required|in:public,private,rank',
+            'rank' => 'nullable|in:bronze,silver,gold,diamond',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'exists:users,id',
         ]);
-
-        $data['is_active'] = $data['is_active'] ?? 0;
 
         if ($validator->fails()) {
             return response()->json([
@@ -84,15 +89,32 @@ class CouponController extends Controller
             ], 422);
         }
 
-        $data['usage_count'] = 0;
-        $data['is_expired'] = $data['end_date'] ? (now()->lessThanOrEqualTo($data['end_date']) ? 1 : 0) : 1;
+        // Kiểm tra logic: private cần user_ids, rank cần rank
+        if ($data['coupon_type'] === 'private' && empty($data['user_ids'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Private coupon cần có danh sách user_ids',
+            ], 422);
+        }
+        if ($data['coupon_type'] === 'rank' && empty($data['rank'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rank coupon cần có rank',
+            ], 422);
+        }
 
         try {
             $coupon = Coupon::create($data);
+
+            // Nếu là private coupon, liên kết với users
+            if ($data['coupon_type'] === 'private') {
+                $coupon->users()->sync($data['user_ids']);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Thêm mã giảm giá thành công',
-                'data' => $coupon,
+                'data' => $coupon->load('users'),
             ], 201);
         } catch (\Throwable $th) {
             return response()->json([
@@ -101,6 +123,7 @@ class CouponController extends Controller
             ], 500);
         }
     }
+
 
 
     public function show(string $id)
@@ -131,7 +154,10 @@ class CouponController extends Controller
             ], 404);
         }
 
-        $data = $request->only(['code', 'title', 'description', 'discount_type', 'discount_value', 'usage_limit', 'start_date', 'end_date', 'is_active']);
+        $data = $request->only([
+            'code', 'title', 'description', 'discount_type', 'discount_value',
+            'usage_limit', 'start_date', 'end_date', 'is_active', 'coupon_type', 'rank', 'user_ids'
+        ]);
 
         $validator = Validator::make($data, [
             'code' => 'required|string|max:50|unique:coupons,code,' . $id,
@@ -143,9 +169,11 @@ class CouponController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'boolean',
+            'coupon_type' => 'required|in:public,private,rank',
+            'rank' => 'nullable|in:bronze,silver,gold,diamond',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'exists:users,id',
         ]);
-
-        $data['is_active'] = $data['is_active'] ?? 0;
 
         if ($validator->fails()) {
             return response()->json([
@@ -155,14 +183,34 @@ class CouponController extends Controller
             ], 422);
         }
 
-        $data['is_expired'] = $data['end_date'] ? (now()->lessThanOrEqualTo($data['end_date']) ? 1 : 0) : 1;
+        // Kiểm tra logic
+        if ($data['coupon_type'] === 'private' && empty($data['user_ids'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Private coupon cần có user_ids',
+            ], 422);
+        }
+        if ($data['coupon_type'] === 'rank' && empty($data['rank'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rank coupon cần có rank',
+            ], 422);
+        }
 
         try {
             $coupon->update($data);
+
+            // Cập nhật danh sách user
+            if ($data['coupon_type'] === 'private') {
+                $coupon->users()->sync($data['user_ids']);
+            } else {
+                $coupon->users()->detach(); // Nếu đổi về public/rank, xóa users
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật mã giảm giá thành công',
-                'data' => $coupon,
+                'data' => $coupon->load('users'),
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([

@@ -16,5 +16,11 @@ class ProductService
     public function getHistoryStockProduct($id){
        return $this->productRepository->getHistoryStockProduct($id);
     }
+    public function addViewedProducts($user,$product){
+       return $this->productRepository->addViewedProducts($user,$product);
+    }
+    public function viewedProduct($user){
+       return $this->productRepository->viewedProduct($user);
+    }
 
 }

@@ -1,6 +1,7 @@
 <?php 
 namespace App\Repositories\Clients;
 use App\Models\Product;
+use App\Models\ViewedProduct;
 use Illuminate\Support\Facades\DB;
 
 class ProductRepository {
@@ -15,10 +16,11 @@ class ProductRepository {
         return $data;
     }
     public function getHistoryStockProduct($id){
+
         $datas = DB::table('product_stocks')
         ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
         ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
-        ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Join bảng stocks
+        ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') 
         ->select([
             'product_stocks.id',
             'products.name as product_name',
@@ -31,9 +33,40 @@ class ProductRepository {
            'product_stocks.created_at'
         ])
         ->where('product_stocks.product_id', $id)
-        ->where('stocks.status', 1) // Chỉ lấy sản phẩm có stock đã xác nhận
+        ->where('stocks.status', 1) 
         ->get();
         return $datas;
     }
+
+    public function addViewedProducts($user,$product){
+        $exists = ViewedProduct::where('user_id', $user->id)
+        ->where('product_id', $product->id)
+        ->exists();
+    
+        if (!$exists) {
+            $count = ViewedProduct::where('user_id', $user->id)->count();
+            if ($count >= 8) {
+                ViewedProduct::where('user_id', $user->id)
+                    ->orderBy('created_at', 'asc') 
+                    ->limit(1)
+                    ->delete();
+            }
+        
+            ViewedProduct::create([
+                'user_id' => $user->id,
+                'product_id' => $product->id,
+            ]);
+        }
+    }
+        public function viewedProduct($user){
+            $datas = ViewedProduct::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->with(['product' => function ($query) {
+                $query->select('id', 'name', 'slug', 'thumbnail', 'sell_price', 'sale_price');
+            }])
+            ->get()
+            ->pluck('product');;
+            return $datas;
+        }
 
 }

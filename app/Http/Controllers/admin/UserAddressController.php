@@ -96,7 +96,7 @@ class UserAddressController extends Controller
             UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
 
-        $address->update($request->only(['address', 'id_default']));
+        $address->update($request->only(['address', 'detail_address' , 'id_default']));
 
         return response()->json($address, 200);
     }

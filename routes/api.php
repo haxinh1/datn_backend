@@ -27,6 +27,7 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
+use App\Http\Controllers\admin\OrderReturnController;
 use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
@@ -75,7 +76,6 @@ Route::post('/import-stock', [StockController::class, 'import']);
 
 Route::get('/export-product-stocks', function () {
     return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');
-
 });
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
@@ -99,6 +99,10 @@ Route::prefix('orders')->group(function () {
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
+    // Route cho trả hàng
+    Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
+    Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
+    Route::get('/order-returns/{id}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
 });
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
@@ -134,7 +138,7 @@ Route::prefix('order-statuses')->group(function () {
 Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
 Route::post('/orders/multiple-statuses', [OrderOrderStatusController::class, 'indexMultiple']);
 Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
-        ->name('orders.updateStatus');
+    ->name('orders.updateStatus');
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/batch-update-status', [OrderOrderStatusController::class, 'batchUpdateByStatus'])
         ->name('orders.batchUpdateStatus');

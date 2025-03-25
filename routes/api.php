@@ -74,8 +74,12 @@ Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 Route::resource('/stocks', StockController::class);
 Route::post('/import-stock', [StockController::class, 'import']);
 
-Route::get('/export-product-stocks', function () {
-    return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');
+Route::post('/export-product-stocks', function (Request $request) {
+    $orderIds = $request->input('order_ids', []);
+    if (empty($orderIds)) {
+        return Excel::download(new ProductStocksExport(), 'product_stocks.xlsx');
+    }
+    return Excel::download(new ProductStocksExport($orderIds), 'product_stocks.xlsx');
 });
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');

@@ -142,6 +142,11 @@ class OrderController extends Controller
 
                 return $item['quantity'] * $price;
             });
+            // Nhận phí ship từ frontend
+            $shippingFee = $request->input('shipping_fee', 0);
+
+            // Cộng phí ship vào tổng tiền
+            $totalAmount += $shippingFee;
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);

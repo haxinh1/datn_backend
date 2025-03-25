@@ -53,5 +53,15 @@ class Product extends Model
     {
         return $this->belongsToMany(AttributeValue::class, 'attribute_value_products', 'product_id', 'attribute_value_id');
     }
+    public function viewedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'viewed_products')
+                    ->withTimestamps();
+    }
+
+    public function viewedProducts()
+    {
+        return $this->hasMany(ViewedProduct::class);
+    }
 
 }

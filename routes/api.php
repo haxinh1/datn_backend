@@ -28,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
 use App\Http\Controllers\admin\OrderReturnController;
+use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -245,3 +246,7 @@ Route::prefix('chat')->group(function () {
 
     Route::post('/mark-as-read/{id}', [MessageController::class, 'markAsRead']);
 });
+
+//Client 
+Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
+

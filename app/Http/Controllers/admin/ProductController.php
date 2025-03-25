@@ -165,27 +165,47 @@ class ProductController extends Controller
 
             
             $stocks = DB::table('product_stocks')
-    ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
-    ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
-    ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Join bảng stocks
-    ->select([
-        'product_stocks.id',
-        'products.name as product_name',
-        'products.thumbnail as product_thumbnail',
-        'product_stocks.quantity',
-        'product_stocks.price',
-        'product_variants.id as product_variant_id',
-        'product_variants.sku as variant_sku',
-        'product_variants.thumbnail as variant_image',
-       'product_stocks.created_at'
-    ])
-    ->where('product_stocks.product_id', $id)
-    ->where('stocks.status', 1) // Chỉ lấy sản phẩm có stock đã xác nhận
-    ->get();
+            ->leftJoin('products', 'product_stocks.product_id', '=', 'products.id')
+            ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
+            ->leftJoin('stocks', 'product_stocks.stock_id', '=', 'stocks.id') // Join bảng stocks
+            ->select([
+                'product_stocks.id',
+                'products.name as product_name',
+                'products.thumbnail as product_thumbnail',
+                'product_stocks.quantity',
+                'product_stocks.price',
+                'product_variants.id as product_variant_id',
+                'product_variants.sku as variant_sku',
+                'product_variants.thumbnail as variant_image',
+            'product_stocks.created_at'
+            ])
+            ->where('product_stocks.product_id', $id)
+            ->where('stocks.status', 1) // Chỉ lấy sản phẩm có stock đã xác nhận
+            ->get();
+            
+            $orders = DB::table('order_items')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('order_statuses', 'orders.status_id', '=', 'order_statuses.id') // Join thêm bảng order_statuses
+            ->select(
+                'products.name as product_name',
+                'order_items.quantity',
+                'order_statuses.name as status_name', 
+                'orders.fullname',
+                'orders.payment_id',
+                'order_items.product_variant_id',
+                'orders.address',
+                'orders.updated_at'
+            )
+            ->where('order_items.product_id', $id) 
+            ->orderByDesc('orders.created_at')
+            ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $product,
-                'stocks' =>$stocks
+                'stocks' =>$stocks,
+                'orders' =>$orders,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

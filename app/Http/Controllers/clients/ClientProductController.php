@@ -20,22 +20,21 @@ class ClientProductController extends Controller
     public function productDetail(string $id){
         try {
             $product = $this->productService->showProductById($id);
-            
-            $stocks = $this->productService->getHistoryStockProduct($id);
-            
+            // $stocks = $this->productService->getHistoryStockProduct($id);
             $user = Auth::guard('sanctum')->user();
+            $dataViewed= [];
             if ($user) {
-                ViewedProduct::create([
-                    'user_id' => $user->id,
-                    'product_id' => $product->id,
-                ]);
+               $this->productService->addViewedProducts($user,$product);
+               $dataViewed = $this->productService->viewedProduct($user);
             }
             
             return response()->json([
                 'success' => true,
                 'data' => $product,
-                'stocks' => $stocks
+                // 'stocks' => $stocks,
+                'dataViewed' => $dataViewed,
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

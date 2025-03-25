@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 class UserAddress extends Model
 {
     use HasFactory;
@@ -14,7 +15,10 @@ class UserAddress extends Model
         'user_id',
         'address',
         'detail_address',
-        'id_default', 
+        'ProvinceID',
+        'DistrictID',
+        'WardCode',
+        'id_default',
 
     ];
 

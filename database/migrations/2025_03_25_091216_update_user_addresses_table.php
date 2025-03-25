@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,9 +11,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('user_addresses', function (Blueprint $table) {
-            $table->string('province')->after('address')->nullable();
-            $table->string('district')->after('province')->nullable();
-            $table->string('wards')->after('district')->nullable();
+            $table->string('ProvinceID')->after('address')->nullable();
+            $table->string('DistrictID')->after('ProvinceID')->nullable(); 
+            $table->string('WardCode')->after('DistrictID')->nullable(); 
         });
     }
 
@@ -24,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('user_addresses', function (Blueprint $table) {
-            $table->dropColumn(['province', 'district', 'wards']);
+            $table->dropColumn(['ProvinceID', 'DistrictID', 'WardCode']);
         });
     }
 };

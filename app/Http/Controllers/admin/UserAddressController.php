@@ -35,6 +35,9 @@ class UserAddressController extends Controller
         $request->validate([
             'address' => 'required|string',
             'detail_address' => 'nullable|string',
+            'province' => 'nullable|numeric',
+            'district' => 'nullable|numeric',
+            'wards' => 'nullable|string',
             'id_default' => 'boolean',
         ]);
     
@@ -54,6 +57,9 @@ class UserAddressController extends Controller
             'user_id' => $user->id,
             'address' => $request->address,
             'detail_address' => $request->detail_address,
+            'province' => $request->province,
+            'district' => $request->district,
+            'wards' => $request->wards,
             'id_default' => $idDefault,
         ]);
     
@@ -86,6 +92,9 @@ class UserAddressController extends Controller
         $request->validate([
             'address' => 'sometimes|required|string',
             'detail_address' => 'sometimes|required|string',
+            'province' => 'sometimes|required|string',
+            'district' => 'sometimes|required|string',
+            'wards' => 'sometimes|required|string',
             'id_default' => 'boolean',
         ]);
 
@@ -96,7 +105,7 @@ class UserAddressController extends Controller
             UserAddress::where('user_id', $user->id)->update(['id_default' => false]);
         }
 
-        $address->update($request->only(['address', 'detail_address' , 'id_default']));
+        $address->update($request->only(['address',  'province' , 'district' , 'wards' , 'detail_address' , 'id_default']));
 
         return response()->json($address, 200);
     }

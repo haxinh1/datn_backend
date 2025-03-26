@@ -90,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::class, 'destroy'])->name('cart.remove');
 Route::delete('/cart/destroy-all', [CartItemController::class, 'destroyAll'])->name('cart.destroyAll');
 
+Route::get('user/{userId}/top-products', [OrderItemController::class, 'getTopProductsByUser']);
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)

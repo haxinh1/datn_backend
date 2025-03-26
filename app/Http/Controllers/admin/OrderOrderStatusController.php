@@ -54,28 +54,23 @@ class OrderOrderStatusController extends Controller
     public function getOrdersByModifiedBy(Request $request, $modified_by)
     {
         // Kiểm tra xem user_id có tồn tại trong bảng users không
-        $userExists = \App\Models\User::find($modified_by); // Kiểm tra xem user với modified_by có tồn tại không
+        $userExists = \App\Models\User::where('id', $modified_by)->exists();
         if (!$userExists) {
             return response()->json(['message' => 'Người dùng không tồn tại'], 404);
         }
 
+
         try {
             // Truy vấn tất cả các bản ghi trong bảng `order_order_statuses` theo modified_by và eager load bảng `orders`
             $orderStatuses = OrderOrderStatus::where('modified_by', $modified_by)
-                ->with('order:id,code') // Eager load bảng orders chỉ lấy id và code
+                ->with('order:id,code')  // Eager load bảng orders chỉ lấy id và code
                 ->orderBy('created_at', 'desc')  // Sắp xếp theo thời gian cập nhật
                 ->get(); // Lấy tất cả các bản ghi
 
-            // Trả về danh sách các order_statuses cùng mã đơn hàng
+            // Trả về danh sách các order_statuses chỉ có mã đơn hàng
             return response()->json([
                 'status' => 'success',
-                'data' => $orderStatuses->map(function ($status) {
-                    // Thêm mã đơn hàng vào mỗi order_status mà không làm thay đổi dữ liệu của order_status
-                    return [
-                        'order_status' => $status, // Giữ nguyên dữ liệu của order_status
-                        'order_code' => $status->order->code, // Thêm mã đơn hàng
-                    ];
-                })
+                'data' => $orderStatuses
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -84,8 +79,6 @@ class OrderOrderStatusController extends Controller
             ], 500);
         }
     }
-
-
     /**
      * Cập nhật trạng thái đơn hàng.
      */

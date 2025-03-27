@@ -151,23 +151,40 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
             }
 
-            $userPoints = $request->input('user_points', 0);
+            $usedPoints = $request->input('user_points', 60000);
             $discountPoints = 0;
 
 
-            // $user->loyalty_points;
-            //  Log::info('DEBUG - Số điểm khách hàng:', ['userPoints' =>  $user->loyalty_points]);
+            $user->loyalty_points;
+             Log::info('DEBUG - Số điểm khách hàng:', ['usedPoints' =>  $user->loyalty_points]);
 
             if ($userId) {
-                if ($userPoints > $user->loyalty_points) {
+                if ($usedPoints > $user->loyalty_points) {
                     Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['user_points' => $user->loyalty_points]);
                     return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
                 }
-                $discountPoints =  $userPoints;
+                $discountPoints =  $usedPoints;
                 $totalAmount -= $discountPoints;
             } else {
-                $userPoints = 0;
+                $usedPoints = 0;
             }
+
+            
+            // Nếu user có điểm thưởng và đã sử dụng, trừ điểm trong database
+            if ($userId && $usedPoints > 0) {
+                $user->decrement('loyalty_points', $usedPoints);
+                
+                $updatedPoints = $user->fresh()->loyalty_points;
+                 
+                Log::info('DEBUG - Trừ điểm thành công:', [
+                    'user_id' => $userId,
+                    'used_points' => $usedPoints,
+                    'remaining_points' => $updatedPoints
+                    //  $user->loyalty_points - $usedPoints
+                ]);
+            }
+
+
 
             // Kiểm tra thông tin khách hàng nếu chưa đăng nhập
             $request->validate([
@@ -245,7 +262,7 @@ class OrderController extends Controller
                 'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
-                'user_points' => $userPoints,
+                'user_points' => $usedPoints,
                 'discount_points' => $discountPoints,
             ]);
 

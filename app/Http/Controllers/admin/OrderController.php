@@ -225,6 +225,7 @@ class OrderController extends Controller
                 'phone_number' => $phone_number,
                 'address' => $address, // Lấy từ bảng user_addresses
                 'total_amount' => $totalAmount,
+                'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
             ]);

@@ -77,5 +77,15 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserAddress::class, 'user_id')->where('id_default', true);
     }
+    public function viewedProducts()
+    {
+        return $this->hasMany(ViewedProduct::class);
+    }
+
+    public function productsViewed()
+    {
+        return $this->belongsToMany(Product::class, 'viewed_products')
+                    ->withTimestamps();
+    }
     
 }

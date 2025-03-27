@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Chạy hàng ngày vào 00:00 (12h đêm)
-        $schedule->command('orders:auto-complete')->dailyAt('00:00');
+        // $schedule->command('inspire')->hourly();
     }
 
     /**

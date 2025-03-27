@@ -27,6 +27,8 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
+use App\Http\Controllers\admin\OrderReturnController;
+use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -72,15 +74,23 @@ Route::post('postStock', [StockController::class, 'store'])->name('postStock');
 Route::resource('/stocks', StockController::class);
 Route::post('/import-stock', [StockController::class, 'import']);
 
-Route::get('/export-product-stocks', function () {
-    return Excel::download(new ProductStocksExport, 'product_stocks.xlsx');
-
+Route::post('/export-product-stocks', function (Request $request) {
+    $orderIds = $request->input('order_ids', []);
+    if (empty($orderIds)) {
+        return Excel::download(new ProductStocksExport(), 'product_stocks.xlsx');
+    }
+    return Excel::download(new ProductStocksExport($orderIds), 'product_stocks.xlsx');
 });
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
-Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/cart/update/{productId}/{variantId?}', [CartItemController::class, 'update'])->name('cart.update');
+});
 Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::class, 'destroy'])->name('cart.remove');
+Route::delete('/cart/destroy-all', [CartItemController::class, 'destroyAll'])->name('cart.destroyAll');
+
+Route::get('user/{userId}/top-products', [OrderItemController::class, 'getTopProductsByUser']);
 
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
@@ -94,12 +104,15 @@ Route::prefix('orders')->group(function () {
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
+    // Route cho trả hàng
+    Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
+    Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
+    Route::get('/order-returns/{id}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
 });
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
 
-Route::post('/shipping-fee', [ShippingController::class, 'calculateShippingFee']);
 
 
 Route::prefix('payments')->group(function () {
@@ -129,8 +142,9 @@ Route::prefix('order-statuses')->group(function () {
 // Quản lý lịch sử trạng thái đơn hàng
 Route::get('/orders/{id}/statuses', [OrderOrderStatusController::class, 'index'])->name('orders.statuses');
 Route::post('/orders/multiple-statuses', [OrderOrderStatusController::class, 'indexMultiple']);
+Route::get('/orders/modified-by/{modified_by}', [OrderOrderStatusController::class, 'getOrdersByModifiedBy']);
 Route::put('/orders/{id}/update-status', [OrderOrderStatusController::class, 'updateStatus'])
-        ->name('orders.updateStatus');
+    ->name('orders.updateStatus');
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/orders/batch-update-status', [OrderOrderStatusController::class, 'batchUpdateByStatus'])
         ->name('orders.batchUpdateStatus');
@@ -238,3 +252,7 @@ Route::prefix('chat')->group(function () {
 
     Route::post('/mark-as-read/{id}', [MessageController::class, 'markAsRead']);
 });
+
+//Client 
+Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
+

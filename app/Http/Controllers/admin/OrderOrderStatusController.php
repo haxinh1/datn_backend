@@ -51,6 +51,34 @@ class OrderOrderStatusController extends Controller
             'data' => $groupedStatuses,
         ]);
     }
+    public function getOrdersByModifiedBy(Request $request, $modified_by)
+    {
+        // Kiểm tra xem user_id có tồn tại trong bảng users không
+        $userExists = \App\Models\User::where('id', $modified_by)->exists();
+        if (!$userExists) {
+            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
+        }
+
+
+        try {
+            // Truy vấn tất cả các bản ghi trong bảng `order_order_statuses` theo modified_by và eager load bảng `orders`
+            $orderStatuses = OrderOrderStatus::where('modified_by', $modified_by)
+                ->with('order:id,code')  // Eager load bảng orders chỉ lấy id và code
+                ->orderBy('created_at', 'desc')  // Sắp xếp theo thời gian cập nhật
+                ->get(); // Lấy tất cả các bản ghi
+
+            // Trả về danh sách các order_statuses chỉ có mã đơn hàng
+            return response()->json([
+                'status' => 'success',
+                'data' => $orderStatuses
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Lỗi khi truy vấn dữ liệu',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Cập nhật trạng thái đơn hàng.
      */
@@ -94,12 +122,11 @@ class OrderOrderStatusController extends Controller
 
         DB::beginTransaction();
         try {
-            $userId = $request->modified_by ?? null; 
-            // Kiểm tra nếu người dùng đã đăng nhập thì lấy ID người dùng
+            $userId = $request->input('user_id') ?? null;
             $orderOrderStatus = OrderOrderStatus::create([
                 'order_id' => $orderId,
                 'order_status_id' => $request->order_status_id,
-                'modified_by' => $userId,  // Lưu `modified_by` từ frontend
+                'modified_by' =>  $userId,
                 'employee_evidence' => $request->employee_evidence ?? '', // Tránh null nếu dùng kiểu string
             ]);
 

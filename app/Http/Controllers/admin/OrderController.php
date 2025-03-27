@@ -4,7 +4,6 @@ namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\VNPayController;
-use App\Http\Controllers\ShippingController; 
 use App\Models\Order;
 use App\Models\CartItem;
 use App\Models\OrderItem;
@@ -19,8 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
-
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderMail;
 
 class OrderController extends Controller
 {
@@ -143,6 +142,11 @@ class OrderController extends Controller
 
                 return $item['quantity'] * $price;
             });
+            // Nhận phí ship từ frontend
+            $shippingFee = $request->input('shipping_fee', 0);
+
+            // Cộng phí ship vào tổng tiền
+            $totalAmount += $shippingFee;
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
@@ -155,7 +159,6 @@ class OrderController extends Controller
                 'phone_number' => $user ? 'nullable' : 'required|string|max:20',
                 'address' => $user ? 'nullable' : 'required|string|max:255',
             ]);
-
 
             // Lấy thông tin khách hàng
             $fullname = $user->fullname ?? $request->fullname ?? '';
@@ -198,15 +201,6 @@ class OrderController extends Controller
             if (!$userId && $paymentMethod != 'vnpay') {
                 return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay'], 400);
             }
-            // Gọi API tính phí vận chuyển từ ShippingController
-            $shippingController = new ShippingController();
-            $shippingFee = $shippingController->calculateShippingFee([
-                'district_id' => $request->district_id, // ID Quận/Huyện nhận hàng
-                'ward_id' => $request->ward_id         // ID Phường/Xã nhận hàng
-            ]);
-
-            // Cộng phí vận chuyển vào tổng số tiền
-            $totalAmount += $shippingFee;  // Cộng phí vận chuyển vào tổng tiền đơn hàng
 
             // Kiểm tra nếu phương thức thanh toán không hợp lệ (cho phép cả VNPay và COD cho người dùng đã đăng nhập)
             if (!in_array($paymentMethod, ['vnpay', 'cod'])) {
@@ -231,6 +225,7 @@ class OrderController extends Controller
                 'phone_number' => $phone_number,
                 'address' => $address, // Lấy từ bảng user_addresses
                 'total_amount' => $totalAmount,
+                'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
             ]);
@@ -274,7 +269,6 @@ class OrderController extends Controller
 
             // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
             $order->update(['status_id' => 3]); // "Chờ xử lý"
-
             DB::commit();
 
             return response()->json(['message' => 'Đặt hàng thành công!', 'order' => $order], 201);

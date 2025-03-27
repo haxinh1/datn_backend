@@ -17,6 +17,7 @@ class Order extends Model
         'phone_number',
         'address',
         'total_amount',
+        'shipping_fee',
         'status_id',
         'payment_id',
         'coupon_id',

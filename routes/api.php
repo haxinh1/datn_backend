@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\OrderItemExport;
 use App\Exports\ProductStocksExport;
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
@@ -81,6 +82,13 @@ Route::post('/export-product-stocks', function (Request $request) {
         return Excel::download(new ProductStocksExport(), 'product_stocks.xlsx');
     }
     return Excel::download(new ProductStocksExport($orderIds), 'product_stocks.xlsx');
+});
+Route::post('/export-orders', function (Request $request) {
+    $orderIds = $request->input('order_ids', []);
+    if (empty($orderIds)) {
+        return Excel::download(new OrderItemExport(), 'order_item.xlsx');
+    }
+    return Excel::download(new OrderItemExport($orderIds), 'order_item.xlsx');
 });
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
@@ -265,4 +273,3 @@ Route::prefix('chat')->group(function () {
 
 //Client 
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
-

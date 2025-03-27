@@ -51,6 +51,34 @@ class OrderOrderStatusController extends Controller
             'data' => $groupedStatuses,
         ]);
     }
+    public function getOrdersByModifiedBy(Request $request, $modified_by)
+    {
+        // Kiểm tra xem user_id có tồn tại trong bảng users không
+        $userExists = \App\Models\User::where('id', $modified_by)->exists();
+        if (!$userExists) {
+            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
+        }
+
+
+        try {
+            // Truy vấn tất cả các bản ghi trong bảng `order_order_statuses` theo modified_by và eager load bảng `orders`
+            $orderStatuses = OrderOrderStatus::where('modified_by', $modified_by)
+                ->with('order:id,code')  // Eager load bảng orders chỉ lấy id và code
+                ->orderBy('created_at', 'desc')  // Sắp xếp theo thời gian cập nhật
+                ->get(); // Lấy tất cả các bản ghi
+
+            // Trả về danh sách các order_statuses chỉ có mã đơn hàng
+            return response()->json([
+                'status' => 'success',
+                'data' => $orderStatuses
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Lỗi khi truy vấn dữ liệu',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Cập nhật trạng thái đơn hàng.
      */
@@ -77,8 +105,12 @@ class OrderOrderStatusController extends Controller
             6 => [4, 8],    // Giao hàng thất bại -> Giao hàng lại hoặc hủy đơn
             7 => [9], // Đã hoàn thành -> Chờ xử lí trả hàng
             9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
-            10 => [12],    // Chấp nhận trả hàng -> Đang xử lý trả hàng
-            12 => [13]    // Đang xử lý trả hàng -> Người bán đã nhận hàng
+            10 => [12],    // Chấp nhận trả hàng -> Chờ xử lí hoàn tiền
+            12 => [13],   // Chờ xử lí hoàn tiền -> Hoàn tiền thành công
+            13 => [14],   // Hoàn tiền thành công -> Hàng đang quay về shop
+            14 => [15],   // Hàng đang quay về shop -> Người bán đã nhận hàng
+
+
         ];
         // Kiểm tra trạng thái hiện tại có thể chuyển sang trạng thái mới không
         if (
@@ -98,7 +130,7 @@ class OrderOrderStatusController extends Controller
             $orderOrderStatus = OrderOrderStatus::create([
                 'order_id' => $orderId,
                 'order_status_id' => $request->order_status_id,
-                'modified_by' =>  $userId,                 
+                'modified_by' =>  $userId,
                 'employee_evidence' => $request->employee_evidence ?? '', // Tránh null nếu dùng kiểu string
             ]);
 
@@ -155,8 +187,10 @@ class OrderOrderStatusController extends Controller
                 4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
                 5 => [7],    // Đã giao hàng -> Hoàn thành
                 9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
-                10 => [12],    // Chấp nhận trả hàng -> Đang xử lý trả hàng
-                12 => [13]    // Đang xử lý trả hàng -> Người bán đã nhận hàng
+                10 => [12],    // Chấp nhận trả hàng -> Chờ xử lí hoàn tiền
+                13 => [14],   // Hoàn tiền thành công -> Hàng đang quay về shop
+                14 => [15],   // Hàng đang quay về shop -> Người bán đã nhận hàng
+
             ];
 
             // Kiểm tra trạng thái chuyển đổi hợp lệ

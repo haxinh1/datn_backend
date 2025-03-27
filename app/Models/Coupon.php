@@ -44,7 +44,7 @@ class Coupon extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'coupon_user');
+        return $this->belongsToMany(User::class, 'coupon_users');
     }
 
 

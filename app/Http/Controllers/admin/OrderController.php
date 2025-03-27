@@ -21,8 +21,6 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderMail;
 
-
-
 class OrderController extends Controller
 {
     /**
@@ -143,6 +141,11 @@ class OrderController extends Controller
 
                 return $item['quantity'] * $price;
             });
+            // Nhận phí ship từ frontend
+            $shippingFee = $request->input('shipping_fee', 0);
+
+            // Cộng phí ship vào tổng tiền
+            $totalAmount += $shippingFee;
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
@@ -221,6 +224,7 @@ class OrderController extends Controller
                 'phone_number' => $phone_number,
                 'address' => $address, // Lấy từ bảng user_addresses
                 'total_amount' => $totalAmount,
+                'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
             ]);

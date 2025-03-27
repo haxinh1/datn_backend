@@ -60,14 +60,14 @@ class OrderReturnController extends Controller
         }
 
         // Trừ số lượng trong bảng order_items
-        DB::table('order_items')
-            ->where('order_id', $orderId)
-            ->where('product_id', $request->product_id)
-            ->when($request->filled('product_variant_id'), function ($query) use ($request) {
-                $query->where('product_variant_id', $request->product_variant_id);
-            })
-            ->decrement('quantity', $request->quantity);
-
+        // DB::table('order_items')
+        //     ->where('order_id', $orderId)
+        //     ->where('product_id', $request->product_id)
+        //     ->when($request->filled('product_variant_id'), function ($query) use ($request) {
+        //         $query->where('product_variant_id', $request->product_variant_id);
+        //     })
+        //     ->decrement('quantity', $request->quantity);
+        
         // Cập nhật trạng thái đơn hàng
         DB::table('orders')
             ->where('id', $orderId)

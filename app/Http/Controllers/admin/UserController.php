@@ -68,6 +68,7 @@ class UserController extends Controller
         $user->status         = $validatedData['status'] ?? 'active';
         $user->google_id      = $validatedData['google_id'] ?? null;
         $user->total_spent    = 0;
+        $user->rank_points    = 0;
         $user->rank           = 'Thành Viên';
         $user->save();
 

@@ -96,8 +96,7 @@ class OrderController extends Controller
 
         try {
             // Lấy userId từ frontend hoặc local
-            $userId = $request->input('user_id') ?? null;
-
+            $userId = $request->input('user_id') ?? null;       
             // Kiểm tra nếu đã đăng nhập
             $user = $userId ? User::find($userId) : null;
 

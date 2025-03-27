@@ -19,33 +19,42 @@ class OrderObserver
     { 
         
         if ($order->status_id == 7) {
+    
+            $point = ($order->total_amount * 2) / 100;
 
-            $totalSpent = Order::where('user_id', $order->user_id)->sum('total_amount');
-
-            $point = ($totalSpent * 2) / 100;
-
-            $rank = 'Thành Viên';
-            if ($totalSpent >= 20000000) {
-                $rank = 'Kim Cương';
-            } elseif ($totalSpent >= 10000000) {
-                $rank = 'Vàng';
-            } elseif ($totalSpent >= 5000000) {
-                $rank = 'Bạc';
-            }else if($totalSpent >= 2000000){
-               $rank = 'Đồng';
-            } else {
-                $rank = 'Thành Viên';
-            }
+            $rankPoints = ($order->total_amount * 2) / 100;
+    
+            // Lấy user
             $user = User::where('id', $order->user_id)->first();
+    
             if ($user) {
-                if ($user->rank !== $rank || $user->total_spent !== $totalSpent || $user->loyalty_points !== $point) {
-                    $user->loyalty_points = $point;
-                    $user->rank = $rank;
-                    $user->total_spent = $totalSpent;
-                    $user->save();
+                // Cộng điểm mới vào điểm hiện tại
+                $user->loyalty_points += $point;
+
+                $user->rank_points += $rankPoints;
+    
+                // Cộng thêm số tiền đơn hàng vào tổng đã chi
+                $user->total_spent += $order->total_amount;
+    
+                // Cập nhật hạng theo tổng đã chi mới
+                $rankPoints = $user->rank_points;
+                $rank = 'Thành Viên';
+    
+                if ($rankPoints >= 400000) {
+                    $rank = 'Kim Cương';
+                } elseif ($rankPoints >= 200000) {
+                    $rank = 'Vàng';
+                } elseif ($rankPoints >= 100000) {
+                    $rank = 'Bạc';
+                } elseif ($rankPoints >= 40000) {
+                    $rank = 'Đồng';
                 }
+    
+                $user->rank = $rank;
+                $user->save();
             }
-        }
+      
+    }
     }
 
     public function created(Order $order): void

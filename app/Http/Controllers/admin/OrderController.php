@@ -94,7 +94,7 @@ class OrderController extends Controller
 
         try {
             // Lấy userId từ frontend hoặc local
-            $userId = $request->input('user_id') ?? null;       
+            $userId = $request->input('user_id') ?? null;
             // Kiểm tra nếu đã đăng nhập
             $user = $userId ? User::find($userId) : null;
 
@@ -149,6 +149,24 @@ class OrderController extends Controller
 
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
+            }
+
+            $userPoints = $request->input('user_points', 0);
+            $discountPoints = 0;
+
+
+            // $user->loyalty_points;
+            //  Log::info('DEBUG - Số điểm khách hàng:', ['userPoints' =>  $user->loyalty_points]);
+
+            if ($userId) {
+                if ($userPoints > $user->loyalty_points) {
+                    Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['user_points' => $user->loyalty_points]);
+                    return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
+                }
+                $discountPoints =  $userPoints;
+                $totalAmount -= $discountPoints;
+            } else {
+                $userPoints = 0;
             }
 
             // Kiểm tra thông tin khách hàng nếu chưa đăng nhập
@@ -214,7 +232,7 @@ class OrderController extends Controller
             if (!$paymentId) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
-
+            Log::info('DEBUG - Tổng tiền đơn hàng:', ['total_amount' => $totalAmount]);
             // Tạo đơn hàng
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
@@ -227,6 +245,8 @@ class OrderController extends Controller
                 'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
+                'user_points' => $userPoints,
+                'discount_points' => $discountPoints,
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho

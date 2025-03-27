@@ -28,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
 use App\Http\Controllers\admin\OrderReturnController;
+use App\Http\Controllers\admin\RefundController;
 use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
@@ -112,6 +113,15 @@ Route::prefix('orders')->group(function () {
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
+Route::post('/order-returns/update-status/{returnId}', [OrderReturnController::class, 'updateStatus']);
+
+//Hoàn tiềntiền
+Route::prefix('/refunds')->group(function () {
+    Route::post('/request', [RefundController::class, 'requestRefund']);
+    Route::post('/confirm/{id}', [RefundController::class, 'confirmRefund']);
+    Route::get('/', [RefundController::class, 'index']);
+    Route::get('/{id}', [RefundController::class, 'show']);
+});
 
 
 

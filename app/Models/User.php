@@ -34,6 +34,7 @@ class User extends Authenticatable
         'status',
         'verified_at',
         'total_spent',
+        'rank_points',
         'rank',
     ];
 

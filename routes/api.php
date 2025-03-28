@@ -122,9 +122,9 @@ Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy 
 Route::get('/order-returns/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
-Route::post('/order-returns/update-status/{returnId}', [OrderReturnController::class, 'updateStatus']);
+Route::post('/order-returns/update-status/order/{orderId}', [OrderReturnController::class, 'updateStatusByOrder']);
 
-//Hoàn tiềntiền
+//Hoàn tiền
 Route::prefix('/refunds')->group(function () {
     Route::post('/request', [RefundController::class, 'requestRefund']);
     Route::post('/confirm/{id}', [RefundController::class, 'confirmRefund']);

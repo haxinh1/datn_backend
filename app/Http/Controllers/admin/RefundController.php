@@ -107,17 +107,119 @@ class RefundController extends Controller
         }
     }
 
-    // 3. Lấy danh sách bản ghi hoàn tiền
-    public function index()
+    // Lấy danh sách tất cả các đơn hoàn tiền, nhóm theo order_id
+    public function index(Request $request)
     {
-        $refunds = RefundDetail::with(['order', 'orderReturn'])->get();
-        return response()->json(['refunds' => $refunds]);
+        $orderId = $request->query('order_id'); // Lấy order_id từ query parameter
+
+        // Lấy danh sách đơn hoàn trả với thông tin liên quan đến order và product
+        $query = OrderReturn::with(['order', 'product', 'productVariant']); // Chỉ lấy những quan hệ đã khai báo
+
+        if ($orderId) {
+            $query->where('order_id', $orderId); // Lọc theo order_id nếu có
+        }
+
+        // Lấy tất cả các đơn hoàn trả, nhóm theo order_id
+        $orderReturns = $query->get()
+            ->groupBy('order_id') // Nhóm theo order_id
+            ->map(function ($returns, $orderId) {
+                $firstReturn = $returns->first(); // Lấy bản ghi hoàn trả đầu tiên trong nhóm
+                $order = $firstReturn->order; // Lấy thông tin đơn hàng
+
+                // Trả về thông tin của đơn hàng và các sản phẩm
+                return [
+                    'order_id' => $orderId,
+                    'reason' => $returns->first()->reason, // Chỉ lấy lý do một lần
+                    'employee_evidence' => $returns->first()->employee_evidence, // Chỉ lấy video một lần
+                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'order_returns' => $returns->map(function ($return) {
+                        $product = $return->product;
+                        $variant = $return->productVariant;
+
+                        // Trả về thông tin chi tiết của từng đơn hoàn trả
+                        return [
+                            'order_return_id' => $return->id, // Trả về order_return_id
+                            'reason' => $return->reason, // Lý do hoàn trả
+                            'employee_evidence' => $return->employee_evidence, // Video chứng minh
+                            'product' => [
+                                'product_id' => $product->id,
+                                'name' => $product->name,
+                                'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
+                                'sell_price' => $variant ? $variant->sell_price : $return->price,
+                                'product_variant_id' => $return->product_variant_id,
+                                'quantity' => $return->quantity_returned,
+                                'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
+                                    return [
+                                        'attribute_name' => $attr->value,
+                                        'attribute_id' => $attr->attribute_id,
+                                    ];
+                                }) : [], // Giữ lại danh sách thuộc tính nếu có
+                            ]
+                        ];
+                    })->values(), // Trả về danh sách các order return trong mảng
+                ];
+            })->values(); // Trả về tất cả các đơn hoàn trả đã nhóm theo order_id
+
+        return response()->json([
+            'order_returns' => $orderReturns, // Trả về tất cả dữ liệu đã xử lý
+        ], 200);
     }
 
-    // 4. Lấy chi tiết 1 bản ghi hoàn tiền
-    public function show($id)
-    {
-        $refund = RefundDetail::with(['order', 'orderReturn'])->findOrFail($id);
-        return response()->json(['refund' => $refund]);
+    // Lấy chi tiết các đơn hoàn tiền theo order_id
+    public function show($orderId)
+{
+    // Kiểm tra nếu không có order_id thì trả về lỗi
+    if (!$orderId) {
+        return response()->json(['message' => 'order_id không được cung cấp.'], 400);
     }
+
+    // Lấy danh sách đơn hoàn trả với thông tin liên quan đến order và product cho một order_id cụ thể
+    $orderReturns = OrderReturn::with(['order', 'product', 'productVariant'])  // Đảm bảo quan hệ đúng
+        ->where('order_id', $orderId)  // Lọc theo order_id
+        ->get();
+
+    // Kiểm tra nếu không tìm thấy dữ liệu
+    if ($orderReturns->isEmpty()) {
+        return response()->json(['message' => 'Không tìm thấy đơn hoàn tiền cho đơn hàng này.'], 404);
+    }
+
+    // Lấy thông tin chung cho đơn hàng
+    $firstReturn = $orderReturns->first(); // Lấy đơn hoàn trả đầu tiên
+    $order = $firstReturn->order; // Lấy thông tin đơn hàng
+
+    // Xử lý dữ liệu trả về theo cấu trúc cần thiết
+    $orderReturnDetails = $orderReturns->map(function ($return) {
+        $product = $return->product;
+        $variant = $return->productVariant;
+
+        return [
+            'order_return_id' => $return->id,
+            'product' => [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
+                'sell_price' => $variant ? $variant->sell_price : $return->price,
+                'product_variant_id' => $return->product_variant_id,
+                'quantity' => $return->quantity_returned,
+                'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
+                    return [
+                        'attribute_name' => $attr->value,
+                        'attribute_id' => $attr->attribute_id,
+                    ];
+                }) : [],
+            ]
+        ];
+    });
+
+    // Trả về dữ liệu cho order_id cụ thể
+    return response()->json([
+        'order_id' => $orderId,
+        'reason' => $firstReturn->reason,  // Chỉ lấy lý do từ bản ghi đầu tiên
+        'employee_evidence' => $firstReturn->employee_evidence,  // Chỉ lấy video chứng minh từ bản ghi đầu tiên
+        'order' => $order ? $order->toArray() : null, // Trả về thông tin của đơn hàng
+        'order_returns' => $orderReturnDetails,  // Trả về chi tiết các đơn hoàn trả cho order_id
+    ], 200);
+}
+
+
 }

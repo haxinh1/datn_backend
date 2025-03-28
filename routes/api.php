@@ -129,7 +129,7 @@ Route::prefix('refunds')->group(function () {
     Route::post('/request/{orderId}', [RefundController::class, 'requestRefundByOrder']);
     Route::post('/confirm/{orderId}', [RefundController::class, 'confirmRefundByOrder']);
     Route::get('/', [RefundController::class, 'index']);
-    Route::get('/{id}', [RefundController::class, 'show']);
+    Route::get('/{orderId}', [RefundController::class, 'show']);
 });
 
 

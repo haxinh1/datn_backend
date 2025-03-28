@@ -262,54 +262,41 @@ class OrderReturnController extends Controller
 
     // Admin xử lý chấp nhận hoặc từ chối yêu cầu trả hàng
     public function updateStatusByOrder(Request $request, $orderId)
-{
-    $request->validate([
-        'status_id' => 'required|in:10,11', // 10: Chấp nhận trả hàng, 11: Từ chối
-        'note' => 'nullable|string',
-        'user_id' => 'required|exists:users,id',
-    ]);
-
-    $orderReturns = OrderReturn::where('order_id', $orderId)->get();
-    $order = Order::findOrFail($orderId);
-
-    DB::beginTransaction();
-    try {
-        foreach ($orderReturns as $orderReturn) {
-            // Nếu chấp nhận thì trừ sản phẩm khỏi đơn
-            if ($request->status_id == 10) {
-                $orderItemQuery = OrderItem::where('order_id', $orderId)
-                    ->where('product_id', $orderReturn->product_id);
-
-                if ($orderReturn->product_variant_id) {
-                    $orderItemQuery->where('product_variant_id', $orderReturn->product_variant_id);
-                }
-
-                $orderItemQuery->decrement('quantity', $orderReturn->quantity_returned);
-            }
-
-            // Cập nhật từng bản ghi trả hàng
-            $orderReturn->update(['status_id' => $request->status_id]);
-        }
-
-        // Cập nhật trạng thái đơn hàng
-        $order->update(['status_id' => $request->status_id]);
-
-        // Ghi log trạng thái
-        OrderOrderStatus::create([
-            'order_id' => $orderId,
-            'order_status_id' => $request->status_id,
-            'modified_by' => $request->user_id,
-            'note' => $request->note ?? ($request->status_id == 10 ? 'Admin chấp nhận trả hàng' : 'Admin từ chối trả hàng'),
-            'created_at' => now(),
-            'updated_at' => now()
+    {
+        $request->validate([
+            'status_id' => 'required|in:10,11', // 10: Chấp nhận trả hàng, 11: Từ chối
+            'note' => 'nullable|string',
+            'user_id' => 'required|exists:users,id',
         ]);
 
-        DB::commit();
-        return response()->json(['message' => 'Cập nhật trạng thái trả hàng theo đơn thành công!']);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'Lỗi xử lý trả hàng theo đơn', 'error' => $e->getMessage()], 500);
-    }
-}
+        $orderReturns = OrderReturn::where('order_id', $orderId)->get();
+        $order = Order::findOrFail($orderId);
 
+        DB::beginTransaction();
+        try {
+            foreach ($orderReturns as $orderReturn) {
+                // Cập nhật từng bản ghi trả hàng
+                $orderReturn->update(['status_id' => $request->status_id]);
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            $order->update(['status_id' => $request->status_id]);
+
+            // Ghi log trạng thái
+            OrderOrderStatus::create([
+                'order_id' => $orderId,
+                'order_status_id' => $request->status_id,
+                'modified_by' => $request->user_id,
+                'note' => $request->note ?? ($request->status_id == 10 ? 'Admin chấp nhận trả hàng' : 'Admin từ chối trả hàng'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+            return response()->json(['message' => 'Cập nhật trạng thái trả hàng theo đơn thành công!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi xử lý trả hàng theo đơn', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -88,5 +88,4 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'viewed_products')
                     ->withTimestamps();
     }
-    
 }

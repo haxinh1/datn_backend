@@ -24,6 +24,7 @@ use App\Http\Controllers\admin\UserAddressController;
 use App\Http\Controllers\admin\UserController as AdminUserController;
 
 use App\Http\Controllers\clients\UserController as ClientUserController;
+use App\Http\Controllers\statistics\StatisticController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -274,3 +275,14 @@ Route::prefix('chat')->group(function () {
 
 //Client 
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
+
+
+//Thống kê
+
+Route::prefix('statistics')->group(function () {
+    //Top 10 người dùng mua sản phẩm nhiều nhất
+    Route::get('/topUserBought', [StatisticController::class, 'topUserBought']);
+    //Top 10 sản phẩm có số lương bán ra nhiều nhất 
+    Route::get('/topProductBought', [StatisticController::class, 'topProductBought']);
+
+});

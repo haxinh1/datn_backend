@@ -115,10 +115,11 @@ Route::prefix('orders')->group(function () {
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
     // Route cho trả hàng
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
-    Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
-    Route::get('/order-returns/{id}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
+    
 });
 
+Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
+Route::get('/order-returns/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
 Route::post('/order-returns/update-status/{returnId}', [OrderReturnController::class, 'updateStatus']);

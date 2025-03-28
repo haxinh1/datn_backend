@@ -15,56 +15,106 @@ class OrderReturnController extends Controller
     /**
      * Lấy danh sách các đơn hàng trả lại
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orderReturns = OrderReturn::with(['product', 'productVariant.attributeValues'])->get();
+        $orderId = $request->query('order_id'); // Lấy order_id từ query parameter
 
-        $detailedReturns = $orderReturns->map(function ($return) {
-            $product = $return->product;
-            $variant = $return->productVariant;
+        $query = OrderReturn::with(['order', 'product', 'productVariant.attributeValues']);
 
-            return [
-                'id' => $return->id,
-                'order_id' => $return->order_id,
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'thumbnail' => $variant?->thumbnail ?? $product->thumbnail,
-                'sell_price' => $variant?->sell_price ?? $return->price,
-                'quantity_returned' => $return->quantity_returned,
-                'reason' => $return->reason,
-                'employee_evidence' => $return->employee_evidence,
-                'status_id' => $return->status_id,
-                'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
-                    return [
-                        'attribute_name' => $attr->value,
-                        'attribute_id' => $attr->attribute_id,
-                    ];
-                }) : [],
-                'created_at' => $return->created_at,
-                'updated_at' => $return->updated_at,
-            ];
-        });
+        if ($orderId) {
+            $query->where('order_id', $orderId); // Lọc theo order_id nếu có
+        }
+
+        $orderReturns = $query->get()
+            ->groupBy('order_id')
+            ->map(function ($returns, $orderId) {
+                $firstReturn = $returns->first();
+                $order = $firstReturn->order;
+                return [
+                    'order_id' => $orderId,
+                    'reason' => $returns->first()->reason, // Chỉ lấy lý do một lần
+                    'employee_evidence' => $returns->first()->employee_evidence, // Chỉ lấy video một lần
+                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'products' => $returns->map(function ($return) {
+                        $product = $return->product;
+                        $variant = $return->productVariant;
+
+                        return [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'thumbnail' => $variant?->thumbnail ?? $product->thumbnail,
+                            'sell_price' => $variant?->sell_price ?? $return->price,
+                            'product_variant_id' => $return->product_variant_id,
+                            'quantity' => $return->quantity_returned,
+                            'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
+                                return [
+                                    'attribute_name' => $attr->value,
+                                    'attribute_id' => $attr->attribute_id,
+                                ];
+                            }) : [], // Giữ lại danh sách thuộc tính
+                        ];
+                    })->values(),
+                ];
+            })->values();
 
         return response()->json([
-            'order_returns' => $detailedReturns,
+            'order_returns' => $orderReturns,
         ], 200);
     }
+
 
     /**
      * Lấy thông tin trả hàng theo ID
      */
-    public function show($id)
+    public function show($orderId)
     {
-        $orderReturn = OrderReturn::with(['order', 'product', 'productVariant'])->find($id);
+        // Lấy thông tin của một order_id cụ thể
+        $orderReturns = OrderReturn::with(['order', 'product', 'productVariant.attributeValues'])
+            ->where('order_id', $orderId)
+            ->get()
+            ->groupBy('order_id')
+            ->map(function ($returns, $orderId) {
+                $firstReturn = $returns->first();
+                $order = $firstReturn->order; // Lấy thông tin đơn hàng
 
-        if (!$orderReturn) {
-            return response()->json(['message' => 'Không tìm thấy thông tin trả hàng'], 404);
+                return [
+                    'order_id' => $orderId,
+                    'reason' => $firstReturn->reason,
+                    'employee_evidence' => $firstReturn->employee_evidence,
+                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'products' => $returns->map(function ($return) {
+                        $product = $return->product;
+                        $variant = $return->productVariant;
+
+                        return [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'thumbnail' => $variant?->thumbnail ?? $product->thumbnail,
+                            'sell_price' => $variant?->sell_price ?? $return->price,
+                            'product_variant_id' => $return->product_variant_id,
+                            'quantity' => $return->quantity_returned,
+                            'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
+                                return [
+                                    'attribute_name' => $attr->value,
+                                    'attribute_id' => $attr->attribute_id,
+                                ];
+                            }) : [],
+                        ];
+                    })->values(),
+                ];
+            })->first(); // Chỉ lấy một order_id duy nhất
+
+        if (!$orderReturns) {
+            return response()->json([
+                'message' => 'Không tìm thấy đơn hàng trả hàng',
+            ], 404);
         }
 
         return response()->json([
-            'order_return' => $orderReturn
+            'order_return' => $orderReturns,
         ], 200);
     }
+
     /**
      * Lưu thông tin trả hàng vào bảng order_returns
      */

@@ -28,7 +28,7 @@ class OrderReturn extends Model
     // Quan hệ với bảng Orders
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     // Quan hệ với bảng Products

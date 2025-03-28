@@ -3,97 +3,118 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderReturn;
 use Illuminate\Http\Request;
 use App\Models\RefundDetail;
 use Illuminate\Support\Facades\DB;
 
 class RefundController extends Controller
 {
-    // Khách hàng gửi yêu cầu hoàn tiền
-    public function requestRefund(Request $request)
-    {
-        $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'order_return_id' => 'required|exists:order_returns,id',
-            'note' => 'nullable|string',
-            'employee_evidence' => 'nullable|string'
-        ]);
-
-        $refund = RefundDetail::create([
-            'order_id' => $request->order_id,
-            'order_return_id' => $request->order_return_id,
-            'note' => $request->note,
-            'employee_evidence' => $request->employee_evidence,
-            'status' => 12
-        ]);
-
-        // Cập nhật trạng thái đơn hàng thành "Yêu cầu hoàn tiền" (status_id = 12)
-        DB::table('orders')->where('id', $request->order_id)->update(['status_id' => 12]);
-
-        // Cập nhật trạng thái yêu cầu trả hàng thành "Yêu cầu hoàn tiền" (status_id = 12)
-        DB::table('order_returns')->where('id', $request->order_return_id)->update(['status_id' => 12]);
-
-        $userId = $request->input('user_id');
-        // Lưu lịch sử trạng thái trong bảng order_order_statuses
-        DB::table('order_order_statuses')->insert([
-            'order_id' => $request->order_id,
-            'order_status_id' => 12,  // Trạng thái "Yêu cầu hoàn tiền"
-            'modified_by' => $userId,
-            'note' => 'Yêu cầu hoàn tiền',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return response()->json(['message' => 'Yêu cầu hoàn tiền đã được gửi!', 'refund' => $refund]);
-    }
-
-    // Admin xác nhận đã hoàn tiền
-    public function confirmRefund(Request $request, $id)
+    public function requestRefundByOrder(Request $request, $orderId)
     {
         $request->validate([
             'note' => 'nullable|string',
             'employee_evidence' => 'nullable|string',
-            'user_id' => 'nullable|integer'
-        ]);
-    
-        $refund = RefundDetail::findOrFail($id);
-
-        // Cập nhật trạng thái hoàn tiền thành công (status = 13)
-        $refund->update([
-            'status' => 13,
-            'note' => $request->note,
-            'employee_evidence' => $request->employee_evidence
+            'user_id' => 'required|exists:users,id'
         ]);
 
-        // Cập nhật trạng thái đơn hàng thành "Hoàn tiền thành công" (status_id = 13)
-        DB::table('orders')->where('id', $refund->order_id)->update(['status_id' => 13]);
+        $returns = OrderReturn::where('order_id', $orderId)->get();
 
-        // Cập nhật trạng thái trả hàng thành "Hoàn tiền thành công"
-        DB::table('order_returns')->where('id', $refund->order_return_id)->update(['status_id' => 13]);
+        if ($returns->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy yêu cầu trả hàng cho đơn này'], 404);
+        }
 
-        $userId = $request->input('user_id');
+        DB::beginTransaction();
+        try {
+            foreach ($returns as $return) {
+                RefundDetail::create([
+                    'order_id' => $orderId,
+                    'order_return_id' => $return->id,
+                    'note' => $request->note,
+                    'employee_evidence' => $request->employee_evidence,
+                    'status' => 12
+                ]);
 
-        // Lưu lịch sử trạng thái trong bảng order_order_statuses
-        DB::table('order_order_statuses')->insert([
-            'order_id' => $refund->order_id,
-            'order_status_id' => 13,  // Trạng thái "Hoàn tiền thành công"
-            'modified_by' => $userId,
-            'note' => 'Hoàn tiền thành công',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+                $return->update(['status_id' => 12]); // "Yêu cầu hoàn tiền"
+            }
 
-        return response()->json(['message' => 'Đã xác nhận hoàn tiền thành công', 'refund' => $refund]);
+            Order::where('id', $orderId)->update(['status_id' => 12]);
+
+            DB::table('order_order_statuses')->insert([
+                'order_id' => $orderId,
+                'order_status_id' => 12,
+                'modified_by' => $request->user_id,
+                'note' => 'Yêu cầu hoàn tiền',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+            return response()->json(['message' => 'Đã gửi yêu cầu hoàn tiền cho đơn hàng #' . $orderId]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi khi gửi yêu cầu hoàn tiền', 'error' => $e->getMessage()], 500);
+        }
     }
 
-    // Lấy danh sách tất cả bản ghi hoàn tiền
+    // 2. Admin xác nhận hoàn tiền theo order_id
+    public function confirmRefundByOrder(Request $request, $orderId)
+    {
+        $request->validate([
+            'note' => 'nullable|string',
+            'employee_evidence' => 'nullable|string',
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        $refunds = RefundDetail::where('order_id', $orderId)->get();
+        $returns = OrderReturn::where('order_id', $orderId)->get();
+
+        if ($refunds->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy bản ghi hoàn tiền'], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($refunds as $refund) {
+                $refund->update([
+                    'status' => 13,
+                    'note' => $request->note,
+                    'employee_evidence' => $request->employee_evidence
+                ]);
+            }
+
+            foreach ($returns as $return) {
+                $return->update(['status_id' => 13]); // "Hoàn tiền thành công"
+            }
+
+            Order::where('id', $orderId)->update(['status_id' => 13]);
+
+            DB::table('order_order_statuses')->insert([
+                'order_id' => $orderId,
+                'order_status_id' => 13,
+                'modified_by' => $request->user_id,
+                'note' => 'Hoàn tiền thành công',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+            return response()->json(['message' => 'Đã xác nhận hoàn tiền thành công cho đơn hàng #' . $orderId]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi xác nhận hoàn tiền', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // 3. Lấy danh sách bản ghi hoàn tiền
     public function index()
     {
         $refunds = RefundDetail::with(['order', 'orderReturn'])->get();
         return response()->json(['refunds' => $refunds]);
     }
 
-    // Xem chi tiết 1 bản ghi hoàn tiền
+    // 4. Lấy chi tiết 1 bản ghi hoàn tiền
     public function show($id)
     {
         $refund = RefundDetail::with(['order', 'orderReturn'])->findOrFail($id);

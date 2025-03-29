@@ -129,7 +129,7 @@ class CouponController extends Controller
     public function show(string $id)
     {
         try {
-            $coupon = Coupon::withTrashed()->findOrFail($id);
+            $coupon = Coupon::withTrashed()->with('users')->findOrFail($id);
             return response()->json([
                 'success' => true,
                 'message' => 'Chi tiết mã giảm giá',

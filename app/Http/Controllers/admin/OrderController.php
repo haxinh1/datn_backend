@@ -151,7 +151,7 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
             }
 
-            $usedPoints = $request->input('user_points', 60000);
+            $usedPoints = $request->input('used_points', 0);
             $discountPoints = 0;
 
 
@@ -160,7 +160,7 @@ class OrderController extends Controller
 
             if ($userId) {
                 if ($usedPoints > $user->loyalty_points) {
-                    Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['user_points' => $user->loyalty_points]);
+                    Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['used_points' => $user->loyalty_points]);
                     return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
                 }
                 $discountPoints =  $usedPoints;
@@ -262,7 +262,7 @@ class OrderController extends Controller
                 'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
-                'user_points' => $usedPoints,
+                'used_points' => $usedPoints,
                 'discount_points' => $discountPoints,
             ]);
 

@@ -8,6 +8,7 @@ use App\Models\ViewedProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\Clients\ProductService;
+use Illuminate\Support\Facades\Http;
 
 class ClientProductController extends Controller
 {
@@ -20,19 +21,21 @@ class ClientProductController extends Controller
     public function productDetail(string $id){
         try {
             $product = $this->productService->showProductById($id);
-            // $stocks = $this->productService->getHistoryStockProduct($id);
             $user = Auth::guard('sanctum')->user();
             $dataViewed= [];
             if ($user) {
                $this->productService->addViewedProducts($user,$product);
                $dataViewed = $this->productService->viewedProduct($user);
             }
-            
+            $recommended_products = Http::get('http://127.0.0.1:5000/recommend', [
+                'product_id' => $id
+            ])->json(); 
+             
             return response()->json([
                 'success' => true,
                 'data' => $product,
-                // 'stocks' => $stocks,
                 'dataViewed' => $dataViewed,
+                'recommended_products' => $recommended_products['recommended_products'] ?? [],
             ], 200);
 
         } catch (\Exception $e) {

@@ -12,7 +12,7 @@ db_config = {
     "host": "localhost",
     "user": "root",  # Thay bằng user database của bạn
     "password": "",  # Thay bằng mật khẩu database
-    "database": "datn"  # Thay bằng tên database Laravel
+    "database": "datn2025"  # Thay bằng tên database Laravel
 }
 
 def decimal_to_float(obj):

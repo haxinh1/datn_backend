@@ -259,6 +259,61 @@ class OrderReturnController extends Controller
             'order_items' => $finalItems
         ], 200);
     }
+    public function showByUser($userId)
+{
+    // Lấy danh sách đơn hoàn trả với thông tin liên quan đến order, product, và productVariant
+    $orderReturns = OrderReturn::with(['order', 'product', 'productVariant.attributeValues'])
+        ->join('orders', 'order_returns.order_id', '=', 'orders.id') // Join bảng orders để lấy user_id
+        ->where('orders.user_id', $userId) // Lọc theo user_id
+        ->get()
+        ->groupBy('order_id') // Nhóm theo order_id
+        ->map(function ($returns, $orderId) {
+            $firstReturn = $returns->first(); // Lấy bản hoàn trả đầu tiên trong nhóm
+            $order = $firstReturn->order; // Lấy thông tin đơn hàng
+
+            return [
+                'order_id' => $orderId,
+                'reason' => $firstReturn->reason, // Lý do hoàn trả
+                'employee_evidence' => $firstReturn->employee_evidence, // Video chứng minh
+                'order' => $order ? $order->toArray() : null, // Chuyển thông tin đơn hàng thành mảng
+                'order_returns' => $returns->map(function ($return) {
+                    $product = $return->product;
+                    $variant = $return->productVariant;
+
+                    // Trả về thông tin chi tiết của từng đơn hoàn trả
+                    return [
+                        'order_return_id' => $return->id, 
+                        'product' => [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
+                            'sell_price' => $variant ? $variant->sell_price : $return->price,
+                            'product_variant_id' => $return->product_variant_id,
+                            'quantity' => $return->quantity_returned,
+                            'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
+                                return [
+                                    'attribute_name' => $attr->value,
+                                    'attribute_id' => $attr->attribute_id,
+                                ];
+                            }) : [], // Giữ lại danh sách thuộc tính nếu có
+                        ]
+                    ];
+                })->values(),
+            ];
+        })->values(); // Trả về tất cả các đơn hoàn trả đã nhóm theo order_id
+
+    if ($orderReturns->isEmpty()) {
+        return response()->json([
+            'message' => 'Không tìm thấy đơn hàng trả lại cho người dùng này.',
+        ], 404);
+    }
+
+    return response()->json([
+        'order_returns' => $orderReturns, // Trả về tất cả dữ liệu đã xử lý
+    ], 200);
+}
+
+
 
     // Admin xử lý chấp nhận hoặc từ chối yêu cầu trả hàng
     public function updateStatusByOrder(Request $request, $orderId)

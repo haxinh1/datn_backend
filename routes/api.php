@@ -120,6 +120,8 @@ Route::prefix('orders')->group(function () {
 
 Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
 Route::get('/order-returns/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
+Route::get('/order-returns/user/{userId}', [OrderReturnController::class, 'showByUser']);
+
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
 Route::post('/order-returns/update-status/order/{orderId}', [OrderReturnController::class, 'updateStatusByOrder']);

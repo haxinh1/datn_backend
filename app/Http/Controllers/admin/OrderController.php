@@ -95,7 +95,6 @@ class OrderController extends Controller
         try {
             // Lấy userId từ frontend hoặc local
             $userId = $request->input('user_id') ?? null;
-
             // Kiểm tra nếu đã đăng nhập
             $user = $userId ? User::find($userId) : null;
 
@@ -151,6 +150,41 @@ class OrderController extends Controller
             if ($totalAmount <= 0) {
                 return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
             }
+
+            $usedPoints = $request->input('user_points', 60000);
+            $discountPoints = 0;
+
+
+            $user->loyalty_points;
+             Log::info('DEBUG - Số điểm khách hàng:', ['usedPoints' =>  $user->loyalty_points]);
+
+            if ($userId) {
+                if ($usedPoints > $user->loyalty_points) {
+                    Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['user_points' => $user->loyalty_points]);
+                    return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
+                }
+                $discountPoints =  $usedPoints;
+                $totalAmount -= $discountPoints;
+            } else {
+                $usedPoints = 0;
+            }
+
+            
+            // Nếu user có điểm thưởng và đã sử dụng, trừ điểm trong database
+            if ($userId && $usedPoints > 0) {
+                $user->decrement('loyalty_points', $usedPoints);
+                
+                $updatedPoints = $user->fresh()->loyalty_points;
+                 
+                Log::info('DEBUG - Trừ điểm thành công:', [
+                    'user_id' => $userId,
+                    'used_points' => $usedPoints,
+                    'remaining_points' => $updatedPoints
+                    //  $user->loyalty_points - $usedPoints
+                ]);
+            }
+
+
 
             // Kiểm tra thông tin khách hàng nếu chưa đăng nhập
             $request->validate([
@@ -215,7 +249,7 @@ class OrderController extends Controller
             if (!$paymentId) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
-
+            Log::info('DEBUG - Tổng tiền đơn hàng:', ['total_amount' => $totalAmount]);
             // Tạo đơn hàng
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
@@ -228,6 +262,8 @@ class OrderController extends Controller
                 'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
                 'payment_id' => $paymentId,
+                'user_points' => $usedPoints,
+                'discount_points' => $discountPoints,
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho

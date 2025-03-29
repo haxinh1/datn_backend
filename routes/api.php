@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\OrderItemExport;
 use App\Exports\ProductStocksExport;
 use App\Http\Controllers\admin\AttributeController;
 use App\Http\Controllers\admin\AttributeValueController;
@@ -23,11 +24,13 @@ use App\Http\Controllers\admin\UserAddressController;
 use App\Http\Controllers\admin\UserController as AdminUserController;
 
 use App\Http\Controllers\clients\UserController as ClientUserController;
+use App\Http\Controllers\statistics\StatisticController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
 use App\Http\Controllers\admin\OrderReturnController;
+use App\Http\Controllers\admin\RefundController;
 use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
@@ -81,6 +84,13 @@ Route::post('/export-product-stocks', function (Request $request) {
     }
     return Excel::download(new ProductStocksExport($orderIds), 'product_stocks.xlsx');
 });
+Route::post('/export-orders', function (Request $request) {
+    $orderIds = $request->input('order_ids', []);
+    if (empty($orderIds)) {
+        return Excel::download(new OrderItemExport(), 'order_item.xlsx');
+    }
+    return Excel::download(new OrderItemExport($orderIds), 'order_item.xlsx');
+});
 // Giỏ hàng (Cho phép khách vãng lai sử dụng)
 Route::get('/cart', [CartItemController::class, 'index'])->name('cart.view');
 Route::post('/cart/add/{id}', [CartItemController::class, 'store'])->name('cart.add');
@@ -106,12 +116,25 @@ Route::prefix('orders')->group(function () {
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
     // Route cho trả hàng
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
-    Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
-    Route::get('/order-returns/{id}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
+    
 });
+
+Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
+Route::get('/order-returns/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
+Route::get('/order-returns/user/{userId}', [OrderReturnController::class, 'showByUser']);
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
+Route::post('/order-returns/update-status/order/{orderId}', [OrderReturnController::class, 'updateStatusByOrder']);
+
+//Hoàn tiền
+Route::prefix('refunds')->group(function () {
+    Route::post('/request/{orderId}', [RefundController::class, 'requestRefundByOrder']);
+    Route::post('/confirm/{orderId}', [RefundController::class, 'confirmRefundByOrder']);
+    Route::get('/', [RefundController::class, 'index']);
+    Route::get('/{orderId}', [RefundController::class, 'show']);
+});
+
 
 
 
@@ -256,3 +279,13 @@ Route::prefix('chat')->group(function () {
 //Client 
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
 
+
+//Thống kê
+
+Route::prefix('statistics')->group(function () {
+    //Top 10 người dùng mua sản phẩm nhiều nhất
+    Route::get('/topUserBought', [StatisticController::class, 'topUserBought']);
+    //Top 10 sản phẩm có số lương bán ra nhiều nhất 
+    Route::get('/topProductBought', [StatisticController::class, 'topProductBought']);
+
+});

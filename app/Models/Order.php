@@ -17,6 +17,8 @@ class Order extends Model
         'phone_number',
         'address',
         'total_amount',
+        'used_points',
+        'discount_points',
         'shipping_fee',
         'status_id',
         'payment_id',

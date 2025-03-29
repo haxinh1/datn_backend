@@ -34,6 +34,7 @@ class User extends Authenticatable
         'status',
         'verified_at',
         'total_spent',
+        'rank_points',
         'rank',
     ];
 
@@ -87,5 +88,4 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'viewed_products')
                     ->withTimestamps();
     }
-    
 }

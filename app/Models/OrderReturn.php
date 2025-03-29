@@ -20,13 +20,15 @@ class OrderReturn extends Model
         'quantity_returned',
         'reason',
         'employee_evidence',
-        'status',
+        'status_id',
+        'price',
     ];
+
 
     // Quan hệ với bảng Orders
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     // Quan hệ với bảng Products
@@ -40,5 +42,9 @@ class OrderReturn extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+    // Quan hệ với bảng OrderStatus
+    public function orderStatus()
+    {
+        return $this->belongsTo(OrderStatus::class, 'status_id'); // Liên kết với bảng order_statuses
+    }
 }
-

@@ -33,6 +33,9 @@ class UserController extends Controller
             'birthday' => 'nullable|date',
             'address' => 'nullable|string',
             'detail_address' => 'nullable|string',
+            'ProvinceID' => 'nullable|string',
+            'DistrictID' => 'nullable|string',
+            'WardCode' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -54,6 +57,7 @@ class UserController extends Controller
                 'role' => 'customer',
                 'status' => 'inactive',
                 'total_spent' => 0,
+                'rank_points' => 0,
                 'rank' => 'Thành Viên',
             ]);
 
@@ -62,6 +66,9 @@ class UserController extends Controller
                 'user_id' => $user->id,
                 'address' => $request->address,
                 'detail_address' => $request->detail_address,
+                'ProvinceID' => $request->ProvinceID,
+                'DistrictID' => $request->DistrictID,
+                'WardCode' => $request->WardCode,
                 'id_default' => true,
             ]);
          }

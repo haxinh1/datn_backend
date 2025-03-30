@@ -11,7 +11,6 @@ class CouponController extends Controller
 
     public function search(Request $request)
     {
-
         $query = Coupon::query();
 
         if ($request->filled('code')) {
@@ -35,7 +34,13 @@ class CouponController extends Controller
             $query->where('is_active', $request->is_active);
         }
 
-        $coupons = $query->orderByDesc('id')->paginate(10);
+        // Lấy danh sách, nếu là private thì load users
+        $coupons = $query->orderByDesc('id')->get()->map(function ($coupon) {
+            if ($coupon->coupon_type === 'private') {
+                $coupon->load('users');
+            }
+            return $coupon;
+        });
 
         return response()->json([
             'success' => true,
@@ -47,15 +52,23 @@ class CouponController extends Controller
 
 
 
+
     public function index()
     {
-        $coupons = Coupon::withTrashed()->orderByDesc('id')->get();
+        $coupons = Coupon::withTrashed()->orderByDesc('id')->get()->map(function ($coupon) {
+            if ($coupon->coupon_type === 'private') {
+                $coupon->load('users');
+            }
+            return $coupon;
+        });
+
         return response()->json([
             'success' => true,
             'message' => "Đây là danh sách mã giảm giá",
             'data' => $coupons,
         ]);
     }
+
 
 
     public function store(Request $request)

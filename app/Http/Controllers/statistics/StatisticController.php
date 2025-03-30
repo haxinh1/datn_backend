@@ -17,7 +17,6 @@ class StatisticController extends Controller
         $topUserBought = $this->statisticService->topUserBought();
 
         return response()->json([
-            'success'=>true,
             'topUserBought'=> $topUserBought,
         ]);
     }
@@ -27,11 +26,29 @@ class StatisticController extends Controller
             $filter = $request->input('filter');
         }
         $topProductBought = $this->statisticService->topProductBought($filter);
-
         return response()->json([
-            'success'=>true,
             'topProductBought'=> $topProductBought,
         ]);
+    }
+    public function revenue(Request $request){
+        $revenue = $this->statisticService->revenue();
+        return response()->json($revenue);
+    }
+    public function orderStatistics(Request $request){
+        $orderStatistics = $this->statisticService->orderStatistics();
+        return response()->json($orderStatistics);
+    }
+    public function topBuyView(Request $request){
+        $topBuyView = $this->statisticService->topBuyView();
+        return response()->json($topBuyView);
+    }
+    public function revenueStatistics(Request $request){
+        $revenueStatistics = $this->statisticService->revenueStatistics();
+        return response()->json($revenueStatistics);
+    }
+    public function topRevenueDays(Request $request){
+        $topRevenueDays = $this->statisticService->topRevenueDays();
+        return response()->json($topRevenueDays);
     }
 
 }

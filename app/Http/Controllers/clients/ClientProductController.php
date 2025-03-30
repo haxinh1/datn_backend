@@ -22,6 +22,7 @@ class ClientProductController extends Controller
     public function productDetail(string $id){
         try { 
             $product = $this->productService->showProductById($id);
+             $this->productService->moreViewProductById($id);
             $user = Auth::guard('sanctum')->user();
             $dataViewed= [];
         

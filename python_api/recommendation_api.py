@@ -7,30 +7,26 @@ from collections import Counter
 
 app = Flask(__name__)
 
-# Cấu hình kết nối MySQL (Chỉnh sửa theo Laravel)
 db_config = {
     "host": "localhost",
-    "user": "root",  # Thay bằng user database của bạn
-    "password": "",  # Thay bằng mật khẩu database
-    "database": "datn2025"  # Thay bằng tên database Laravel
+    "user": "root", 
+    "password": "", 
+    "database": "datn2025" 
 }
 
 def decimal_to_float(obj):
-    """ Chuyển đổi Decimal thành float để tránh lỗi JSON """
     if isinstance(obj, decimal.Decimal):
         return float(obj)
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 def get_orders_data():
-    """ Lấy dữ liệu từ database """
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
-    
-    # Truy vấn tất cả sản phẩm đã được mua trong các đơn hàng
     cursor.execute("""
         SELECT orders.user_id, order_items.order_id, order_items.product_id
         FROM orders
         JOIN order_items ON orders.id = order_items.order_id
+        WHERE orders.status_id = 7
     """)
     
     orders = cursor.fetchall()
@@ -39,30 +35,19 @@ def get_orders_data():
     return orders
 
 def recommend_products(product_id, top_n=2):
-    """ Gợi ý sản phẩm thường được mua cùng và lấy thông tin chi tiết """
     orders_data = get_orders_data()
     
     if not orders_data:
-        return []  # Không có dữ liệu đơn hàng
+        return [] 
 
     df = pd.DataFrame(orders_data)
-
-    # Lọc ra các đơn hàng có chứa sản phẩm đang xem
     relevant_orders = df[df["product_id"] == product_id]["order_id"].unique()
-    
-    # Lấy tất cả sản phẩm xuất hiện trong các đơn hàng đó (trừ sản phẩm đang xem)
     related_products = df[df["order_id"].isin(relevant_orders) & (df["product_id"] != product_id)]["product_id"]
-
-    # Đếm số lần mỗi sản phẩm xuất hiện
     product_counts = Counter(related_products)
-
-    # Chọn ra `top_n` sản phẩm được mua cùng nhiều nhất
     recommended_product_ids = [p[0] for p in product_counts.most_common(top_n)]
 
     if not recommended_product_ids:
         return []
-
-    # Truy vấn bảng products để lấy thông tin sản phẩm chi tiết
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
@@ -74,10 +59,8 @@ def recommend_products(product_id, top_n=2):
     """
     cursor.execute(query, tuple(recommended_product_ids))
     products = cursor.fetchall()
-
     cursor.close()
     connection.close()
-    
     return products
 
 @app.route('/recommend', methods=['GET'])

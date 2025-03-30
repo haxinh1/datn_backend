@@ -16,5 +16,20 @@ class StatisticService
     public function topProductBought($filter){
         return $this->statisticRepository->topProductBought($filter);
     }
+    public function revenue(){
+        return $this->statisticRepository->revenue();
+    }
+    public function orderStatistics(){
+        return $this->statisticRepository->orderStatistics();
+    }
+    public function topBuyView(){
+        return $this->statisticRepository->topBuyView();
+    }
+    public function topRevenueDays(){
+        return $this->statisticRepository->topRevenueDays();
+    }
+    public function revenueStatistics(){
+        return $this->statisticRepository->revenueStatistics();
+    }
     
 }

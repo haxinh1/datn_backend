@@ -22,5 +22,8 @@ class ProductService
     public function viewedProduct($user){
        return $this->productRepository->viewedProduct($user);
     }
+    public function moreViewProductById($user){
+       return $this->productRepository->moreViewProductById($user);
+    }
 
 }

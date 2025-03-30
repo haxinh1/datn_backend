@@ -284,8 +284,18 @@ Route::get('/product-detail/{id}', [ClientProductController::class, 'productDeta
 
 Route::prefix('statistics')->group(function () {
     //Top 10 người dùng mua sản phẩm nhiều nhất
-    Route::get('/topUserBought', [StatisticController::class, 'topUserBought']);
+    Route::get('/top-user-bought', [StatisticController::class, 'topUserBought']);
     //Top 10 sản phẩm có số lương bán ra nhiều nhất 
-    Route::get('/topProductBought', [StatisticController::class, 'topProductBought']);
+    Route::get('/top-product-bought', [StatisticController::class, 'topProductBought']);
+    //Doanh thu theo ngày theo tháng theo năm
+    Route::get('/revenue', [StatisticController::class, 'revenue']);
+    //Tổng đơn theo trạng thái
+    Route::get('/order-statistics', [StatisticController::class, 'orderStatistics']);
+    //TOP 10 sản phẩm được mua nhiều nhất và 10 sản phẩm có lượt xem nhiều nhất
+    Route::get('/top-buy-view', [StatisticController::class, 'topBuyView']);
+    //Top doanh thu cao nhất theo ngày
+    Route::get('/top-revenue-days', [StatisticController::class, 'topRevenueDays']);
+    //Biểu đồ hoàn hủy
+    Route::get('/revenue-statistics', [StatisticController::class, 'revenueStatistics']);
 
 });

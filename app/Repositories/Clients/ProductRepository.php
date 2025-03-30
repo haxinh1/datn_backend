@@ -15,6 +15,11 @@ class ProductRepository {
         ])->where('id', $id)->firstOrFail();
         return $data;
     }
+    public function moreViewProductById($id){
+        $data = Product::find($id);
+        $data->increment('views');
+        return $data;
+    }
     public function getHistoryStockProduct($id){
 
         $datas = DB::table('product_stocks')

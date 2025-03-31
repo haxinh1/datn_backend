@@ -34,6 +34,7 @@ use App\Http\Controllers\admin\RefundController;
 use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\GoogleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,10 @@ use Maatwebsite\Excel\Facades\Excel;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle']);
+
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
 //Route thuộc tính
 Route::apiResource('/attributes', AttributeController::class);

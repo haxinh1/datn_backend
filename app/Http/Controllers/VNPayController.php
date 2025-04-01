@@ -45,9 +45,12 @@ class VNPayController extends Controller
         if (!$payment) {
             return response()->json(['message' => 'Phương thức thanh toán VNPay không tồn tại'], 400);
         }
-
+        if ($order->status_id != 1) {
+        return response()->json(['message' => 'Đơn hàng đã được thanh toán hoặc trạng thái không hợp lệ'], 400);
+    }
         $order->update([
-            'payment_id' => $payment->id
+            'payment_id' => $payment->id,
+            'status_id' => 1  
         ]);
 
         $vnp_Url = config('services.vnpay.url');
@@ -124,6 +127,7 @@ class VNPayController extends Controller
 
         // Kiểm tra nếu thiếu `vnp_SecureHash`
         if (!isset($inputData['vnp_SecureHash'])) {
+            Log::error("Missing Secure Hash in the response from VNPay.");
             return response()->json([
                 'message' => 'Thiếu mã bảo mật VNPay',
                 'data' => $inputData

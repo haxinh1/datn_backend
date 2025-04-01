@@ -18,7 +18,8 @@ class OrderItemController extends Controller
     {
         // Lấy tất cả các order items của đơn hàng
         $items = OrderItem::where('order_id', $orderId)
-            ->with(['product', 'productVariant.attributeValues']) // Nạp đúng quan hệ
+            ->with(['product', 'productVariant.attributeValues'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Nhóm theo product_variant_id (biến thể)

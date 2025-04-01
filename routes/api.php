@@ -119,6 +119,8 @@ Route::prefix('orders')->group(function () {
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
+    Route::post('/{orderId}/retry-payment', [OrderController::class, 'retryPayment']);
+
     // Route cho trả hàng
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
     

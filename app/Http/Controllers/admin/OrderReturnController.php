@@ -22,19 +22,20 @@ class OrderReturnController extends Controller
         $query = OrderReturn::with(['order', 'product', 'productVariant.attributeValues']);
 
         if ($orderId) {
-            $query->where('order_id', $orderId); // Lọc theo order_id nếu có
+            $query->where('order_id', $orderId); 
         }
 
-        $orderReturns = $query->get()
+        $orderReturns = $query->orderBy('created_at', 'desc') 
+            ->get()
             ->groupBy('order_id')
             ->map(function ($returns, $orderId) {
                 $firstReturn = $returns->first();
                 $order = $firstReturn->order;
                 return [
                     'order_id' => $orderId,
-                    'reason' => $returns->first()->reason, // Chỉ lấy lý do một lần
-                    'employee_evidence' => $returns->first()->employee_evidence, // Chỉ lấy video một lần
-                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'reason' => $returns->first()->reason, 
+                    'employee_evidence' => $returns->first()->employee_evidence, 
+                    'order' => $order ? $order->toArray() : null,
                     'products' => $returns->map(function ($return) {
                         $product = $return->product;
                         $variant = $return->productVariant;
@@ -51,7 +52,7 @@ class OrderReturnController extends Controller
                                     'attribute_name' => $attr->value,
                                     'attribute_id' => $attr->attribute_id,
                                 ];
-                            }) : [], // Giữ lại danh sách thuộc tính
+                            }) : [], 
                         ];
                     })->values(),
                 ];
@@ -71,6 +72,7 @@ class OrderReturnController extends Controller
         // Lấy thông tin của một order_id cụ thể
         $orderReturns = OrderReturn::with(['order', 'product', 'productVariant.attributeValues'])
             ->where('order_id', $orderId)
+            ->orderBy('created_at', 'desc') 
             ->get()
             ->groupBy('order_id')
             ->map(function ($returns, $orderId) {
@@ -102,7 +104,7 @@ class OrderReturnController extends Controller
                         ];
                     })->values(),
                 ];
-            })->first(); // Chỉ lấy một order_id duy nhất
+            })->first(); 
 
         if (!$orderReturns) {
             return response()->json([

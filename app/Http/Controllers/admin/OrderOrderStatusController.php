@@ -161,8 +161,8 @@ class OrderOrderStatusController extends Controller
         $request->validate([
             'order_ids' => 'required|array|min:1',
             'order_ids.*' => 'integer|exists:orders,id', // Đảm bảo các ID đơn hàng là hợp lệ
-            'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13',
-            'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13'
+            'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15',
+            'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15'
         ]);
 
         try {

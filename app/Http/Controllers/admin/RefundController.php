@@ -110,38 +110,39 @@ class RefundController extends Controller
     // Lấy danh sách tất cả các đơn hoàn tiền, nhóm theo order_id
     public function index(Request $request)
     {
-        $orderId = $request->query('order_id'); // Lấy order_id từ query parameter
+        $orderId = $request->query('order_id'); 
 
         // Lấy danh sách hoàn tiền với thông tin liên quan đến order và product
-        $query = RefundDetail::with(['order', 'orderReturn.product', 'orderReturn.productVariant']); // Liên kết với bảng order và orderReturn
+        $query = RefundDetail::with(['order', 'orderReturn.product', 'orderReturn.productVariant']); 
 
         if ($orderId) {
-            $query->where('order_id', $orderId); // Lọc theo order_id nếu có
+            $query->where('order_id', $orderId); 
         }
 
         // Lấy tất cả các đơn hoàn tiền, nhóm theo order_id
-        $refundDetails = $query->get()
-            ->groupBy('order_id') // Nhóm theo order_id
+        $refundDetails = $query->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('order_id') 
             ->map(function ($refunds, $orderId) {
-                $firstRefund = $refunds->first(); // Lấy bản ghi hoàn tiền đầu tiên trong nhóm
-                $order = $firstRefund->order; // Lấy thông tin đơn hàng
+                $firstRefund = $refunds->first(); 
+                $order = $firstRefund->order; 
 
                 // Trả về thông tin của đơn hàng và các sản phẩm
                 return [
                     'order_id' => $orderId,
-                    'note' => $firstRefund->note, // Chỉ lấy lý do hoàn tiền từ bản ghi đầu tiên
-                    'employee_evidence' => $firstRefund->employee_evidence, // Video chứng minh từ bản ghi đầu tiên
-                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'note' => $firstRefund->note, 
+                    'employee_evidence' => $firstRefund->employee_evidence, 
+                    'order' => $order ? $order->toArray() : null, 
                     'order_returns' => $refunds->map(function ($refund) {
-                        $orderReturn = $refund->orderReturn; // Lấy thông tin đơn hoàn trả từ quan hệ orderReturn
-                        $product = $orderReturn->product; // Lấy sản phẩm
-                        $variant = $orderReturn->productVariant; // Lấy variant sản phẩm
+                        $orderReturn = $refund->orderReturn; 
+                        $product = $orderReturn->product; 
+                        $variant = $orderReturn->productVariant; 
 
                         // Trả về thông tin chi tiết của từng đơn hoàn trả
                         return [
-                            'order_return_id' => $orderReturn->id, // Trả về order_return_id
-                            'reason' => $orderReturn->reason, // Lý do hoàn trả
-                            'employee_evidence' => $orderReturn->employee_evidence, // Video chứng minh từ bảng order_return
+                            'order_return_id' => $orderReturn->id,
+                            'reason' => $orderReturn->reason, 
+                            'employee_evidence' => $orderReturn->employee_evidence, 
                             'product' => [
                                 'product_id' => $product->id,
                                 'name' => $product->name,
@@ -157,12 +158,12 @@ class RefundController extends Controller
                                 }) : [],
                             ]
                         ];
-                    })->values(), // Trả về danh sách các đơn hoàn trả trong mảng
+                    })->values(), 
                 ];
-            })->values(); // Trả về tất cả các đơn hoàn tiền đã nhóm theo order_id
+            })->values(); 
 
         return response()->json([
-            'refund_details' => $refundDetails, // Trả về tất cả dữ liệu đã xử lý
+            'refund_details' => $refundDetails, 
         ], 200);
     }
 
@@ -174,33 +175,34 @@ class RefundController extends Controller
         }
 
         // Lấy danh sách hoàn tiền với thông tin liên quan đến order và product cho một order_id cụ thể
-        $query = RefundDetail::with(['order', 'orderReturn.product', 'orderReturn.productVariant']); // Liên kết với bảng order và orderReturn
+        $query = RefundDetail::with(['order', 'orderReturn.product', 'orderReturn.productVariant']); 
 
-        $query->where('order_id', $orderId); // Lọc theo order_id
+        $query->where('order_id', $orderId); 
 
         // Lấy các dữ liệu hoàn tiền cho order_id cụ thể
-        $refundDetails = $query->get()
-            ->groupBy('order_id') // Nhóm theo order_id
+        $refundDetails = $query->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('order_id') 
             ->map(function ($refunds, $orderId) {
-                $firstRefund = $refunds->first(); // Lấy bản ghi hoàn tiền đầu tiên trong nhóm
-                $order = $firstRefund->order; // Lấy thông tin đơn hàng
+                $firstRefund = $refunds->first(); 
+                $order = $firstRefund->order; 
 
                 // Trả về thông tin của đơn hàng và các sản phẩm
                 return [
                     'order_id' => $orderId,
-                    'note' => $firstRefund->note, // Lý do hoàn tiền
-                    'employee_evidence' => $firstRefund->employee_evidence, // Video chứng minh từ bản ghi đầu tiên
-                    'order' => $order ? $order->toArray() : null, // Chuyển toàn bộ order thành mảng
+                    'note' => $firstRefund->note, 
+                    'employee_evidence' => $firstRefund->employee_evidence, 
+                    'order' => $order ? $order->toArray() : null, 
                     'order_returns' => $refunds->map(function ($refund) {
-                        $orderReturn = $refund->orderReturn; // Lấy thông tin đơn hoàn trả từ quan hệ orderReturn
-                        $product = $orderReturn->product; // Lấy sản phẩm
-                        $variant = $orderReturn->productVariant; // Lấy variant sản phẩm
+                        $orderReturn = $refund->orderReturn; 
+                        $product = $orderReturn->product; 
+                        $variant = $orderReturn->productVariant;
 
                         // Trả về thông tin chi tiết của từng đơn hoàn trả
                         return [
-                            'order_return_id' => $orderReturn->id, // Trả về order_return_id
-                            'reason' => $orderReturn->reason, // Lý do hoàn trả từ bảng order_return
-                            'employee_evidence' => $orderReturn->employee_evidence, // Video chứng minh từ bảng order_return
+                            'order_return_id' => $orderReturn->id, 
+                            'reason' => $orderReturn->reason, 
+                            'employee_evidence' => $orderReturn->employee_evidence, 
                             'product' => [
                                 'product_id' => $product->id,
                                 'name' => $product->name,
@@ -216,13 +218,13 @@ class RefundController extends Controller
                                 }) : [],
                             ]
                         ];
-                    })->values(), // Trả về danh sách các đơn hoàn trả trong mảng
+                    })->values(), 
                 ];
-            })->values(); // Trả về tất cả các đơn hoàn tiền đã nhóm theo order_id
+            })->values();
 
         // Trả về kết quả
         return response()->json([
-            'refund_details' => $refundDetails, // Trả về tất cả dữ liệu đã xử lý
+            'refund_details' => $refundDetails, 
         ], 200);
     }
 }

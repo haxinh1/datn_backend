@@ -76,6 +76,7 @@ class OrderController extends Controller
         // Lấy đơn hàng theo ID
         $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('id', $id)
+            ->orderBy('created_at', 'desc')
             ->first();
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);

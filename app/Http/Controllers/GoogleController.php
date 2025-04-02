@@ -14,7 +14,6 @@ class GoogleController extends Controller
   
     public function redirectToGoogle()
     {
-        Log::info('Redirect to Google triggered');
         return Socialite::driver('google')->redirect();
     }
 
@@ -33,7 +32,7 @@ class GoogleController extends Controller
     if ($user) {
    
         Auth::login($user);
-        return redirect('/dashboard');
+   
     } else {
       
         $newUser = User::create([
@@ -51,10 +50,13 @@ class GoogleController extends Controller
             'total_spent'   => 0,
             'verified_at'   => now(),
         ]);
-        Log::info('New user created: ' . $newUser);
 
         Auth::login($newUser);
-        return redirect('/dashboard');
+        $token = $newUser->createToken('access_token')->plainTextToken;
+      return response()->json([
+            'user' => $newUser,
+            'token' => $token,
+        ]);
     }
 }
 

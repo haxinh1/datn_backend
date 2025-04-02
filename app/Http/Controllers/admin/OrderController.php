@@ -76,6 +76,7 @@ class OrderController extends Controller
         // Lấy đơn hàng theo ID
         $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('id', $id)
+            ->orderBy('created_at', 'desc')
             ->first();
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
@@ -166,13 +167,13 @@ class OrderController extends Controller
                 $usedPoints = 0;
             }
 
-            
+
             // Nếu user có điểm thưởng và đã sử dụng, trừ điểm trong database
             if ($userId && $usedPoints > 0) {
                 $user->decrement('loyalty_points', $usedPoints);
-                
+
                 $updatedPoints = $user->fresh()->loyalty_points;
-                 
+
                 Log::info('DEBUG - Trừ điểm thành công:', [
                     'user_id' => $userId,
                     'used_points' => $usedPoints,
@@ -309,5 +310,29 @@ class OrderController extends Controller
             DB::rollBack();
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
+    }
+    public function retryPayment($orderId)
+    {
+        // Lấy đơn hàng theo ID và kiểm tra trạng thái
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['message' => 'Đơn hàng không tồn tại'], 404);
+        }
+
+        if ($order->status_id != 1) {
+            return response()->json(['message' => 'Đơn hàng không thể thanh toán lại, trạng thái không hợp lệ'], 400);
+        }
+
+        // Lấy phương thức thanh toán (VNPay hoặc COD)
+        $paymentMethod = 'vnpay'; // Giả sử chỉ hỗ trợ VNPay để thanh toán lại
+
+        // Tạo yêu cầu thanh toán VNPay
+        $vnpayController = app()->make(VNPayController::class);
+
+        return $vnpayController->createPayment(new Request([
+            'order_id' => $order->id,
+            'payment_method' => $paymentMethod
+        ]));
     }
 }

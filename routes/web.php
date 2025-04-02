@@ -23,7 +23,6 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\GoogleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,18 +38,6 @@ use App\Http\Controllers\GoogleController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
-
-
-Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle']);
-
-Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
 
 //Route thuộc tính

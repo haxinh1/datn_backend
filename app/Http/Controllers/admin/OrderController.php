@@ -155,9 +155,6 @@ class OrderController extends Controller
             $discountPoints = 0;
 
 
-            $user->loyalty_points;
-             Log::info('DEBUG - Số điểm khách hàng:', ['usedPoints' =>  $user->loyalty_points]);
-
             if ($userId) {
                 if ($usedPoints > $user->loyalty_points) {
                     Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['used_points' => $user->loyalty_points]);

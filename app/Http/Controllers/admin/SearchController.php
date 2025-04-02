@@ -14,12 +14,17 @@ class SearchController extends Controller
         $request->validate([
             'keyword' => 'required|string',
         ]);
+        
 
         $keyword = $request->keyword;
-        $users = User::where('fullname', 'LIKE', "%{$keyword}%")
-            ->orWhere('email', 'LIKE', "%{$keyword}%")
-            ->orWhere('phone_number', 'LIKE', "%{$keyword}%")
-            ->get();
+
+        $users = User::where('role', 'customer')
+        ->where(function ($query) use ($keyword) {
+            $query->where('fullname', 'LIKE', "%{$keyword}%")
+                ->orWhere('email', 'LIKE', "%{$keyword}%")
+                ->orWhere('phone_number', 'LIKE', "%{$keyword}%");
+        }) 
+        ->get();
 
         return response()->json($users, 200);
     }
@@ -33,7 +38,7 @@ class SearchController extends Controller
         $products = Product::where('name', 'LIKE', "%{$keyword}%")
             ->with([
                 'categories',
-                'atributeValueProduct.attributeValue',
+                'attributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
             ])

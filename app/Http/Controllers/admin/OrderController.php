@@ -296,6 +296,10 @@ class OrderController extends Controller
                 'discount_points' => $discountPoints,
                 'coupon_code' => $couponCode,
                 'discount_amount' => $discountAmount,
+                'coupon_id' => $coupon ? $coupon->id : null, 
+                'coupon_description' => $coupon ? $coupon->description : null, 
+                'coupon_discount_type' => $coupon ? $coupon->discount_type : null, 
+                'coupon_discount_value' => $coupon ? $coupon->discount_value : null, 
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderMail;
+use App\Models\Coupon;
 
 class OrderController extends Controller
 {
@@ -129,7 +130,7 @@ class OrderController extends Controller
                 }
             }
 
-            // 🏷 Tính tổng tiền đơn hàng
+            // Tính tổng tiền đơn hàng
             $totalAmount = $cartItems->sum(function ($item) {
                 $product = Product::find($item['product_id']);
 
@@ -142,15 +143,42 @@ class OrderController extends Controller
 
                 return $item['quantity'] * $price;
             });
+
+            // Kiểm tra và áp dụng mã giảm giá
+            $couponCode = $request->input('coupon_code');
+            $discountAmount = 0;
+            if ($couponCode) {
+                // Kiểm tra xem mã giảm giá có hợp lệ không
+                $coupon = Coupon::where('code', $couponCode)->where('is_active', true)
+                    ->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now())
+                    ->first();
+
+                if (!$coupon) {
+                    return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn'], 400);
+                }
+
+                // Tính toán giá trị giảm giá dựa trên loại mã giảm giá (percent hoặc fix_amount)
+                if ($coupon->discount_type == 'percent') {
+                    $discountAmount = ($coupon->discount_value / 100) * $totalAmount;
+                } else {
+                    $discountAmount = $coupon->discount_value;
+                }
+
+                // Đảm bảo không giảm quá số tiền tổng
+                if ($discountAmount > $totalAmount) {
+                    $discountAmount = $totalAmount;
+                }
+
+                // Trừ giá trị giảm giá vào tổng tiền
+                $totalAmount -= $discountAmount;
+
+                Log::info("DEBUG - Áp dụng mã giảm giá: {$couponCode}, giảm giá: $discountAmount, tổng tiền sau giảm: $totalAmount");
+            }
             // Nhận phí ship từ frontend
             $shippingFee = $request->input('shipping_fee', 0);
-
-            // Cộng phí ship vào tổng tiền
             $totalAmount += $shippingFee;
 
-            if ($totalAmount <= 0) {
-                return response()->json(['message' => 'Giá trị đơn hàng không hợp lệ'], 400);
-            }
 
             $usedPoints = $request->input('used_points', 0);
             $discountPoints = 0;
@@ -158,14 +186,18 @@ class OrderController extends Controller
 
             if ($userId) {
                 if ($usedPoints > $user->loyalty_points) {
-                    Log::info('DEBUG - Số điểm khách hàng ko hợp lệ:', ['used_points' => $user->loyalty_points]);
                     return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
                 }
-                $discountPoints =  $usedPoints;
-                $totalAmount -= $discountPoints;
-            } else {
-                $usedPoints = 0;
+                $discountPoints = $usedPoints;
+                $totalAmount -= $discountPoints; // Trừ điểm thưởng vào tổng tiền
             }
+
+            // Đảm bảo tổng tiền không âm
+            if ($totalAmount < 0) {
+                $totalAmount = 0;
+            }
+
+            Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', ['total_amount' => $totalAmount]);
 
 
             // Nếu user có điểm thưởng và đã sử dụng, trừ điểm trong database
@@ -255,13 +287,15 @@ class OrderController extends Controller
                 'fullname' => $fullname,
                 'email' => $email,
                 'phone_number' => $phone_number,
-                'address' => $address, // Lấy từ bảng user_addresses
+                'address' => $address,
                 'total_amount' => $totalAmount,
                 'shipping_fee' => $shippingFee,
-                'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3, // VNPay = 1, COD = 3
+                'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3,
                 'payment_id' => $paymentId,
                 'used_points' => $usedPoints,
                 'discount_points' => $discountPoints,
+                'coupon_code' => $couponCode,
+                'discount_amount' => $discountAmount,
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
@@ -292,17 +326,17 @@ class OrderController extends Controller
 
             // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
             if ($paymentMethod == 'vnpay') {
-                DB::commit(); // Commit trước khi gọi VNPay (tránh mất đơn hàng nếu lỗi)
+                DB::commit();
 
                 $vnpayController = app()->make(VNPayController::class);
                 return $vnpayController->createPayment(new Request([
                     'order_id' => $order->id,
-                    'payment_method' => $paymentMethod // 
+                    'payment_method' => $paymentMethod
                 ]));
             }
 
             // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
-            $order->update(['status_id' => 3]); // "Chờ xử lý"
+            $order->update(['status_id' => 3]);
             DB::commit();
 
             return response()->json(['message' => 'Đặt hàng thành công!', 'order' => $order], 201);
@@ -325,7 +359,7 @@ class OrderController extends Controller
         }
 
         // Lấy phương thức thanh toán (VNPay hoặc COD)
-        $paymentMethod = 'vnpay'; // Giả sử chỉ hỗ trợ VNPay để thanh toán lại
+        $paymentMethod = 'vnpay';
 
         // Tạo yêu cầu thanh toán VNPay
         $vnpayController = app()->make(VNPayController::class);

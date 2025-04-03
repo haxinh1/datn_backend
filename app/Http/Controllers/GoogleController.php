@@ -11,54 +11,46 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleController extends Controller
 {
-  
+
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->with(['prompt' => 'select_account'])->redirect();
     }
-
-
+    
     public function handleGoogleCallback()
-{
-    try {
-        $googleUser = Socialite::driver('google')->user();
-    } catch (\Exception $e) {
-        return redirect('/login')->with('error', 'Xác thực Google thất bại.');
+    {
+
+        $googleUser = Socialite::driver('google')->stateless()->user();
+
+        $user = User::where('email', $googleUser->getEmail())->first();
+
+        if ($user) {
+
+            Auth::login($user);
+
+            $token = $user->createToken('token')->plainTextToken;
+            
+            return redirect()->to('http://localhost:5173/google-callback?token=' . $token . '&user=' . urlencode(json_encode($user)));
+       
+        } else {
+            $newUser = User::create([
+                'google_id' => $googleUser->id,
+                'phone_number' => '0' . rand(100000000, 999999999),
+                'password' => bcrypt(Str::random(16)),
+                'email' => $googleUser->email,
+                'fullname' => $googleUser->name,
+                'avatar' => $googleUser->avatar,
+                'status' => 'active',
+                'role' => 'customer',
+                'rank' => 'Thành Viên',
+                'rank_points' => 0,
+                'loyalty_points' => 0,
+                'total_spent' => 0,
+                'verified_at' => now(),
+            ]);
+            Auth::login($newUser);
+            $token = $newUser->createToken('token')->plainTextToken;
+            return redirect()->to('http://localhost:5173/google-callback?token=' . $token . '&user=' . urlencode(json_encode($newUser)));
+        }
     }
-
-
-    $user = User::where('email', $googleUser->getEmail())->first();
-
-    if ($user) {
-   
-        Auth::login($user);
-   
-    } else {
-      
-        $newUser = User::create([
-            'google_id'     => $googleUser->id,
-            'phone_number'  => '0' . rand(100000000, 999999999),
-            'password'      => bcrypt(Str::random(16)),
-            'email'         => $googleUser->email,
-            'fullname'      => $googleUser->name,
-            'avatar'        => $googleUser->avatar,
-            'status'        => 'active',
-            'role'          => 'customer',
-            'rank'          => 'Thành Viên',
-            'rank_points'   => 0,
-            'loyalty_points' => 0,
-            'total_spent'   => 0,
-            'verified_at'   => now(),
-        ]);
-
-        Auth::login($newUser);
-        $token = $newUser->createToken('access_token')->plainTextToken;
-      return response()->json([
-            'user' => $newUser,
-            'token' => $token,
-        ]);
-    }
-}
-
-
 }

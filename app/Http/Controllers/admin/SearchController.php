@@ -38,7 +38,7 @@ class SearchController extends Controller
         $products = Product::where('name', 'LIKE', "%{$keyword}%")
             ->with([
                 'categories',
-                'attributeValueProduct.attributeValue',
+                'atributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
             ])

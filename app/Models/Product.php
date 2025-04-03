@@ -41,7 +41,7 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
-    public function attributeValueProduct()
+    public function atributeValueProduct()
     {
         return $this->hasMany(AttributeValueProduct::class);
     }

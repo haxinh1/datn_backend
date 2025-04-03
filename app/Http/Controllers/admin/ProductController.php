@@ -25,7 +25,7 @@ class ProductController extends Controller
         try {
             $products = Product::with([
                 'categories',
-                'attributeValueProduct.attributeValue',
+                'atributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
             ])
@@ -158,7 +158,7 @@ class ProductController extends Controller
             $product = Product::with([
                 'categories',
                 'galleries',
-                'attributeValueProduct.attributeValue',
+                'atributeValueProduct.attributeValue',
                 'variants',
                 'variants.attributeValueProductVariants.attributeValue',
             ])->where('id', $id)->firstOrFail();

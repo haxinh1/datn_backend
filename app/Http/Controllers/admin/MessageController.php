@@ -28,8 +28,9 @@ class MessageController extends Controller
         }
 
         // Lấy thông tin người gửi từ hệ thống xác thực
-        $senderId = Auth::check() ? Auth::id() : null;
-        $userRole = Auth::check() ? Auth::user()->role : 'guest'; // Nếu chưa đăng nhập, mặc định là khách
+        $userAuth = Auth::guard('sanctum')->user();
+        $senderId =  $userAuth ? $userAuth->id : null;
+        $userRole = $userAuth ? $userAuth->role : 'guest'; // Nếu chưa đăng nhập, mặc định là khách
 
         // Xác định loại người gửi dựa vào vai trò
         if (in_array($userRole, ['admin', 'manager'])) {

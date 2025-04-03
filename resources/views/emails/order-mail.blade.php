@@ -33,6 +33,7 @@
             font-size: 16px;
             line-height: 1.6;
             color: #555;
+            text-align: center
         }
 
         h3 {
@@ -102,8 +103,8 @@
     </style>
 </head>
 <body>
-   {{-- 9704198526191432198  --}}
 
+    
     <div class="container">
         <h1>Xin chào {{ $order->fullname }},</h1>
         <p>Cảm ơn bạn đã đặt hàng tại cửa hàng của chúng tôi. Dưới đây là thông tin chi tiết đơn hàng của bạn:</p>
@@ -116,15 +117,17 @@
             <li><strong>Số điện thoại:</strong> {{ $order->phone_number }}</li>
             <li><strong>Địa chỉ:</strong> {{ $order->address }}</li>
             <li><strong>Tổng tiền:</strong> {{ number_format($order->total_amount, 0, ',', '.') }} VND</li>
-            <li><strong>Phương thức thanh toán:</strong> {{ $order->payment->name ?? 'Không xác định' }}</li>
-            <li><strong>Trạng thái:</strong> {{ $order->status->name ?? 'Không xác định' }}</li>
         </ul>
 
         <h3>Chi tiết sản phẩm:</h3>
         <ul>
             @foreach ($order->orderItems as $item)
                 <li>
-                    <strong>Sản phẩm:</strong> {{ $item->product->name ?? 'Không xác định' }}<br>
+                    <strong>Sản phẩm:</strong> {{ $item->product->name ?? 'Không xác định' }} (
+                    @if ($item->productVariant)
+                    {{ $item->productVariant->attributeValues->map(fn($attributeValue) => $attributeValue->value)->implode(' - ') }}
+                   ) <br>
+                @endif 
                     <strong>Số lượng:</strong> {{ $item->quantity }}<br>
                     <strong>Giá:</strong> {{ number_format($item->sell_price, 0, ',', '.') }} VND
                 </li>

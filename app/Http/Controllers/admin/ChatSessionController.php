@@ -14,7 +14,8 @@ class ChatSessionController extends Controller
      */
     public function createSession(Request $request)
     {
-        $rules = Auth::check()
+        $user = Auth::guard('sanctum')->user();
+        $rules = $user
             ? [] // Nếu đã đăng nhập, không cần validate guest_phone và guest_name
             : [
                 'guest_phone' => 'required|string|max:15',
@@ -24,9 +25,9 @@ class ChatSessionController extends Controller
         $request->validate($rules);
 
         $chatSession = ChatSession::create([
-            'customer_id' => Auth::check() ? Auth::id() : null,
-            'guest_phone' => Auth::check() ? null : $request->guest_phone,
-            'guest_name' => Auth::check() ? null : $request->guest_name,
+            'customer_id' => $user ? $user->id : null,
+            'guest_phone' => $user ? null : $request->guest_phone,
+            'guest_name' => $user ? null : $request->guest_name,
             'status' => 'open',
             'created_date' => now()
         ]);
@@ -39,13 +40,15 @@ class ChatSessionController extends Controller
      */
     public function getSessions(Request $request)
     {
-        if (Auth::check()) {
+
+        $user = Auth::guard('sanctum')->user();
+        if ($user) {
             // Nếu là nhân viên, lấy tất cả chat đang mở
-            if (Auth::user()->is_employee) {
+            if (!($user->role === "customer")) {
                 $sessions = ChatSession::where('status', 'open')->get();
             } else {
                 // Nếu là khách hàng đã đăng nhập, chỉ lấy phiên của họ
-                $sessions = ChatSession::where('customer_id', Auth::id())->get();
+                $sessions = ChatSession::where('customer_id',$user->id)->get();
             }
         } else {
             // Nếu là khách vãng lai, lấy phiên theo số điện thoại

@@ -147,6 +147,7 @@ class OrderController extends Controller
             // Kiểm tra và áp dụng mã giảm giá
             $couponCode = $request->input('coupon_code');
             $discountAmount = 0;
+            $coupon = null;
             if ($couponCode) {
                 // Kiểm tra xem mã giảm giá có hợp lệ không
                 $coupon = Coupon::where('code', $couponCode)->where('is_active', true)

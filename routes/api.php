@@ -123,7 +123,7 @@ Route::prefix('orders')->group(function () {
 
     // Route cho trả hàng
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
-    
+
 });
 
 Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
@@ -252,6 +252,8 @@ Route::get('coupons/{id}', [CouponController::class, 'show']);
 Route::post('coupons/create', [CouponController::class, 'store']);
 Route::put('coupons/{id}', [CouponController::class, 'update']);
 
+Route::get('coupons/availableCoupons}', [CouponController::class, 'availableCoupons']);
+
 
 
 Route::prefix('comments')->group(function () {
@@ -283,7 +285,7 @@ Route::prefix('chat')->group(function () {
     Route::post('/mark-as-read/{id}', [MessageController::class, 'markAsRead']);
 });
 
-//Client 
+//Client
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
 
 
@@ -292,7 +294,7 @@ Route::get('/product-detail/{id}', [ClientProductController::class, 'productDeta
 Route::prefix('statistics')->group(function () {
     //Top 10 người dùng mua sản phẩm nhiều nhất
     Route::get('/top-user-bought', [StatisticController::class, 'topUserBought']);
-    //Top 10 sản phẩm có số lương bán ra nhiều nhất 
+    //Top 10 sản phẩm có số lương bán ra nhiều nhất
     Route::get('/top-product-bought', [StatisticController::class, 'topProductBought']);
     //Doanh thu theo ngày theo tháng theo năm
     Route::get('/revenue', [StatisticController::class, 'revenue']);

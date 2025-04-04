@@ -252,7 +252,7 @@ Route::get('coupons/{id}', [CouponController::class, 'show']);
 Route::post('coupons/create', [CouponController::class, 'store']);
 Route::put('coupons/{id}', [CouponController::class, 'update']);
 
-Route::get('coupons/availableCoupons}', [CouponController::class, 'availableCoupons']);
+Route::get('coupons/availableCoupons', [CouponController::class, 'availableCoupons']);
 
 
 

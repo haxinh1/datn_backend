@@ -57,6 +57,51 @@ class OrderObserver
     }
     }
 
+    public function updated(Order $order)
+    {
+  
+        if ($order->status_id == 9) {
+
+            $user = User::where('id', $order->user_id)->first();
+
+            if ($user) {
+           
+                $point = ($order->total_amount * 2) / 100;
+
+           
+                $user->loyalty_points -= $point;
+                $user->rank_points -= $point;
+                $user->total_spent -= $order->total_amount;
+
+       
+                if ($user->loyalty_points < 0) {
+                    $user->loyalty_points = 0;
+                }
+                if ($user->rank_points < 0) {
+                    $user->rank_points = 0;
+                }
+                if ($user->total_spent < 0) {
+                    $user->total_spent = 0;
+                }
+
+   
+                $rank = 'Thành Viên';
+                if ($user->rank_points >= 400000) {
+                    $rank = 'Kim Cương';
+                } elseif ($user->rank_points >= 200000) {
+                    $rank = 'Vàng';
+                } elseif ($user->rank_points >= 100000) {
+                    $rank = 'Bạc';
+                } elseif ($user->rank_points >= 40000) {
+                    $rank = 'Đồng';
+                }
+
+                $user->rank = $rank;
+                $user->save();
+            }
+        }
+    }
+
     public function created(Order $order): void
     {
         //
@@ -65,10 +110,7 @@ class OrderObserver
     /**
      * Handle the Order "updated" event.
      */
-    public function updated(Order $order): void
-    {
-        //
-    }
+
 
     /**
      * Handle the Order "deleted" event.

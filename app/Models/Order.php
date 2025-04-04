@@ -79,4 +79,15 @@ class Order extends Model
             ->exists();
     }
 
+    // Hàm check user đã từng dùng chauw
+    // true là user này đã dùng voucher này 1 lần
+    // false là user này chưa tung dùng voucher này 1 lần
+    public static function hasUsedCoupon($userId, $couponId)
+    {
+        return self::where('user_id', $userId)
+            ->where('coupon_id', $couponId)
+            ->exists();
+    }
+
+
 }

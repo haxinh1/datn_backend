@@ -4,6 +4,7 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class CouponController extends Controller
@@ -49,6 +50,8 @@ class CouponController extends Controller
         ]);
     }
 
+
+    // Hàm cho client lấy ra danh sách voucher có thể dùng + còn is_active và private
 
 
 
@@ -232,5 +235,53 @@ class CouponController extends Controller
             ], 500);
         }
     }
+
+
+    public function availableCoupons(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+        $now = now();
+
+        $query = Coupon::where('is_active', true)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('start_date')->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($query) use ($now) {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $now);
+            })
+            ->where(function ($query) {
+                $query->whereNull('usage_limit')->orWhereColumn('usage_count', '<', 'usage_limit');
+            });
+
+        // Nếu user đăng nhập, lọc theo cả 3 loại coupon_type
+        if ($user) {
+            $query->where(function ($query) use ($user) {
+                $query->where('coupon_type', 'public')
+                    ->orWhere(function ($q) use ($user) {
+                        $q->where('coupon_type', 'private')
+                            ->whereHas('users', function ($uq) use ($user) {
+                                $uq->where('users.id', $user->id);
+                            });
+                    })
+                    ->orWhere(function ($q) use ($user) {
+                        $q->where('coupon_type', 'rank')
+                            ->where('rank', $user->rank ?? '');
+                    });
+            });
+        } else {
+            // Nếu chưa đăng nhập, chỉ lấy coupon công khai
+            $query->where('coupon_type', 'public');
+        }
+
+        $coupons = $query->orderByDesc('id')->with('users')->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách mã giảm giá có thể sử dụng',
+            'data' => $coupons,
+        ]);
+    }
+
+
 
 }

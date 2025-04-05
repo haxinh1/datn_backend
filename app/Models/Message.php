@@ -25,6 +25,8 @@ class Message extends Model
 
     // Mặc định timestamps đã có (created_at, updated_at)
 
+    protected $with = ['sender'];
+
     // Liên kết với phiên trò chuyện
     public function chatSession()
     {

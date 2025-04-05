@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\MomoController;
 use App\Http\Controllers\VNPayController;
 use App\Models\Order;
 use App\Models\CartItem;
@@ -147,8 +148,8 @@ class OrderController extends Controller
             // Kiểm tra và áp dụng mã giảm giá
             $couponCode = $request->input('coupon_code');
             $discountAmount = 0;
+            $coupon = null;
             if ($couponCode) {
-                // Kiểm tra xem mã giảm giá có hợp lệ không
                 $coupon = Coupon::where('code', $couponCode)->where('is_active', true)
                     ->where('start_date', '<=', now())
                     ->where('end_date', '>=', now())
@@ -158,65 +159,51 @@ class OrderController extends Controller
                     return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn'], 400);
                 }
 
-                // Tính toán giá trị giảm giá dựa trên loại mã giảm giá (percent hoặc fix_amount)
                 if ($coupon->discount_type == 'percent') {
                     $discountAmount = ($coupon->discount_value / 100) * $totalAmount;
                 } else {
                     $discountAmount = $coupon->discount_value;
                 }
 
-                // Đảm bảo không giảm quá số tiền tổng
                 if ($discountAmount > $totalAmount) {
                     $discountAmount = $totalAmount;
                 }
 
-                // Trừ giá trị giảm giá vào tổng tiền
                 $totalAmount -= $discountAmount;
 
                 Log::info("DEBUG - Áp dụng mã giảm giá: {$couponCode}, giảm giá: $discountAmount, tổng tiền sau giảm: $totalAmount");
             }
-            // Nhận phí ship từ frontend
             $shippingFee = $request->input('shipping_fee', 0);
             $totalAmount += $shippingFee;
 
-
             $usedPoints = $request->input('used_points', 0);
             $discountPoints = 0;
-
 
             if ($userId) {
                 if ($usedPoints > $user->loyalty_points) {
                     return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
                 }
                 $discountPoints = $usedPoints;
-                $totalAmount -= $discountPoints; // Trừ điểm thưởng vào tổng tiền
+                $totalAmount -= $discountPoints;
             }
 
-            // Đảm bảo tổng tiền không âm
             if ($totalAmount < 0) {
                 $totalAmount = 0;
             }
 
             Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', ['total_amount' => $totalAmount]);
 
-
-            // Nếu user có điểm thưởng và đã sử dụng, trừ điểm trong database
             if ($userId && $usedPoints > 0) {
                 $user->decrement('loyalty_points', $usedPoints);
-
                 $updatedPoints = $user->fresh()->loyalty_points;
 
                 Log::info('DEBUG - Trừ điểm thành công:', [
                     'user_id' => $userId,
                     'used_points' => $usedPoints,
                     'remaining_points' => $updatedPoints
-                    //  $user->loyalty_points - $usedPoints
                 ]);
             }
 
-
-
-            // Kiểm tra thông tin khách hàng nếu chưa đăng nhập
             $request->validate([
                 'fullname' => $user ? 'nullable' : 'required|string|max:255',
                 'email' => $user ? 'nullable' : 'required|email|max:255',
@@ -224,30 +211,23 @@ class OrderController extends Controller
                 'address' => $user ? 'nullable' : 'required|string|max:255',
             ]);
 
-            // Lấy thông tin khách hàng
             $fullname = $user->fullname ?? $request->fullname ?? '';
             $email = $user->email ?? $request->email ?? '';
             $phone_number = $user->phone_number ?? $request->phone_number ?? '';
 
-
-            // Nếu người dùng nhập địa chỉ mới, ưu tiên địa chỉ mới
             if ($request->filled('address')) {
                 $address = $request->address;
             } else {
-                // Nếu không, lấy địa chỉ từ database
                 $address = $user ? $user->addresses()->where('id_default', true)->value('address') : null;
                 if ($user && !$address) {
                     $address = $user->addresses()->orderByDesc('created_at')->value('address');
                 }
             }
 
-            // Nếu không có địa chỉ nào hợp lệ, báo lỗi
             if (!$address) {
                 return response()->json(['message' => 'Bạn chưa có địa chỉ, vui lòng cập nhật'], 400);
             }
 
-
-            // Nếu user chưa có địa chỉ, lưu lại địa chỉ mới
             if ($user && !$user->addresses()->exists() && $request->address) {
                 $user->addresses()->create([
                     'address' => $request->address,
@@ -255,22 +235,21 @@ class OrderController extends Controller
                 ]);
             }
 
-            // Kiểm tra phương thức thanh toán
             $paymentMethod = strtolower($request->input('payment_method', ''));
             if (!$paymentMethod) {
                 return response()->json(['message' => 'Thiếu phương thức thanh toán'], 400);
             }
 
-            // Kiểm tra nếu khách vãng lai, chỉ cho phép VNPay
-            if (!$userId && $paymentMethod != 'vnpay') {
-                return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay'], 400);
+            // Cập nhật điều kiện cho phép khách vãng lai thanh toán qua VNPay hoặc MoMo
+            if (!$userId && !in_array($paymentMethod, ['vnpay', 'momo'])) {
+                return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay hoặc MoMo'], 400);
             }
 
-            // Kiểm tra nếu phương thức thanh toán không hợp lệ (cho phép cả VNPay và COD cho người dùng đã đăng nhập)
-            if (!in_array($paymentMethod, ['vnpay', 'cod'])) {
+            // Cập nhật danh sách phương thức thanh toán hợp lệ
+            if (!in_array($paymentMethod, ['vnpay', 'cod', 'momo'])) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
-            // Lấy ID phương thức thanh toán từ bảng payments
+
             $payment = DB::table('payments')
                 ->whereRaw('LOWER(name) = ?', [strtolower($paymentMethod)])
                 ->first();
@@ -279,7 +258,9 @@ class OrderController extends Controller
             if (!$paymentId) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
+
             Log::info('DEBUG - Tổng tiền đơn hàng:', ['total_amount' => $totalAmount]);
+
             // Tạo đơn hàng
             $order = Order::create([
                 'code' => 'ORD' . strtoupper(Str::random(8)),
@@ -290,16 +271,16 @@ class OrderController extends Controller
                 'address' => $address,
                 'total_amount' => $totalAmount,
                 'shipping_fee' => $shippingFee,
-                'status_id' => ($paymentMethod == 'vnpay') ? 1 : 3,
+                'status_id' => ($paymentMethod == 'cod') ? 3 : 1, // COD: confirmed, VNPay/MoMo: pending
                 'payment_id' => $paymentId,
                 'used_points' => $usedPoints,
                 'discount_points' => $discountPoints,
                 'coupon_code' => $couponCode,
                 'discount_amount' => $discountAmount,
-                'coupon_id' => $coupon ? $coupon->id : null, 
-                'coupon_description' => $coupon ? $coupon->description : null, 
-                'coupon_discount_type' => $coupon ? $coupon->discount_type : null, 
-                'coupon_discount_value' => $coupon ? $coupon->discount_value : null, 
+                'coupon_id' => $coupon ? $coupon->id : null,
+                'coupon_description' => $coupon ? $coupon->description : null,
+                'coupon_discount_type' => $coupon ? $coupon->discount_type : null,
+                'coupon_discount_value' => $coupon ? $coupon->discount_value : null,
             ]);
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
@@ -313,6 +294,7 @@ class OrderController extends Controller
                         ? ProductVariant::where('id', $item['product_variant_id'])->value('sale_price') ?? ProductVariant::where('id', $item['product_variant_id'])->value('sell_price')
                         : Product::where('id', $item['product_id'])->value('sale_price') ?? Product::where('id', $item['product_id'])->value('sell_price'),
                 ]);
+
                 // Trừ stock nếu chọn COD
                 if ($paymentMethod == 'cod') {
                     if ($item['product_variant_id']) {
@@ -323,27 +305,31 @@ class OrderController extends Controller
                 }
             }
 
-            // Xóa giỏ hàng sau khi đặt hàng thành công**
+            // Xóa giỏ hàng sau khi đặt hàng thành công
             if ($userId) {
                 CartItem::where('user_id', $userId)->delete();
             }
 
-            // Nếu chọn VNPay, gọi VNPayController để tạo URL thanh toán
+            // Xử lý các phương thức thanh toán
             if ($paymentMethod == 'vnpay') {
                 DB::commit();
-
                 $vnpayController = app()->make(VNPayController::class);
                 return $vnpayController->createPayment(new Request([
                     'order_id' => $order->id,
                     'payment_method' => $paymentMethod
                 ]));
+            } elseif ($paymentMethod == 'momo') {
+                DB::commit();
+                $momoController = app()->make(MomoController::class);
+                return $momoController->momo_payment(new Request([
+                    'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
+                    'total_momo' => $totalAmount, // Tổng tiền
+                ]));
+            } else { // COD
+                $order->update(['status_id' => 3]);
+                DB::commit();
+                return response()->json(['message' => 'Đặt hàng thành công!', 'order' => $order], 201);
             }
-
-            // Nếu chọn COD, đơn hàng được xác nhận ngay lập tức
-            $order->update(['status_id' => 3]);
-            DB::commit();
-
-            return response()->json(['message' => 'Đặt hàng thành công!', 'order' => $order], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);

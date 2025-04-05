@@ -35,6 +35,7 @@ use App\Http\Controllers\clients\ClientProductController;
 use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\MomoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,7 +107,7 @@ Route::delete('/cart/remove/{productId}/{variantId?}', [CartItemController::clas
 Route::delete('/cart/destroy-all', [CartItemController::class, 'destroyAll'])->name('cart.destroyAll');
 
 Route::get('user/{userId}/top-products', [OrderItemController::class, 'getTopProductsByUser']);
-
+Route::get('/momo/callback', [MomoController::class, 'callback'])->name('momo.callback');
 
 // Quản lý đơn hàng (Cho phép khách đặt hàng mà không cần đăng nhập)
 Route::prefix('orders')->group(function () {
@@ -238,6 +239,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Api url = "baseUrl/api/categories"
 Route::get('categories', [CategoryController::class, 'index']); // Lấy danh sách danh mục
+Route::get('product-by-category/{id}', [CategoryController::class, 'getProductByCategory']); // Lấy danh sách danh mục
 Route::get('categories/{category}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
 Route::post('categories/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);

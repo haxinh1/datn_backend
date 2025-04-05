@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 
@@ -93,6 +94,31 @@ class CategoryController extends Controller
             return response()->json($category, 200); // Đảm bảo mã trạng thái là 200 (OK)
 
     }
+    public function getProductByCategory($id)
+{
+    try {
+        $products = Product::with([
+                'atributeValueProduct.attributeValue', // Lấy thông tin giá trị thuộc tính của sản phẩm
+                'variants', // Lấy các biến thể của sản phẩm
+                'variants.attributeValueProductVariants.attributeValue', // Lấy thông tin giá trị thuộc tính của các biến thể
+            ])
+            ->whereHas('categories', function($query) use ($id) {
+                $query->where('category_id', $id); // Lọc sản phẩm theo category_id
+            })
+            ->orderByDesc('id')
+            ->get();
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách sản phẩm theo danh mục!',
+            'data' => $products,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi khi truy xuất sản phẩm theo danh mục!',
+        ], 500);
+    }
+}
 
 }

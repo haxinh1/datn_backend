@@ -146,7 +146,7 @@ class MomoController extends Controller
                 return response()->json(['message' => 'Lỗi hệ thống'], 500);
             }
         } else {
-            $order->update(['status_id' => 4]); // Thanh toán thất bại
+            $order->update(['status_id' => 1]); // Thanh toán thất bại
             return redirect()->away("http://localhost:5173/thanks?" . http_build_query([
                 'success' => 'false',
                 'order_id' => $order->id,

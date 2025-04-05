@@ -31,6 +31,7 @@ class StockController extends Controller
             'stocks.updated_at as ngaycapnhap'
         ])
             ->join('users', 'stocks.created_by', '=', 'users.id')
+            ->orderByDesc('ngaytao')
             ->with('productStocks.product', 'productStocks.productVariant')
             ->get();
 

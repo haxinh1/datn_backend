@@ -23,17 +23,15 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 // Chat event
 Broadcast::channel('chat.{chatSessionId}', function ($user, $chatSessionId) {
 
-
     $chatSession = ChatSession::where('id', $chatSessionId)->first();
-
     if (!$chatSession) {
         return false;
     }
     $auth = Auth::guard('sanctum')->user();
     if ($auth) {
         // Nếu đã đăng nhập, kiểm tra quyền truy cập
-        return $chatSession->customer_id === $user->id ||
-            $chatSession->storeUsers()->where('user_id', $user->id)->exists();
+        return $chatSession->customer_id === $auth->id ||
+            $auth->role != "customer";
     }
 
     // Nếu là guest, kiểm tra session và trả về dữ liệu guest

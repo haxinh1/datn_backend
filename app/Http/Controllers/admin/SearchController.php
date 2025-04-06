@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\Order;
 
 class SearchController extends Controller
 {
@@ -50,6 +51,27 @@ class SearchController extends Controller
             'message' => 'Danh sách sản phẩm tìm kiếm!',
             'data' => $products,
         ], 200);
+    }
+
+    public function searchOrders(Request $request)
+    {
+        $validated = $request->validate([
+            'keyword' => 'required|string',
+        ]);
+
+        $keyword = $validated['keyword'];
+
+        $orders = Order::where('code', 'LIKE', '%' . $keyword . '%')
+            ->orWhereHas('user', function ($query) use ($keyword) {
+                $query->where('fullname', 'LIKE', '%' . $keyword . '%');
+            })
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        return response()->json($orders);
     }
 
 }

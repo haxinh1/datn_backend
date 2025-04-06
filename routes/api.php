@@ -122,26 +122,27 @@ Route::prefix('orders')->group(function () {
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
     Route::post('/{orderId}/retry-payment', [OrderController::class, 'retryPayment']);
 
-    // Route cho trả hàng
-    Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
 
 });
 
-Route::get('/order-returns', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
-Route::get('/order-returns/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
-Route::get('/order-returns/user/{userId}', [OrderReturnController::class, 'showByUser']);
+Route::prefix('order-returns')->group(function () {
+    // Trả hàng
+    Route::get('/', [OrderReturnController::class, 'index']); // Lấy danh sách các đơn hàng trả lại
+    Route::get('/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
+    Route::get('/user/{userId}', [OrderReturnController::class, 'showByUser']); // Trả hàng theo user
+    Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
+     // Admin xử lý chấp nhận hoặc từ chối
+     Route::post('/{orderId}/status/update', [OrderReturnController::class, 'updateStatusByOrder']);
+     // Admin xác nhận hoàn tiền thành công
+     Route::post('/{orderId}/refund/confirm', [OrderReturnController::class, 'confirmRefundByOrder']);
+});
+
+
 
 Route::get('/completed', [OrderController::class, 'completedOrders']);
 Route::get('/accepted-returns', [OrderController::class, 'acceptedReturnOrders']);
-Route::post('/order-returns/update-status/order/{orderId}', [OrderReturnController::class, 'updateStatusByOrder']);
 
-//Hoàn tiền
-Route::prefix('refunds')->group(function () {
-    Route::post('/request/{orderId}', [RefundController::class, 'requestRefundByOrder']);
-    Route::post('/confirm/{orderId}', [RefundController::class, 'confirmRefundByOrder']);
-    Route::get('/', [RefundController::class, 'index']);
-    Route::get('/{orderId}', [RefundController::class, 'show']);
-});
+
 
 
 
@@ -196,6 +197,7 @@ Route::apiResource('coupons', CouponController::class);
 Route::prefix('admin')->group(function () {
     Route::get('/products/search', [SearchController::class, 'searchProducts']);
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
+    Route::get('/orders/search', [SearchController::class, 'searchOrders']);
 });
 //route admin user
 Route::prefix('admin')->group(function () {

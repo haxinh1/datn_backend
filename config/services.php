@@ -28,7 +28,7 @@ return [
         'url' => env('VNP_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
         'return_url' => env('VNP_RETURN_URL', 'http://127.0.0.1:8000/api/payments/vnpay/return'),
         'tmn_code' => env('VNP_TMN_CODE', 'FOQ8B80U'),
-        'hash_secret' => env('VNP_HASH_SECRET', 'E2XRZHWXVAC2XGJXO1M51MRRQXNDN3U8'), // 🔥 CHẮC CHẮN hash_secret này đúng
+        'hash_secret' => env('VNP_HASH_SECRET', 'E2XRZHWXVAC2XGJXO1M51MRRQXNDN3U8'), 
     ],
 
     'ses' => [
@@ -37,10 +37,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
     'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI','http://127.0.0.1:8000/api/auth/google/callback'),
-],
-   
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8000/api/auth/google/callback'),
+    ],
+
 
 ];

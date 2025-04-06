@@ -136,6 +136,7 @@ class MomoController extends Controller
                 return redirect()->away("http://localhost:5173/thanks?" . http_build_query([
                     'success' => 'true',
                     'order_id' => $order->id,
+                    'order_code' => $order->code,
                     'momo_OrderInfo' => "Thanh toan don hang " . $order->code,
                     'momo_Amount' => $data['amount'],
                     'momo_ResponseCode' => '0',

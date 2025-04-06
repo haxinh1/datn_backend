@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderMail;
 use App\Models\Coupon;
+use App\Models\UserPointTransaction;
 
 class OrderController extends Controller
 {
@@ -282,6 +283,18 @@ class OrderController extends Controller
                 'coupon_discount_type' => $coupon ? $coupon->discount_type : null,
                 'coupon_discount_value' => $coupon ? $coupon->discount_value : null,
             ]);
+
+               if($usedPoints > 0) {
+                    UserPointTransaction::create([
+                        'user_id' => $userId,
+                        'points' => -$usedPoints,  
+                        'type' => 'subtract', 
+                        'reason' => 'Sử dụng điểm để thanh toán đơn hàng',
+                        'order_id' => $order->id,  
+                    ]);
+                }
+       
+            
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
             foreach ($cartItems as $item) {

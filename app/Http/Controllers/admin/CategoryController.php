@@ -120,7 +120,16 @@ class CategoryController extends Controller
     public function getProductByCategory($id)
     {
         try {
+        
+              $category = Category::find($id);
+        if(!$category){
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi truy xuất sản phẩm theo danh mục!',
+            ], 500);
+        }
             $products = Product::with([
+            
                 'atributeValueProduct.attributeValue', // Lấy thông tin giá trị thuộc tính của sản phẩm
                 'variants', // Lấy các biến thể của sản phẩm
                 'variants.attributeValueProductVariants.attributeValue', // Lấy thông tin giá trị thuộc tính của các biến thể
@@ -134,6 +143,7 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Danh sách sản phẩm theo danh mục!',
+                'category' => $category,
                 'data' => $products,
             ], 200);
         } catch (\Exception $e) {

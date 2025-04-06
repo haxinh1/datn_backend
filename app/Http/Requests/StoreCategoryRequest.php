@@ -27,7 +27,7 @@ class StoreCategoryRequest extends FormRequest
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'ordinal' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-            'thumbnail'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
+            'thumbnail'    => ['string', 'max:255'],
         ];
     }
 }

@@ -35,10 +35,7 @@ class CategoryController extends Controller
             $category->slug = $request->slug;
             $category->ordinal = $request->ordinal;
             $category->parent_id = $request->parent_id;
-            if ($request->hasFile('thumbnail')) {
-                $path = $request->thumbnail->store('categories', 'public');
-                $category->thumbnail = $path;
-            }
+            $category->thumbnail = $request->thumbnail;
             $category->save();
             return response()->json($category);
 
@@ -67,7 +64,7 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'ordinal' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-            'thumbnail'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
+            'thumbnail'    => ['string', 'max:255'],
         ]);
 
         if ($validator->fails()) {
@@ -81,10 +78,7 @@ class CategoryController extends Controller
             $category->ordinal = $request->ordinal;
             $category->parent_id = $request->parent_id;
             $category->is_active = $request->is_active;
-            if ($request->hasFile('thumbnail')) {
-                $path = $request->thumbnail->store('categories', 'public');
-                $category->thumbnail = $path;
-            }
+            $category->thumbnail = $request->thumbnail;
             $category->save();
             return response()->json($category);
         } catch (\Throwable $throwable) {

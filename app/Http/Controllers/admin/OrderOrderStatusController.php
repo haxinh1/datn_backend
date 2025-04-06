@@ -105,10 +105,8 @@ class OrderOrderStatusController extends Controller
             6 => [4, 8],    // Giao hàng thất bại -> Giao hàng lại hoặc hủy đơn
             7 => [9], // Đã hoàn thành -> Chờ xử lí trả hàng
             9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
-            10 => [12],    // Chấp nhận trả hàng -> Chờ xử lí hoàn tiền
-            12 => [13],   // Chờ xử lí hoàn tiền -> Hoàn tiền thành công
-            13 => [14],   // Hoàn tiền thành công -> Hàng đang quay về shop
-            14 => [15],   // Hàng đang quay về shop -> Người bán đã nhận hàng
+            12 => [13],   // Hoàn tiền thành công -> Hàng đang quay về shop
+            13 => [14],   // Hàng đang quay về shop -> Người bán đã nhận hàng
 
 
         ];
@@ -137,8 +135,8 @@ class OrderOrderStatusController extends Controller
             // Cập nhật trạng thái đơn hàng trong bảng `orders`
             $order->update(['status_id' => $request->order_status_id]);
 
-            // Kiểm tra nếu trạng thái chuyển từ 14 (Hàng đang quay về shop) sang 15 (Người bán đã nhận hàng)
-            if ($order->status_id == 15) {
+            // Kiểm tra nếu trạng thái chuyển từ 14 (Hàng đang quay về shop) sang 14 (Người bán đã nhận hàng)
+            if ($order->status_id == 14) {
                 // Lấy tất cả các đơn hàng trả lại tương ứng với order_id
                 $orderReturns = OrderReturn::where('order_id', $orderId)->get();
 
@@ -184,8 +182,8 @@ class OrderOrderStatusController extends Controller
         $request->validate([
             'order_ids' => 'required|array|min:1',
             'order_ids.*' => 'integer|exists:orders,id', // Đảm bảo các ID đơn hàng là hợp lệ
-            'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15',
-            'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15'
+            'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14',
+            'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14'
         ]);
 
         try {
@@ -210,9 +208,7 @@ class OrderOrderStatusController extends Controller
                 4 => [5, 6], // Đang giao hàng -> Đã giao hàng hoặc Giao hàng thất bại
                 5 => [7],    // Đã giao hàng -> Hoàn thành
                 9 => [10, 11], // Chờ xử lý trả hàng -> Chấp nhận hoặc Từ chối
-                10 => [12],    // Chấp nhận trả hàng -> Chờ xử lí hoàn tiền
-                13 => [14],   // Hoàn tiền thành công -> Hàng đang quay về shop
-                14 => [15],   // Hàng đang quay về shop -> Người bán đã nhận hàng
+                13 => [14],   // Hàng đang quay về shop -> Người bán nhận được hàng
 
             ];
 
@@ -237,8 +233,8 @@ class OrderOrderStatusController extends Controller
                 ]);
                 // Phát sự kiện để cập nhật trạng thái thời gian thực
                 event(new OrderStatusUpdated($order)); 
-                // Cộng stock khi update status = 15
-                if ($order->status_id == 15) {
+                // Cộng stock khi update status = 144
+                if ($order->status_id == 14) {
                     // Lấy tất cả các đơn hàng trả lại tương ứng với order_id
                     $orderReturns = OrderReturn::where('order_id', $order->id)->get();
 

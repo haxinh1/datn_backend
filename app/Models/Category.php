@@ -28,6 +28,7 @@ class Category extends Model
         'slug',
         'ordinal',
         'is_active',
+        'thumbnail',
     ];
 
     /**

@@ -88,4 +88,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'viewed_products')
                     ->withTimestamps();
     }
+    public function pointTransactions()
+{
+    return $this->hasMany(UserPointTransaction::class);
+}
+public function orders()
+{
+    return $this->hasMany(Order::class);
+}
 }

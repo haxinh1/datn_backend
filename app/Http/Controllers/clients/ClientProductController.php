@@ -19,45 +19,54 @@ class ClientProductController extends Controller
         $this->productService = $productService;
     }
 
-    public function productDetail(string $id){
-        try { 
+    public function productDetail(string $id)
+    {
+        try {
             $product = $this->productService->showProductById($id);
-             $this->productService->moreViewProductById($id);
+            $this->productService->moreViewProductById($id);
+    
             $user = Auth::guard('sanctum')->user();
-            $dataViewed= [];
-        
+            $dataViewed = [];
+    
             if ($user) {
                 $this->productService->addViewedProducts($user, $product);
                 $dataViewed = $this->productService->viewedProduct($user);
             }
-            $recommended_products = [];
-            try {
-                $response = Http::get('http://127.0.0.1:5000/recommend', [
-                    'product_id' => $id
-                ]);
-        
-                if ($response->successful()) {
-                    $data = $response->json();
-                    $recommended_products = $data['recommended_products'] ?? [];
-                }
-            } catch (\Exception $e) {
-                // Ghi log lỗi nếu cần
-                Log::error('Lỗi gọi API gợi ý sản phẩm: ' . $e->getMessage());
-            }
-        
+    
             return response()->json([
                 'success' => true,
                 'data' => $product,
                 'dataViewed' => $dataViewed,
-                'recommended_products' => $recommended_products,
             ], 200);
-        
+    
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sản phẩm không tìm thấy hoặc xảy ra lỗi! ' . $e->getMessage(),
             ], 404);
         }
-        
     }
+    public function getRecommendedProducts($id)
+    {
+        $recommended_products = [];
+    
+        try {
+            $response = Http::timeout(2)->get('http://127.0.0.1:5000/recommend', [
+                'product_id' => $id
+            ]);
+    
+            if ($response->successful()) {
+                $data = $response->json();
+                $recommended_products = $data['recommended_products'] ?? [];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('API gợi ý sản phẩm lỗi hoặc quá chậm: ' . $e->getMessage());
+        }
+    
+        return response()->json([
+            'success' => true,
+            'recommended_products' => $recommended_products,
+        ]);
+    }
+        
 }

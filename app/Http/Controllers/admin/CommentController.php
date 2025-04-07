@@ -247,6 +247,8 @@ class CommentController extends Controller
         ]);
     }
 
+
+    // Lấy ra comment theo product
     public function getCommentsByProduct(Request $request, $productId): JsonResponse
     {
         $query = Comment::where('products_id', $productId)->whereNull("parent_id");

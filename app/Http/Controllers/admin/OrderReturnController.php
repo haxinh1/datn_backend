@@ -143,7 +143,7 @@ class OrderReturnController extends Controller
         $bankAccount = $request->input('bank_account_number');
         $bankName = $request->input('bank_name');
         $bankQr = $request->input('bank_qr');
-        $statusId = 9; 
+        $statusId = 9;
 
         $createdReturns = [];
 
@@ -329,6 +329,13 @@ class OrderReturnController extends Controller
             return response()->json(['message' => 'Không tìm thấy yêu cầu trả hàng'], 404);
         }
 
+        // Kiểm tra trạng thái đơn hàng, chỉ cho phép hoàn tiền khi trạng thái là 10 (Chấp nhận trả hàng)
+        $order = Order::findOrFail($orderId);
+
+        if ($order->status_id != 10) {
+            return response()->json(['message' => 'Chỉ có thể hoàn tiền khi yêu cầu trả hàng đã được chấp nhận.'], 400);
+        }
+
         DB::beginTransaction();
         try {
             foreach ($returns as $return) {
@@ -342,7 +349,7 @@ class OrderReturnController extends Controller
 
             OrderOrderStatus::create([
                 'order_id' => $orderId,
-                'order_status_id' => 122,
+                'order_status_id' => 12,
                 'modified_by' => $request->user_id,
                 'note' => $request->note ?? 'Hoàn tiền thành công',
                 'created_at' => now(),

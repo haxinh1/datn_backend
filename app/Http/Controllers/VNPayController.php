@@ -46,11 +46,11 @@ class VNPayController extends Controller
             return response()->json(['message' => 'Phương thức thanh toán VNPay không tồn tại'], 400);
         }
         if ($order->status_id != 1) {
-        return response()->json(['message' => 'Đơn hàng đã được thanh toán hoặc trạng thái không hợp lệ'], 400);
-    }
+            return response()->json(['message' => 'Đơn hàng đã được thanh toán hoặc trạng thái không hợp lệ'], 400);
+        }
         $order->update([
             'payment_id' => $payment->id,
-            'status_id' => 1  
+            'status_id' => 1
         ]);
 
         $vnp_Url = config('services.vnpay.url');
@@ -191,9 +191,9 @@ class VNPayController extends Controller
         // Nếu giao dịch thành công (`vnp_ResponseCode == 00`)
         if ($inputData['vnp_ResponseCode'] == 00) {
             $order = Order::find($inputData['vnp_TxnRef']);
-          
-       
-      
+
+
+
             // Kiểm tra nếu không tìm thấy đơn hàng
             if (!$order) {
                 Log::error("Order not found for TxnRef: {$inputData['vnp_TxnRef']}");
@@ -238,9 +238,9 @@ class VNPayController extends Controller
                     'order_status_id' => 2, // Trạng thái "Đã thanh toán"
                     'note' => 'Thanh toán VNPay thành công.',
                 ]);
-             if($order->user_id == null){
-                Mail::to($order->email)->send(new OrderMail($order));   
-             }
+                if ($order->user_id == null) {
+                    Mail::to($order->email)->send(new OrderMail($order));
+                }
                 return redirect()->away(
                     'http://localhost:5173/thanks?' . http_build_query([
                         'success' => 'true',

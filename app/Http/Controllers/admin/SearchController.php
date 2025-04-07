@@ -62,9 +62,7 @@ class SearchController extends Controller
         $keyword = $validated['keyword'];
 
         $orders = Order::where('code', 'LIKE', '%' . $keyword . '%')
-            ->orWhereHas('user', function ($query) use ($keyword) {
-                $query->where('fullname', 'LIKE', '%' . $keyword . '%');
-            })
+            ->orwhere('fullname', 'LIKE', '%' . $keyword . '%')
             ->get();
 
         if ($orders->isEmpty()) {

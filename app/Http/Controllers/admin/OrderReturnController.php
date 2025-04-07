@@ -122,32 +122,34 @@ class OrderReturnController extends Controller
      */
     public function store(Request $request, $orderId)
     {
+        // Xác thực dữ liệu đầu vào
         $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'reason' => 'required|string|max:255',
             'employee_evidence' => 'nullable|string',
-            'request_refund' => 'nullable|boolean',
-            'bank_account_number' => 'nullable|string|max:50',
-            'bank_name' => 'nullable|string|max:100',
-            'bank_qr' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|integer|exists:products,id',
             'products.*.product_variant_id' => 'nullable|integer|exists:product_variants,id',
             'products.*.quantity' => 'required|integer|min:1',
+            'bank_account_number' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_qr' => 'nullable|string',
         ]);
 
         $userId = $request->input('user_id');
         $reason = $request->input('reason');
         $evidence = $request->input('employee_evidence');
-        $requestRefund = $request->boolean('request_refund', false);
-        $bankAccount = $request->input('bank_account_number');
-        $bankName = $request->input('bank_name');
-        $bankQr = $request->input('bank_qr');
-        $statusId = 9; 
+        $statusId = 9; // Trạng thái yêu cầu trả hàng
+
+        // Kiểm tra nếu có yêu cầu hoàn tiền, thì điền thông tin ngân hàng
+        $bankAccount = $request->input('bank_account_number', null);
+        $bankName = $request->input('bank_name', null);
+        $bankQr = $request->input('bank_qr', null);
 
         $createdReturns = [];
 
         foreach ($request->products as $product) {
+            // Kiểm tra xem sản phẩm đã được trả hàng chưa
             $existingReturn = DB::table('order_returns')
                 ->where('order_id', $orderId)
                 ->where('product_id', $product['product_id'])
@@ -164,6 +166,7 @@ class OrderReturnController extends Controller
                 ], 400);
             }
 
+            // Lấy thông tin sản phẩm trong order_items
             $orderItem = DB::table('order_items')
                 ->where('order_id', $orderId)
                 ->where('product_id', $product['product_id'])
@@ -178,12 +181,14 @@ class OrderReturnController extends Controller
                 ], 404);
             }
 
+            // Kiểm tra số lượng trả lại có hợp lệ không
             if ($product['quantity'] > $orderItem->quantity) {
                 return response()->json([
                     'message' => 'Số lượng trả vượt quá sản phẩm trong đơn hàng (ID ' . $product['product_id'] . ')'
                 ], 400);
             }
 
+            // Lưu thông tin trả hàng vào bảng order_returns
             $returnId = DB::table('order_returns')->insertGetId([
                 'order_id' => $orderId,
                 'product_id' => $product['product_id'],
@@ -193,9 +198,9 @@ class OrderReturnController extends Controller
                 'employee_evidence' => $evidence,
                 'status_id' => $statusId,
                 'price' => $orderItem->sell_price,
-                'bank_account_number' => $requestRefund ? $bankAccount : null,
-                'bank_name' => $requestRefund ? $bankName : null,
-                'bank_qr' => $requestRefund ? $bankQr : null,
+                'bank_account_number' => $bankAccount, // Có thể null nếu không hoàn tiền
+                'bank_name' => $bankName, // Có thể null nếu không hoàn tiền
+                'bank_qr' => $bankQr, // Có thể null nếu không hoàn tiền
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -203,22 +208,25 @@ class OrderReturnController extends Controller
             $createdReturns[] = OrderReturn::with(['order', 'product', 'productVariant'])->find($returnId);
         }
 
+        // Cập nhật trạng thái đơn hàng
         OrderOrderStatus::create([
             'order_id' => $orderId,
             'order_status_id' => $statusId,
             'modified_by' => $userId,
-            'note' => $requestRefund ? 'Yêu cầu trả hàng + hoàn tiền' : 'Yêu cầu trả hàng',
+            'note' => 'Yêu cầu trả hàng' . ($bankAccount ? ' + hoàn tiền' : ''),
             'created_at' => now(),
-            'updated_at' => now(),
+            'updated_at' => now()
         ]);
 
+        // Cập nhật trạng thái của đơn hàng
         Order::where('id', $orderId)->update(['status_id' => $statusId]);
 
         return response()->json([
-            'message' => $requestRefund ? 'Trả hàng và yêu cầu hoàn tiền thành công!' : 'Trả hàng thành công!',
+            'message' => 'Trả hàng' . ($bankAccount ? ' và yêu cầu hoàn tiền' : '') . ' thành công!',
             'order_returns' => $createdReturns
         ], 200);
     }
+
 
     public function showByUser($userId)
     {
@@ -329,6 +337,13 @@ class OrderReturnController extends Controller
             return response()->json(['message' => 'Không tìm thấy yêu cầu trả hàng'], 404);
         }
 
+        // Kiểm tra trạng thái đơn hàng, chỉ cho phép hoàn tiền khi trạng thái là 10 (Chấp nhận trả hàng)
+        $order = Order::findOrFail($orderId);
+
+        if ($order->status_id != 10) {
+            return response()->json(['message' => 'Chỉ có thể hoàn tiền khi yêu cầu trả hàng đã được chấp nhận.'], 400);
+        }
+
         DB::beginTransaction();
         try {
             foreach ($returns as $return) {
@@ -342,7 +357,7 @@ class OrderReturnController extends Controller
 
             OrderOrderStatus::create([
                 'order_id' => $orderId,
-                'order_status_id' => 122,
+                'order_status_id' => 12,
                 'modified_by' => $request->user_id,
                 'note' => $request->note ?? 'Hoàn tiền thành công',
                 'created_at' => now(),

@@ -292,6 +292,7 @@ Route::prefix('chat')->group(function () {
 
 //Client
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
+Route::get('/product-recommend/{id}', [ClientProductController::class, 'getRecommendedProducts']);
 
 
 //Thống kê

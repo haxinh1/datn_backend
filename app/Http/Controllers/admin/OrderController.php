@@ -180,6 +180,7 @@ class OrderController extends Controller
             $usedPoints = $request->input('used_points', 0);
             $discountPoints = 0;
 
+
             if ($userId) {
                 if ($usedPoints > $user->loyalty_points) {
                     return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
@@ -193,6 +194,9 @@ class OrderController extends Controller
             }
 
             Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', ['total_amount' => $totalAmount]);
+            
+            // Tổng tiền sản phẩm 
+            $totalProductAmount = $totalAmount + $discountAmount + $usedPoints - $shippingFee;
 
             if ($userId && $usedPoints > 0) {
                 $user->decrement('loyalty_points', $usedPoints);
@@ -271,6 +275,7 @@ class OrderController extends Controller
                 'phone_number' => $phone_number,
                 'address' => $address,
                 'total_amount' => $totalAmount,
+                'total_product_amount' => $totalProductAmount,
                 'shipping_fee' => $shippingFee,
                 'status_id' => ($paymentMethod == 'cod') ? 3 : 1, // COD: confirmed, VNPay/MoMo: pending
                 'payment_id' => $paymentId,
@@ -284,17 +289,17 @@ class OrderController extends Controller
                 'coupon_discount_value' => $coupon ? $coupon->discount_value : null,
             ]);
 
-               if($usedPoints > 0) {
-                    UserPointTransaction::create([
-                        'user_id' => $userId,
-                        'points' => -$usedPoints,  
-                        'type' => 'subtract', 
-                        'reason' => 'Sử dụng điểm để thanh toán đơn hàng',
-                        'order_id' => $order->id,  
-                    ]);
-                }
-       
-            
+            if ($usedPoints > 0) {
+                UserPointTransaction::create([
+                    'user_id' => $userId,
+                    'points' => -$usedPoints,
+                    'type' => 'subtract',
+                    'reason' => 'Sử dụng điểm để thanh toán đơn hàng',
+                    'order_id' => $order->id,
+                ]);
+            }
+
+
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
             foreach ($cartItems as $item) {
@@ -348,7 +353,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
-    public function retryPayment($orderId)
+    public function retryPayment($orderId, Request $request)
     {
         // Lấy đơn hàng theo ID và kiểm tra trạng thái
         $order = Order::find($orderId);
@@ -361,15 +366,31 @@ class OrderController extends Controller
             return response()->json(['message' => 'Đơn hàng không thể thanh toán lại, trạng thái không hợp lệ'], 400);
         }
 
-        // Lấy phương thức thanh toán (VNPay hoặc COD)
-        $paymentMethod = 'vnpay';
+        // Lấy phương thức thanh toán từ yêu cầu
+        $paymentMethod = $request->input('payment_method');
 
-        // Tạo yêu cầu thanh toán VNPay
-        $vnpayController = app()->make(VNPayController::class);
+        // Kiểm tra nếu phương thức thanh toán là VNPay
+        if ($paymentMethod == 'vnpay') {
+            // Tạo yêu cầu thanh toán VNPay
+            $vnpayController = app()->make(VNPayController::class);
 
-        return $vnpayController->createPayment(new Request([
-            'order_id' => $order->id,
-            'payment_method' => $paymentMethod
-        ]));
+            return $vnpayController->createPayment(new Request([
+                'order_id' => $order->id,
+                'payment_method' => 'vnpay' // Giữ nguyên VNPay
+            ]));
+        }
+
+        // Kiểm tra nếu phương thức thanh toán là MoMo
+        if ($paymentMethod == 'momo') {
+            // Tạo yêu cầu thanh toán MoMo
+            $momoController = app()->make(MomoController::class);
+
+            return $momoController->momo_payment(new Request([
+                'order_id' => $order->id,
+                'total_momo' => $order->total_amount // Tổng tiền của đơn hàng
+            ]));
+        }
+
+        return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
     }
 }

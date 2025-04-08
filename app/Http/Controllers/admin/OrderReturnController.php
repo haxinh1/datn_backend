@@ -147,7 +147,13 @@ class OrderReturnController extends Controller
         $bankQr = $request->input('bank_qr', null);
 
         $createdReturns = [];
+        $totalRefundAmount = 0;
 
+        // Lấy tổng tiền sản phẩm trong đơn hàng
+        $order = Order::findOrFail($orderId);
+        $totalProductAmount = $order->total_product_amount; // Total sản phẩm từ bảng orders
+
+        // Lặp qua từng sản phẩm trong yêu cầu trả hàng
         foreach ($request->products as $product) {
             // Kiểm tra xem sản phẩm đã được trả hàng chưa
             $existingReturn = DB::table('order_returns')
@@ -188,6 +194,15 @@ class OrderReturnController extends Controller
                 ], 400);
             }
 
+            // Tính tỷ lệ hoàn trả cho sản phẩm này (tính theo tỷ lệ của tổng tiền sản phẩm)
+            $productTotal = $orderItem->sell_price * $product['quantity'];
+            $productRatio = $productTotal / $totalProductAmount;
+
+            // Tính số tiền hoàn trả của sản phẩm này, áp dụng coupon (tính từ tỷ lệ của coupon)
+            $couponDiscount = $order->coupon_discount_value ?? 0;
+            $refundAmount = $productTotal - (($couponDiscount / 100) * $productTotal);
+            $totalRefundAmount += $refundAmount;
+
             // Lưu thông tin trả hàng vào bảng order_returns
             $returnId = DB::table('order_returns')->insertGetId([
                 'order_id' => $orderId,
@@ -197,12 +212,13 @@ class OrderReturnController extends Controller
                 'reason' => $reason,
                 'employee_evidence' => $evidence,
                 'status_id' => $statusId,
-                'price' => $orderItem->sell_price,
+                'price' => $refundAmount, // Lưu giá hoàn trả của sản phẩm vào cột price
                 'bank_account_number' => $bankAccount, // Có thể null nếu không hoàn tiền
                 'bank_name' => $bankName, // Có thể null nếu không hoàn tiền
                 'bank_qr' => $bankQr, // Có thể null nếu không hoàn tiền
                 'created_at' => now(),
                 'updated_at' => now(),
+                'total_refund_amount' => $refundAmount, // Lưu tổng tiền hoàn trả cho sản phẩm
             ]);
 
             $createdReturns[] = OrderReturn::with(['order', 'product', 'productVariant'])->find($returnId);
@@ -221,11 +237,17 @@ class OrderReturnController extends Controller
         // Cập nhật trạng thái của đơn hàng
         Order::where('id', $orderId)->update(['status_id' => $statusId]);
 
+        // Cập nhật tổng tiền hoàn trả vào bảng order_returns
+        OrderReturn::where('order_id', $orderId)->update(['total_refund_amount' => $totalRefundAmount]);
+
         return response()->json([
             'message' => 'Trả hàng' . ($bankAccount ? ' và yêu cầu hoàn tiền' : '') . ' thành công!',
             'order_returns' => $createdReturns
         ], 200);
     }
+
+
+
 
 
     public function showByUser($userId)

@@ -26,6 +26,7 @@ class OrderReturn extends Model
         'bank_account_number',
         'bank_name',
         'bank_qr',
+        'total_refund_amount',
     ];
 
     // Quan hệ với bảng Orders

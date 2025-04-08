@@ -69,7 +69,7 @@ class OrderObserver
 
     public function updated(Order $order)
     {
-     
+        // Kiểm tra nếu trạng thái đơn hàng là 9 
         if ($order->status_id == 9) {
     
          

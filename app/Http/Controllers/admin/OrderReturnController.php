@@ -236,6 +236,8 @@ class OrderReturnController extends Controller
 
         // Cập nhật trạng thái của đơn hàng
         Order::where('id', $orderId)->update(['status_id' => $statusId]);
+        $order->update(['status_id' => $statusId]);
+        $order->save();
 
         // Cập nhật tổng tiền hoàn trả vào bảng order_returns
         OrderReturn::where('order_id', $orderId)->update(['total_refund_amount' => $totalRefundAmount]);

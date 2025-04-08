@@ -21,9 +21,9 @@ class OrderObserver
 
         if ($order->status_id == 7) {
 
-            $point = ($order->total_amount * 2) / 100;
+            $point = ($order->total_product_amount * 2) / 100;
 
-            $rankPoints = ($order->total_amount * 2) / 100;
+            $rankPoints = ($order->total_product_amount * 2) / 100;
 
         
             // Lấy user
@@ -36,7 +36,7 @@ class OrderObserver
                 $user->rank_points += $rankPoints;
 
                 // Cộng thêm số tiền đơn hàng vào tổng đã chi
-                $user->total_spent += $order->total_amount;
+                $user->total_spent += $order->total_product_amount;
 
                  $reason = 'Hoàn tất đơn hàng #' . $order->id;
                 UserPointTransaction::create([
@@ -69,21 +69,42 @@ class OrderObserver
 
     public function updated(Order $order)
     {
-
+        // Kiểm tra nếu trạng thái đơn hàng là 9 
         if ($order->status_id == 9) {
-
+    
+         
             $user = User::where('id', $order->user_id)->first();
-
+    
             if ($user) {
+              
+                $totalOrderValue = $order->total_product_amount;
+                
+                $totalPointsUsed = ($totalOrderValue * 2) / 100;
+    
+             
+                $returnedProductValue = $order->order_returns->sum('price');  
+                
 
-                $point = ($order->total_amount * 2) / 100;
-
-
-                $user->loyalty_points -= $point;
-                $user->rank_points -= $point;
-                $user->total_spent -= $order->total_amount;
-
-
+                $productReturnRatio = $returnedProductValue / $totalOrderValue;
+  
+                $refundPoints = $productReturnRatio * $totalPointsUsed;
+    
+                // Cập nhật điểm người dùng
+                $user->loyalty_points -= $refundPoints;
+                $user->rank_points -= $refundPoints;
+                $user->total_spent -= $order->total_product_amount;
+    
+            
+                $reason = 'Trả điểm hoàn hàng #' . $order->id;
+                UserPointTransaction::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => $refundPoints,
+                    'type' => 'add',
+                    'reason' => $reason,
+                ]);
+    
+                // Đảm bảo các giá trị không bị âm
                 if ($user->loyalty_points < 0) {
                     $user->loyalty_points = 0;
                 }
@@ -93,9 +114,9 @@ class OrderObserver
                 if ($user->total_spent < 0) {
                     $user->total_spent = 0;
                 }
-
-
-                $rank = 'Thành Viên';
+    
+                // Cập nhật lại hạng người dùng
+                $rank = 'Thành Viên';  // Cấp độ mặc định
                 if ($user->rank_points >= 400000) {
                     $rank = 'Kim Cương';
                 } elseif ($user->rank_points >= 200000) {
@@ -105,7 +126,7 @@ class OrderObserver
                 } elseif ($user->rank_points >= 40000) {
                     $rank = 'Đồng';
                 }
-
+    
                 $user->rank = $rank;
                 $user->save();
             }

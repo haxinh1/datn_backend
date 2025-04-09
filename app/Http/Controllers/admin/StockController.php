@@ -20,9 +20,11 @@ class StockController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $stocks = Stock::select([
+        $createdBy = $request->input('user_id'); // Đúng cú pháp
+
+        $stocksQuery = Stock::select([
             'stocks.id',
             'stocks.status',
             'stocks.total_amount',
@@ -32,17 +34,20 @@ class StockController extends Controller
         ])
             ->join('users', 'stocks.created_by', '=', 'users.id')
             ->orderByDesc('ngaytao')
-            ->with('productStocks.product', 'productStocks.productVariant')
-            ->get();
+            ->with('productStocks.product', 'productStocks.productVariant');
+
+        if ($createdBy) {
+            $stocksQuery->where('stocks.created_by', $createdBy);
+        }
+
+        $stocks = $stocksQuery->get();
 
         $formattedStocks = $stocks->map(function ($stock) {
             $products = [];
 
             foreach ($stock->productStocks as $productStock) {
                 $productId = $productStock->product->id ?? null;
-
                 if (!$productId) continue;
-
                 if (!isset($products[$productId])) {
                     $products[$productId] = [
                         'id' => $productId,

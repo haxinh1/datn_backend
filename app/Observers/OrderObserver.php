@@ -82,34 +82,50 @@ class OrderObserver
 
             if ($user) {
 
-                $totalOrderValue = $order->total_product_amount;
-                Log::info('Total Order Value: ' . $totalOrderValue);
 
                 $totalPointsUsed = $order->used_points;
-                Log::info('Total Points Used: ' . $totalPointsUsed);
+                Log::info('Điểm sử dụng: ' . $totalPointsUsed);
+
+                $totalOrderValue = $order->total_product_amount;
+                Log::info('Tổng hóa đơn: ' . $totalOrderValue);
 
                 $order->load('order_returns');
                 $returnedProductValue = $order->order_returns->sum('price');
-                Log::info('Returned Product Value: ' . $returnedProductValue);
+                Log::info('Sp: ' . $returnedProductValue);
 
 
                 $productReturnRatio = $returnedProductValue / $totalOrderValue;
-                Log::info('Product Return Ratio: ' . $productReturnRatio);
+                Log::info('Sp / Tổng hóa đơn : ' . $productReturnRatio);
 
                 $refundPoints = $productReturnRatio * $totalPointsUsed;
-                Log::info('Refund Points Calculated: ' . $refundPoints);
-                // Cập nhật điểm người dùng
+                Log::info('Điểm hoàn trả: ' . $refundPoints);
+  
+
                 $user->loyalty_points += $refundPoints;
-                // $user->rank_points -= $refundPoints;
-                // $user->total_spent -= $order->total_product_amount;
-
-
+  
                 $reason = 'Trả điểm hoàn hàng #' . $order->id;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
                     'points' => $refundPoints,
                     'type' => 'add',
+                    'reason' => $reason,
+                ]);
+
+                $user->total_spent -= $returnedProductValue;
+
+            
+                $pointsDeducted = ($returnedProductValue * 2) / 100;
+                $user->loyalty_points -= $pointsDeducted; 
+                $user->rank_points -= $pointsDeducted; 
+
+
+                $reason = 'Tính lại hóa đơn #' . $order->id;
+                UserPointTransaction::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => -$pointsDeducted,
+                    'type' => 'subtract',
                     'reason' => $reason,
                 ]);
 

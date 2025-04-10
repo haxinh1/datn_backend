@@ -121,8 +121,6 @@ Route::prefix('orders')->group(function () {
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
     Route::post('/{orderId}/retry-payment', [OrderController::class, 'retryPayment']);
-
-
 });
 
 Route::prefix('order-returns')->group(function () {
@@ -131,10 +129,11 @@ Route::prefix('order-returns')->group(function () {
     Route::get('/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
     Route::get('/user/{userId}', [OrderReturnController::class, 'showByUser']); // Trả hàng theo user
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
-     // Admin xử lý chấp nhận hoặc từ chối
-     Route::post('/{orderId}/status/update', [OrderReturnController::class, 'updateStatusByOrder']);
-     // Admin xác nhận hoàn tiền thành công
-     Route::post('/{orderId}/refund/confirm', [OrderReturnController::class, 'confirmRefundByOrder']);
+    Route::post('/approve-return/{orderId}', [OrderReturnController::class, 'approveReturn']);
+    // Admin xử lý chấp nhận hoặc từ chối
+    Route::post('/{orderId}/status/update', [OrderReturnController::class, 'updateStatusByOrder']);
+    // Admin xác nhận hoàn tiền thành công
+    Route::post('/{orderId}/refund/confirm', [OrderReturnController::class, 'confirmRefundByOrder']);
 });
 
 
@@ -312,5 +311,4 @@ Route::prefix('statistics')->group(function () {
     Route::get('/top-revenue-days', [StatisticController::class, 'topRevenueDays']);
     //Biểu đồ hoàn hủy
     Route::get('/revenue-statistics', [StatisticController::class, 'revenueStatistics']);
-
 });

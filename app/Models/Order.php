@@ -90,5 +90,9 @@ class Order extends Model
             ->exists();
     }
 
-
+    public function order_returns()
+    {
+        return $this->hasMany(OrderReturn::class, 'order_id', 'id');
+    }
+    
 }

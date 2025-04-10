@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserPointTransaction;
+use Illuminate\Support\Facades\Log;
 
 class OrderObserver
 {
@@ -25,7 +26,7 @@ class OrderObserver
 
             $rankPoints = ($order->total_product_amount * 2) / 100;
 
-        
+
             // Lấy user
             $user = User::where('id', $order->user_id)->first();
 
@@ -37,8 +38,8 @@ class OrderObserver
 
                 // Cộng thêm số tiền đơn hàng vào tổng đã chi
                 $user->total_spent += $order->total_product_amount;
-
-                 $reason = 'Hoàn tất đơn hàng #' . $order->id;
+                Log::info('diem: ' . $point);
+                $reason = 'Hoàn tất đơn hàng #' . $order->id;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
@@ -69,32 +70,40 @@ class OrderObserver
 
     public function updated(Order $order)
     {
-        // Kiểm tra nếu trạng thái đơn hàng là 9 
+        $old = $order->getOriginal('status_id');
+        $new = $order->status_id;
+        Log::info("Status cũ: $old -> mới: $new");
+
         if ($order->status_id == 9) {
-    
-         
+
+
             $user = User::where('id', $order->user_id)->first();
-    
+            Log::info('User ID: ' . $user->id);
+
             if ($user) {
-              
+
                 $totalOrderValue = $order->total_product_amount;
-                
-                $totalPointsUsed = ($totalOrderValue * 2) / 100;
-    
-             
-                $returnedProductValue = $order->order_returns->sum('price');  
-                
+                Log::info('Total Order Value: ' . $totalOrderValue);
+
+                $totalPointsUsed = $order->used_points;
+                Log::info('Total Points Used: ' . $totalPointsUsed);
+
+                $order->load('order_returns');
+                $returnedProductValue = $order->order_returns->sum('price');
+                Log::info('Returned Product Value: ' . $returnedProductValue);
+
 
                 $productReturnRatio = $returnedProductValue / $totalOrderValue;
-  
+                Log::info('Product Return Ratio: ' . $productReturnRatio);
+
                 $refundPoints = $productReturnRatio * $totalPointsUsed;
-    
+                Log::info('Refund Points Calculated: ' . $refundPoints);
                 // Cập nhật điểm người dùng
-                $user->loyalty_points -= $refundPoints;
-                $user->rank_points -= $refundPoints;
-                $user->total_spent -= $order->total_product_amount;
-    
-            
+                $user->loyalty_points += $refundPoints;
+                // $user->rank_points -= $refundPoints;
+                // $user->total_spent -= $order->total_product_amount;
+
+
                 $reason = 'Trả điểm hoàn hàng #' . $order->id;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
@@ -103,7 +112,7 @@ class OrderObserver
                     'type' => 'add',
                     'reason' => $reason,
                 ]);
-    
+
                 // Đảm bảo các giá trị không bị âm
                 if ($user->loyalty_points < 0) {
                     $user->loyalty_points = 0;
@@ -114,7 +123,7 @@ class OrderObserver
                 if ($user->total_spent < 0) {
                     $user->total_spent = 0;
                 }
-    
+
                 // Cập nhật lại hạng người dùng
                 $rank = 'Thành Viên';  // Cấp độ mặc định
                 if ($user->rank_points >= 400000) {
@@ -126,7 +135,7 @@ class OrderObserver
                 } elseif ($user->rank_points >= 40000) {
                     $rank = 'Đồng';
                 }
-    
+
                 $user->rank = $rank;
                 $user->save();
             }

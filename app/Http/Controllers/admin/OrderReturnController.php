@@ -9,6 +9,7 @@ use App\Models\OrderReturn;
 use App\Models\OrderOrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderReturnController extends Controller
 {
@@ -303,8 +304,15 @@ class OrderReturnController extends Controller
         ]);
 
         // Cập nhật trạng thái của đơn hàng
-        Order::where('id', $orderId)->update(['status_id' => $statusId]);
-    
+        // Order::where('id', $orderId)->update(['status_id' => $statusId]);
+        try {
+            $order = Order::find($orderId);
+            $order->status_id = $statusId;
+            $order->save();
+        } catch (\Exception $e) {
+            Log::error('Lỗi cập nhật đơn hàng: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
 
         // Cập nhật tổng tiền hoàn trả vào bảng order_returns
         OrderReturn::where('order_id', $orderId)->update(['total_refund_amount' => $totalRefundAmount]);

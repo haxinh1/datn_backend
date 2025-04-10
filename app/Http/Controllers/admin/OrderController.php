@@ -194,7 +194,7 @@ class OrderController extends Controller
             }
 
             Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', ['total_amount' => $totalAmount]);
-            
+
             // Tổng tiền sản phẩm 
             $totalProductAmount = $totalAmount + $discountAmount + $usedPoints - $shippingFee;
 
@@ -303,17 +303,55 @@ class OrderController extends Controller
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
             foreach ($cartItems as $item) {
+                // Tính giá bán của sản phẩm
+                $product = Product::find($item['product_id']);
+                $productVariant = ProductVariant::find($item['product_variant_id']);
+            
+                if ($productVariant) {
+                    // Nếu có biến thể sản phẩm
+                    $sellPrice = $productVariant->sale_price ?? $productVariant->sell_price;
+                } else {
+                    // Nếu không có biến thể, lấy giá sản phẩm gốc
+                    $sellPrice = $product->sale_price ?? $product->sell_price;
+                }
+            
+                // Tính tổng tiền sản phẩm theo số lượng
+                $productTotal = $sellPrice * $item['quantity'];
+            
+                // Tính tổng tiền đơn hàng
+                $totalAmount = $cartItems->sum(function ($cartItem) {
+                    $product = Product::find($cartItem['product_id']);
+                    $productVariant = ProductVariant::find($cartItem['product_variant_id']);
+                    $sellPrice = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : ($product->sale_price ?? $product->sell_price);
+                    return $cartItem['quantity'] * $sellPrice;
+                });
+            
+                // Kiểm tra và tính giá trị mã giảm giá
+                $couponDiscount = $order->coupon_discount_value ?? 0;
+            
+                if ($order->coupon_discount_type === 'percent') {
+                    // Áp dụng coupon theo phần trăm
+                    $refundAmount = ($productTotal - (($couponDiscount / 100) * $productTotal)) / $item['quantity'];  // Chia theo số lượng sản phẩm
+                } elseif ($order->coupon_discount_type === 'fix_amount' && $totalAmount > 0) {
+                    // Áp dụng coupon cố định (theo tỷ lệ của sản phẩm trong đơn)
+                    $productRatio = $productTotal / $totalAmount; // Tỷ lệ của sản phẩm so với tổng tiền đơn hàng
+                    $refundAmount = ($productTotal - ($productRatio * $couponDiscount)) / $item['quantity']; // Chia theo số lượng sản phẩm
+                } else {
+                    // Không có coupon, số tiền hoàn trả là giá gốc
+                    $refundAmount = $productTotal / $item['quantity']; // Chia theo số lượng sản phẩm
+                }
+            
+                // Lưu chi tiết đơn hàng vào bảng order_items với giá hoàn trả
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
                     'quantity' => $item['quantity'],
-                    'sell_price' => $item['product_variant_id']
-                        ? ProductVariant::where('id', $item['product_variant_id'])->value('sale_price') ?? ProductVariant::where('id', $item['product_variant_id'])->value('sell_price')
-                        : Product::where('id', $item['product_id'])->value('sale_price') ?? Product::where('id', $item['product_id'])->value('sell_price'),
+                    'sell_price' => $sellPrice,
+                    'refund_amount' => $refundAmount,  // Lưu số tiền hoàn trả vào cột refund_amount
                 ]);
-
-                // Trừ stock nếu chọn COD
+            
+                // Trừ stock nếu thanh toán qua COD
                 if ($paymentMethod == 'cod') {
                     if ($item['product_variant_id']) {
                         ProductVariant::where('id', $item['product_variant_id'])->decrement('stock', $item['quantity']);
@@ -322,6 +360,10 @@ class OrderController extends Controller
                     }
                 }
             }
+            
+            
+            
+
 
             // Xóa giỏ hàng sau khi đặt hàng thành công
             if ($userId) {
@@ -353,6 +395,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
+
     public function retryPayment($orderId, Request $request)
     {
         // Lấy đơn hàng theo ID và kiểm tra trạng thái

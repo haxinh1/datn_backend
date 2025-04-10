@@ -35,6 +35,7 @@ class OrderItemController extends Controller
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $variantItems->first()->sell_price,
                     'quantity' => $variantItems->sum('quantity'), // Quantity tính từ biến thể
+                    'refund_amount' => $variantItems->first()->refund_amount, // Lấy refund_amount cho biến thể
                     'variants' => $variantItems->map(function ($item) {
                         return [
                             'variant_id' => $item->productVariant->id,
@@ -63,6 +64,7 @@ class OrderItemController extends Controller
                 'thumbnail' => $item->product->thumbnail,
                 'sell_price' => $item->sell_price,
                 'quantity' => $item->quantity, // Lấy quantity của sản phẩm đơn
+                'refund_amount' => $item->refund_amount,  // Lấy refund_amount cho sản phẩm đơn
                 'variants' => []  // Không có biến thể
             ];
         });
@@ -102,6 +104,7 @@ class OrderItemController extends Controller
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $productVariant ? $productVariant->sell_price : 0,
                     'quantity' => $item->total_quantity,
+                    'refund_amount' => $item->refund_amount, // Refund amount cho từng sản phẩm hoặc biến thể
                     'variant' => [
                         'variant_id' => $productVariant ? $productVariant->id : null,
                         'variant_thumbnail' => $productVariant ? $productVariant->thumbnail : null,
@@ -116,6 +119,7 @@ class OrderItemController extends Controller
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $product->sell_price,
                     'quantity' => $item->total_quantity,
+                    'refund_amount' => $item->refund_amount, // Refund amount cho sản phẩm đơn
                     'variant' => []  // Sản phẩm đơn không có biến thể
                 ];
             }

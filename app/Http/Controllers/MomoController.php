@@ -65,8 +65,11 @@ class MomoController extends Controller
         ];
 
         try {
-            $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                ->timeout(30)->withOptions(['verify' => false])->post($endpoint, $data);
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])->withOptions([
+                'verify'          => false,
+                'timeout'         => 60,  // Thời gian tối đa cho toàn bộ request
+                'connect_timeout' => 60   // Thời gian tối đa để kết nối
+            ])->post($endpoint, $data);
 
             if ($response->failed() || !isset($response['payUrl'])) {
                 Log::error('MoMo Error:', ['body' => $response->body()]);

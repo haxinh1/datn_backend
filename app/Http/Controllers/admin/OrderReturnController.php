@@ -40,6 +40,10 @@ class OrderReturnController extends Controller
                     'reason' => $returns->first()->reason,
                     'employee_evidence' => $returns->first()->employee_evidence,
                     'total_refund_amount' => $returns->first()->total_refund_amount,
+                    'refund_proof' => $returns->first()->refund_proof,
+                    'bank_account_number' => $firstReturn->bank_account_number,
+                    'bank_name' => $firstReturn->bank_name,
+                    'bank_qr' => $firstReturn->bank_qr,
                     'order' => $order ? $order->toArray() : null,
                     'products' => $returns->map(function ($return) {
                         $product = $return->product;
@@ -98,6 +102,10 @@ class OrderReturnController extends Controller
                     'reason' => $firstReturn->reason,
                     'employee_evidence' => $firstReturn->employee_evidence,
                     'total_refund_amount' => $returns->first()->total_refund_amount,
+                    'refund_proof' => $returns->first()->refund_proof,
+                    'bank_account_number' => $firstReturn->bank_account_number,
+                    'bank_name' => $firstReturn->bank_name,
+                    'bank_qr' => $firstReturn->bank_qr,
                     'order' => $order ? $order->toArray() : null,
                     'products' => $returns->map(function ($return) {
                         $product = $return->product;
@@ -150,6 +158,10 @@ class OrderReturnController extends Controller
                     'reason' => $returns->first()->reason,
                     'employee_evidence' => $returns->first()->employee_evidence,
                     'total_refund_amount' => $returns->first()->total_refund_amount,
+                    'refund_proof' => $returns->first()->refund_proof,
+                    'bank_account_number' => $firstReturn->bank_account_number,
+                    'bank_name' => $firstReturn->bank_name,
+                    'bank_qr' => $firstReturn->bank_qr,
                     'order' => $order ? $order->toArray() : null,
                     'products' => $returns->map(function ($return) {
                         $product = $return->product;
@@ -269,7 +281,13 @@ class OrderReturnController extends Controller
 
             // Tính số tiền hoàn trả của sản phẩm này, áp dụng coupon (tính từ tỷ lệ của coupon)
             $couponDiscount = $order->coupon_discount_value ?? 0;
-            $refundAmount = $productTotal - (($couponDiscount / 100) * $productTotal);
+            if ($order->coupon_discount_type === 'percent') {
+                $refundAmount = $productTotal - (($order->coupon_discount_value / 100) * $productTotal);
+            } elseif ($order->coupon_discount_type === 'fix_amount' && $totalProductAmount > 0) {
+                $refundAmount = $productTotal - ($productRatio * $order->coupon_discount_value);
+            } else {
+                $refundAmount = $productTotal;
+            }
             $totalRefundAmount += $refundAmount;
 
             // Lưu thông tin trả hàng vào bảng order_returns

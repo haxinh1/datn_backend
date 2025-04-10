@@ -70,12 +70,12 @@ class OrderObserver
 
     public function updated(Order $order)
     {
+
         $old = $order->getOriginal('status_id');
         $new = $order->status_id;
         Log::info("Status cũ: $old -> mới: $new");
 
-        if ($order->status_id == 9) {
-
+        if ($order->status_id == 10) {
 
             $user = User::where('id', $order->user_id)->first();
             Log::info('User ID: ' . $user->id);
@@ -86,23 +86,23 @@ class OrderObserver
                 $totalPointsUsed = $order->used_points;
                 Log::info('Điểm sử dụng: ' . $totalPointsUsed);
 
-                $totalOrderValue = $order->total_product_amount;
-                Log::info('Tổng hóa đơn: ' . $totalOrderValue);
+                $totalOrder = $order->total_product_amount;
+                Log::info('Tổng hóa đơn: ' . $totalOrder);
 
                 $order->load('order_returns');
                 $returnedProductValue = $order->order_returns->sum('price');
                 Log::info('Sp: ' . $returnedProductValue);
 
 
-                $productReturnRatio = $returnedProductValue / $totalOrderValue;
+                $productReturnRatio = $returnedProductValue / $totalOrder;
                 Log::info('Sp / Tổng hóa đơn : ' . $productReturnRatio);
 
                 $refundPoints = $productReturnRatio * $totalPointsUsed;
                 Log::info('Điểm hoàn trả: ' . $refundPoints);
-  
+
 
                 $user->loyalty_points += $refundPoints;
-  
+
                 $reason = 'Trả điểm hoàn hàng #' . $order->id;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
@@ -114,10 +114,10 @@ class OrderObserver
 
                 $user->total_spent -= $returnedProductValue;
 
-            
+
                 $pointsDeducted = ($returnedProductValue * 2) / 100;
-                $user->loyalty_points -= $pointsDeducted; 
-                $user->rank_points -= $pointsDeducted; 
+                $user->loyalty_points -= $pointsDeducted;
+                $user->rank_points -= $pointsDeducted;
 
 
                 $reason = 'Tính lại hóa đơn #' . $order->id;
@@ -129,7 +129,7 @@ class OrderObserver
                     'reason' => $reason,
                 ]);
 
-                // Đảm bảo các giá trị không bị âm
+
                 if ($user->loyalty_points < 0) {
                     $user->loyalty_points = 0;
                 }
@@ -140,8 +140,8 @@ class OrderObserver
                     $user->total_spent = 0;
                 }
 
-                // Cập nhật lại hạng người dùng
-                $rank = 'Thành Viên';  // Cấp độ mặc định
+
+                $rank = 'Thành Viên';
                 if ($user->rank_points >= 400000) {
                     $rank = 'Kim Cương';
                 } elseif ($user->rank_points >= 200000) {
@@ -155,6 +155,37 @@ class OrderObserver
                 $user->rank = $rank;
                 $user->save();
             }
+        }
+
+        if ($order->status_id == 8) {
+            $user = User::where('id', $order->user_id)->first();
+            Log::info('User ID: ' . $user->id);
+            $totalPointsUsed = $order->used_points;
+            Log::info('Điểm sử dụng : ' . $totalPointsUsed);
+            $user->loyalty_points += $totalPointsUsed;
+
+
+            // $refundPoints = ($order->total_product_amount * 2) / 100;
+            // Log::info('Điểm hoàn trả status == 8: ' . $refundPoints);
+            // $user->loyalty_points -= $refundPoints;
+            // $user->rank_points -= $refundPoints;
+
+            // $user->total_spent -= $order->total_product_amount;
+            // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
+
+            $reason = 'Hoàn trả điểm hủy hàng #' . $order->id;
+            UserPointTransaction::create([
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'points' => $totalPointsUsed,
+                'type' => 'add',
+                'reason' => $reason,
+            ]);
+
+
+
+
+            $user->save();
         }
     }
 

@@ -90,7 +90,7 @@ class OrderObserver
                 Log::info('Tổng hóa đơn: ' . $totalOrder);
 
                 $order->load('order_returns');
-                $returnedProductValue = $order->order_returns->sum('price');
+                $returnedProductValue = $order->order_returns->sum('sell_price');
                 Log::info('Sp: ' . $returnedProductValue);
 
 
@@ -103,15 +103,18 @@ class OrderObserver
 
                 $user->loyalty_points += $refundPoints;
 
-                $reason = 'Trả điểm hoàn hàng #' . $order->id;
-                UserPointTransaction::create([
-                    'user_id' => $user->id,
-                    'order_id' => $order->id,
-                    'points' => $refundPoints,
-                    'type' => 'add',
-                    'reason' => $reason,
-                ]);
+                if ($totalPointsUsed > 0) {
 
+                    log::info('Điểm hoàn trả status == 10: ' . $refundPoints);
+                    $reason = 'Trả điểm hoàn hàng #' . $order->id;
+                    UserPointTransaction::create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'points' => $refundPoints,
+                        'type' => 'add',
+                        'reason' => $reason,
+                    ]);
+                }
                 $user->total_spent -= $returnedProductValue;
 
 
@@ -120,7 +123,7 @@ class OrderObserver
                 $user->rank_points -= $pointsDeducted;
 
 
-                $reason = 'Tính lại hóa đơn #' . $order->id;
+                $reason = 'Tính lại hóa đơn khi trả hàng #' . $order->id;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,

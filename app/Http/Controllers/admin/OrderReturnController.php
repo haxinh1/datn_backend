@@ -289,6 +289,15 @@ class OrderReturnController extends Controller
             } else {
                 $refundAmount = $productTotal;
             }
+
+            $pointsUsed = $order->used_points ?? 0; 
+            log::info('Số điểm đã sử dụng: ' . $pointsUsed);
+            $pointsValue = 1; 
+            $pointsRefundAmount = ($pointsUsed * $productRatio) * $pointsValue; 
+
+            // Trừ tiền hoàn trả theo điểm tiêu dùng
+            $refundAmount -= $pointsRefundAmount;  
+
             $totalRefundAmount += $refundAmount;
 
             // Lưu thông tin trả hàng vào bảng order_returns
@@ -300,6 +309,7 @@ class OrderReturnController extends Controller
                 'reason' => $reason,
                 'employee_evidence' => $evidence,
                 'status_id' => $statusId,
+                'sell_price' => $orderItem->sell_price, // Lưu giá bán của sản phẩm vào cột sell_price
                 'price' => $refundAmount, // Lưu giá hoàn trả của sản phẩm vào cột price
                 'bank_account_number' => $bankAccount, // Có thể null nếu không hoàn tiền
                 'bank_name' => $bankName, // Có thể null nếu không hoàn tiền

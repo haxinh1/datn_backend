@@ -339,8 +339,8 @@ class OrderController extends Controller
                 } else {
                     // Không có coupon, số tiền hoàn trả là giá gốc
                     $refundAmount = $productTotal / $item['quantity']; // Chia theo số lượng sản phẩm
-                }
-            
+                }  
+                
                 // Lưu chi tiết đơn hàng vào bảng order_items với giá hoàn trả
                 OrderItem::create([
                     'order_id' => $order->id,

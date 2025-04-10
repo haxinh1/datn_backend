@@ -340,6 +340,13 @@ class OrderController extends Controller
                     // Không có coupon, số tiền hoàn trả là giá gốc
                     $refundAmount = $productTotal / $item['quantity']; // Chia theo số lượng sản phẩm
                 }  
+               
+                $productRatio = $productTotal / $totalProductAmount;
+                $pointsUsed = $order->used_points ?? 0;
+                $pointsValue = 1; 
+                $pointsRefundAmount = ($pointsUsed * $productRatio) * $pointsValue;
+                $refundAmount -= $pointsRefundAmount;
+            
                 
                 // Lưu chi tiết đơn hàng vào bảng order_items với giá hoàn trả
                 OrderItem::create([

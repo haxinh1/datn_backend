@@ -424,15 +424,15 @@ class OrderController extends Controller
         }
 
         // Kiểm tra nếu phương thức thanh toán là MoMo
-        if ($paymentMethod == 'momo') {
-            // Tạo yêu cầu thanh toán MoMo
+        if ($paymentMethod === 'momo') {
+            $amount = (int) $order->total_amount;
             $momoController = app()->make(MomoController::class);
-
-            return $momoController->momo_payment(new Request([
-                'order_id' => $order->id,
-                'total_momo' => $order->total_amount // Tổng tiền của đơn hàng
-            ]));
+                return $momoController->momo_payment(new Request([
+                    'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
+                    'total_momo' => $amount, // Tổng tiền
+                ]));
         }
+        
 
         return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
     }

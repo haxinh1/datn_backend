@@ -135,29 +135,6 @@ class OrderOrderStatusController extends Controller
             // Cập nhật trạng thái đơn hàng trong bảng `orders`
             $order->update(['status_id' => $request->order_status_id]);
 
-            // Kiểm tra nếu trạng thái chuyển từ 14 (Hàng đang quay về shop) sang 14 (Người bán đã nhận hàng)
-            if ($order->status_id == 14) {
-                // Lấy tất cả các đơn hàng trả lại tương ứng với order_id
-                $orderReturns = OrderReturn::where('order_id', $orderId)->get();
-
-                foreach ($orderReturns as $orderReturn) {
-                    // Kiểm tra xem sản phẩm có phải là product hay product_variant
-                    if ($orderReturn->product_variant_id) {
-                        // Cập nhật stock của product_variant
-                        $productVariant = \App\Models\ProductVariant::find($orderReturn->product_variant_id);
-                        if ($productVariant) {
-                            $productVariant->increment('stock', $orderReturn->quantity_returned);
-                        }
-                    } else {
-                        // Cập nhật stock của product
-                        $product = \App\Models\Product::find($orderReturn->product_id);
-                        if ($product) {
-                            $product->increment('stock', $orderReturn->quantity_returned);
-                        }
-                    }
-                }
-            }
-
             // Phát sự kiện để cập nhật trạng thái thời gian thực
             event(new OrderStatusUpdated($order)); // Phát sự kiện OrderStatusUpdated
 
@@ -232,29 +209,7 @@ class OrderOrderStatusController extends Controller
                     'note' => $request->note,
                 ]);
                 // Phát sự kiện để cập nhật trạng thái thời gian thực
-                event(new OrderStatusUpdated($order)); 
-                // Cộng stock khi update status = 144
-                if ($order->status_id == 14) {
-                    // Lấy tất cả các đơn hàng trả lại tương ứng với order_id
-                    $orderReturns = OrderReturn::where('order_id', $order->id)->get();
-
-                    foreach ($orderReturns as $orderReturn) {
-                        // Kiểm tra xem sản phẩm có phải là product hay product_variant
-                        if ($orderReturn->product_variant_id) {
-                            // Cập nhật stock của product_variant
-                            $productVariant = \App\Models\ProductVariant::find($orderReturn->product_variant_id);
-                            if ($productVariant) {
-                                $productVariant->increment('stock', $orderReturn->quantity_returned);
-                            }
-                        } else {
-                            // Cập nhật stock của product
-                            $product = \App\Models\Product::find($orderReturn->product_id);
-                            if ($product) {
-                                $product->increment('stock', $orderReturn->quantity_returned);
-                            }
-                        }
-                    }
-                }
+                event(new OrderStatusUpdated($order));
             }
 
             // Cập nhật trạng thái mới cho tất cả các đơn hàng
@@ -273,5 +228,4 @@ class OrderOrderStatusController extends Controller
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
-
 }

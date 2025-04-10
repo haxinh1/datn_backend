@@ -149,6 +149,7 @@ class OrderReturnController extends Controller
             ->where('orders.user_id', $userId) // Lọc theo user_id
             ->get()
             ->groupBy('order_id') // Nhóm theo order_id
+            ->orderBy('created_at', 'desc')
             ->map(function ($returns, $orderId) {
                 $firstReturn = $returns->first(); // Lấy bản hoàn trả đầu tiên trong nhóm
                 $order = $firstReturn->order; // Lấy thông tin đơn hàng
@@ -430,5 +431,48 @@ class OrderReturnController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+    public function approveReturn(Request $request, $orderId)
+    {
+        // Lấy tất cả các đơn hàng trả lại nhóm theo order_id
+        $orderReturns = OrderReturn::where('order_id', $orderId)->get();
+
+        if ($orderReturns->isEmpty()) {
+            return response()->json(['message' => 'No order returns found for this order'], 404);
+        }
+
+        // Lấy tham số từ frontend (approve_stock)
+        $approveStock = $request->input('approve_stock', false); // Mặc định là false nếu không có
+
+        // Duyệt qua tất cả các đơn hoàn trả trong nhóm
+        foreach ($orderReturns as $orderReturn) {
+            if ($approveStock) {
+                // Nếu chọn cộng stock
+                if ($orderReturn->product_variant_id) {
+                    $productVariant = \App\Models\ProductVariant::find($orderReturn->product_variant_id);
+                    if ($productVariant) {
+                        $productVariant->increment('stock', $orderReturn->quantity_returned);
+                    }
+                } else {
+                    $product = \App\Models\Product::find($orderReturn->product_id);
+                    if ($product) {
+                        $product->increment('stock', $orderReturn->quantity_returned);
+                    }
+                }
+            }
+
+            // Chuyển trạng thái đơn hàng trả lại sang 14 (Người bán đã nhận hàng)
+            $orderReturn->status_id = 14;  // Sử dụng status_id thay vì status
+            $orderReturn->save();
+        }
+
+        // Cập nhật trạng thái đơn hàng chính (Order) sang 14 nếu tất cả đơn hoàn trả đã hoàn tất
+        $order = Order::find($orderId);
+        if ($order && $order->status_id == 13) {
+            $order->status_id = 14; // Chuyển trạng thái đơn chính sang 14
+            $order->save();
+        }
+
+        return response()->json(['message' => 'All returns processed, stock updated (if applicable), and order status updated to 14']);
     }
 }

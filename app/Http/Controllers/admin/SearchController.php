@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\OrderReturn;
 
 class SearchController extends Controller
 {
@@ -72,4 +73,21 @@ class SearchController extends Controller
         return response()->json($orders);
     }
 
+    public function searchOrderReturn(Request $request)
+    {
+        $validated = $request->validate([
+            'keyword' => 'required|string',
+        ]);
+
+        $keyword = $validated['keyword'];   
+        $orderReturns = OrderReturn::with(['order:id,code'])->whereHas('order', function ($query) use ($keyword) {
+            $query->where('code', 'LIKE', '%' . $keyword . '%');
+        })->get();
+    
+        if ($orderReturns->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng trả'], 404);
+        }
+    
+        return response()->json($orderReturns);
+    }
 }

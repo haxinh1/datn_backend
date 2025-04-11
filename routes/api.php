@@ -195,6 +195,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/products/search', [SearchController::class, 'searchProducts']);
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
     Route::get('/orders/search', [SearchController::class, 'searchOrders']);
+    Route::get('/orders-return/search', [SearchController::class, 'searchOrderReturn']);
 });
 //route admin user
 Route::prefix('admin')->group(function () {

@@ -79,6 +79,7 @@
         <div class="content">
             <p>Chào bạn {{ $user->fullname  }}!</p>
             <p>Mã xác nhận của bạn là: <strong>{{ $code }}</strong></p>
+            <p>Mã này có hiệu lực trong vòng 2 phút.</p>
            <p>Vui lòng nhập mã này để xác nhận tài khoản.</p>
 
             

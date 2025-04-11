@@ -66,6 +66,7 @@ class OrderReturnController extends Controller
                             'name' => $product->name,
                             'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
                             'price' => $return->price,
+                            'sell_price' => $return->sell_price,
                             'product_variant_id' => $return->product_variant_id,
                             'quantity' => $return->quantity_returned,
                             'attributes' => $attributes,  // Trả về danh sách thuộc tính nếu có
@@ -78,10 +79,6 @@ class OrderReturnController extends Controller
             'order_returns' => $orderReturns,
         ], 200);
     }
-
-
-
-
     /**
      * Lấy thông tin trả hàng theo ID
      */
@@ -117,6 +114,7 @@ class OrderReturnController extends Controller
                             'name' => $product->name,
                             'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
                             'price' => $return->price, // Giá đã tính toán cho sản phẩm
+                            'sell_price' => $return->sell_price,
                             'product_variant_id' => $return->product_variant_id,
                             'quantity' => $return->quantity_returned,
                             'attributes' => $variant ? $variant->attributeValues->map(function ($attr) {
@@ -145,14 +143,14 @@ class OrderReturnController extends Controller
     {
         // Lấy danh sách đơn hoàn trả với thông tin liên quan đến order, product, và productVariant
         $orderReturns = OrderReturn::with(['order', 'product', 'productVariant.attributeValues'])
-            ->join('orders', 'order_returns.order_id', '=', 'orders.id') // Join bảng orders để lấy user_id
-            ->where('orders.user_id', $userId) // Lọc theo user_id
+            ->join('orders', 'order_returns.order_id', '=', 'orders.id') 
+            ->where('orders.user_id', $userId) 
+            ->orderBy('orders.created_at', 'desc')
             ->get()
-            ->groupBy('order_id') // Nhóm theo order_id
-            ->orderBy('created_at', 'desc')
+            ->groupBy('order_id') 
             ->map(function ($returns, $orderId) {
-                $firstReturn = $returns->first(); // Lấy bản hoàn trả đầu tiên trong nhóm
-                $order = $firstReturn->order; // Lấy thông tin đơn hàng
+                $firstReturn = $returns->first(); 
+                $order = $firstReturn->order; 
 
                 return [
                     'order_id' => $orderId,
@@ -185,9 +183,10 @@ class OrderReturnController extends Controller
                             'name' => $product->name,
                             'thumbnail' => $variant ? $variant->thumbnail : $product->thumbnail,
                             'price' => $return->price,
+                            'sell_price' => $return->sell_price,
                             'product_variant_id' => $return->product_variant_id,
                             'quantity' => $return->quantity_returned,
-                            'attributes' => $attributes,  // Trả về danh sách thuộc tính nếu có
+                            'attributes' => $attributes,  
                         ];
                     })->values(),
                 ];
@@ -197,7 +196,6 @@ class OrderReturnController extends Controller
             'order_returns' => $orderReturns,
         ], 200);
     }
-
 
     /**
      * Lưu thông tin trả hàng vào bảng order_returns

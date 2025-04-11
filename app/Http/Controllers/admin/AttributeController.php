@@ -15,7 +15,7 @@ class AttributeController extends Controller
      */
     public function index()
     {
-        $attributes = Attribute::orderByDesc('id')->get();
+        $attributes = Attribute::with('attributeValues:id,attribute_id,value')->orderByDesc('id')->get();
         return response()->json([
             'success' => true,
             'message' => "Đây là danh sách thuộc tính",

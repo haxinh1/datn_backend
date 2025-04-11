@@ -231,7 +231,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('user-addresses/{id}', [UserAddressController::class, 'destroy']);
 });
 
-
+// lịch sử điểm
+Route::get('user/points/{id}', [AdminUserController::class, 'pointsHistory']);
 
 // Category apiii
 

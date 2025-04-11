@@ -39,7 +39,7 @@ class OrderObserver
                 // Cộng thêm số tiền đơn hàng vào tổng đã chi
                 $user->total_spent += $order->total_product_amount;
                 Log::info('diem: ' . $point);
-                $reason = 'Hoàn tất đơn hàng : Mã#' . $order->code;
+                $reason = 'Hoàn tất đơn hàng : ' . $order->code;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
@@ -108,7 +108,7 @@ class OrderObserver
                 $user->rank_points -= $pointsDeducted;
 
 
-                $reason = 'Tính lại hóa đơn khi trả hàng : Mã#' . $order->code;
+                $reason = 'Tính lại hóa đơn khi trả hàng : ' . $order->code;
                 UserPointTransaction::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
@@ -123,7 +123,7 @@ class OrderObserver
                 if ($totalPointsUsed > 0) {
 
                     log::info('Điểm hoàn trả status == 10: ' . $refundPoints);
-                    $reason = 'Trả điểm hoàn hàng : Mã#' . $order->code;
+                    $reason = 'Trả điểm hoàn hàng : ' . $order->code;
                     UserPointTransaction::create([
                         'user_id' => $user->id,
                         'order_id' => $order->id,
@@ -178,7 +178,7 @@ class OrderObserver
             // $user->total_spent -= $order->total_product_amount;
             // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
 
-            $reason = 'Hoàn trả điểm hủy hàng : Mã#' . $order->code;
+            $reason = 'Hoàn trả điểm hủy hàng : ' . $order->code;
             UserPointTransaction::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,

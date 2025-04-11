@@ -212,17 +212,13 @@ class UserController extends Controller
         ], 200);
     }
 
-    //  lịch sử điểm
-     
-    public function pointsHistory($id)
-    {
-        $user = User::find($id);
-        if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại'], 404);
-        }
 
-        $pointHistory = $user->pointTransactions()->with('order:id,code')->get();
 
-        return response()->json($pointHistory, 200);
-    }
+
+
+
+
+
+
+    
 }

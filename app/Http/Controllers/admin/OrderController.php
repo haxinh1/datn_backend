@@ -294,7 +294,7 @@ class OrderController extends Controller
                     'user_id' => $userId,
                     'points' => -$usedPoints,
                     'type' => 'subtract',
-                    'reason' => 'Sử dụng điểm để thanh toán đơn hàng : Mã#' . $order->code,
+                    'reason' => 'Sử dụng điểm để thanh toán đơn hàng : ' . $order->code,
                     'order_id' => $order->id,
                 ]);
             }

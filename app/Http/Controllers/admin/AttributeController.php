@@ -75,7 +75,7 @@ class AttributeController extends Controller
     public function show(string $id)
     {
         try {
-            $attribute = Attribute::findOrFail($id);
+            $attribute = Attribute::with('attributeValues:id,attribute_id,value')->findOrFail($id);
             return response()->json([
                 'success' => true,
                 'message' => 'Chi tiết dữ liệu',

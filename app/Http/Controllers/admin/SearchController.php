@@ -80,7 +80,7 @@ class SearchController extends Controller
         ]);
 
         $keyword = $validated['keyword'];   
-        $orderReturns = OrderReturn::with(['order:id,code'])->whereHas('order', function ($query) use ($keyword) {
+        $orderReturns = OrderReturn::with(['order:id,code,phone_number,fullname,status_id'])->whereHas('order', function ($query) use ($keyword) {
             $query->where('code', 'LIKE', '%' . $keyword . '%');
         })->get();
     

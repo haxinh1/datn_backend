@@ -306,7 +306,7 @@ class OrderController extends Controller
                 // Tính giá bán của sản phẩm
                 $product = Product::find($item['product_id']);
                 $productVariant = ProductVariant::find($item['product_variant_id']);
-            
+
                 if ($productVariant) {
                     // Nếu có biến thể sản phẩm
                     $sellPrice = $productVariant->sale_price ?? $productVariant->sell_price;
@@ -314,10 +314,10 @@ class OrderController extends Controller
                     // Nếu không có biến thể, lấy giá sản phẩm gốc
                     $sellPrice = $product->sale_price ?? $product->sell_price;
                 }
-            
+
                 // Tính tổng tiền sản phẩm theo số lượng
                 $productTotal = $sellPrice * $item['quantity'];
-            
+
                 // Tính tổng tiền đơn hàng
                 $totalAmount = $cartItems->sum(function ($cartItem) {
                     $product = Product::find($cartItem['product_id']);
@@ -325,10 +325,10 @@ class OrderController extends Controller
                     $sellPrice = $productVariant ? ($productVariant->sale_price ?? $productVariant->sell_price) : ($product->sale_price ?? $product->sell_price);
                     return $cartItem['quantity'] * $sellPrice;
                 });
-            
+
                 // Kiểm tra và tính giá trị mã giảm giá
                 $couponDiscount = $order->coupon_discount_value ?? 0;
-            
+
                 if ($order->coupon_discount_type === 'percent') {
                     // Áp dụng coupon theo phần trăm
                     $refundAmount = ($productTotal - (($couponDiscount / 100) * $productTotal)) / $item['quantity'];  // Chia theo số lượng sản phẩm
@@ -339,15 +339,15 @@ class OrderController extends Controller
                 } else {
                     // Không có coupon, số tiền hoàn trả là giá gốc
                     $refundAmount = $productTotal / $item['quantity']; // Chia theo số lượng sản phẩm
-                }  
-               
+                }
+
                 $productRatio = $productTotal / $totalProductAmount;
                 $pointsUsed = $order->used_points ?? 0;
-                $pointsValue = 1; 
+                $pointsValue = 1;
                 $pointsRefundAmount = ($pointsUsed * $productRatio) * $pointsValue;
                 $refundAmount -= $pointsRefundAmount;
-            
-                
+
+
                 // Lưu chi tiết đơn hàng vào bảng order_items với giá hoàn trả
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -357,7 +357,11 @@ class OrderController extends Controller
                     'sell_price' => $sellPrice,
                     'refund_amount' => $refundAmount,  // Lưu số tiền hoàn trả vào cột refund_amount
                 ]);
-            
+                // Cập nhật lại total_sales của sản phẩm khi đặt hàng
+                $product = Product::find($item['product_id']);
+                $product->total_sales += $item['quantity']; 
+                $product->save(); 
+
                 // Trừ stock nếu thanh toán qua COD
                 if ($paymentMethod == 'cod') {
                     if ($item['product_variant_id']) {
@@ -367,9 +371,9 @@ class OrderController extends Controller
                     }
                 }
             }
-            
-            
-            
+
+
+
 
 
             // Xóa giỏ hàng sau khi đặt hàng thành công
@@ -434,12 +438,12 @@ class OrderController extends Controller
         if ($paymentMethod === 'momo') {
             $amount = (int) $order->total_amount;
             $momoController = app()->make(MomoController::class);
-                return $momoController->momo_payment(new Request([
-                    'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
-                    'total_momo' => $amount, // Tổng tiền
-                ]));
+            return $momoController->momo_payment(new Request([
+                'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
+                'total_momo' => $amount, // Tổng tiền
+            ]));
         }
-        
+
 
         return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
     }

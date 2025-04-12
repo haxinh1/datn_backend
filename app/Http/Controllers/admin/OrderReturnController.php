@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderReturn;
 use App\Models\OrderOrderStatus;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -260,6 +261,9 @@ class OrderReturnController extends Controller
                     $query->where('product_variant_id', $product['product_variant_id']);
                 })
                 ->first();
+                $product = Product::find($product['product_id']);
+                $product->total_sales -= $product['quantity']; 
+                $product->save(); 
 
             if (!$orderItem) {
                 return response()->json([

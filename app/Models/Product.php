@@ -16,6 +16,7 @@ class Product extends Model
         'name_link',
         'slug',
         'views',
+        'total_sales',
         'content',
         'thumbnail',
         'sku',

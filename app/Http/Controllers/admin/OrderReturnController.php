@@ -261,12 +261,7 @@ class OrderReturnController extends Controller
                     $query->where('product_variant_id', $product['product_variant_id']);
                 })
                 ->first();
-            // Cập nhật total_sales khi trả hàng
-            if ($orderItem) {
-                $product = Product::find($product['product_id']);
-                $product->total_sales -= $orderItem->quantity;  // Trừ số lượng đã bán
-                $product->save();
-            }
+
 
             if (!$orderItem) {
                 return response()->json([
@@ -325,6 +320,12 @@ class OrderReturnController extends Controller
             ]);
 
             $createdReturns[] = OrderReturn::with(['order', 'product', 'productVariant'])->find($returnId);
+            // **Cập nhật total_sales trong bảng products**:
+            $productUpdate = Product::find($product['product_id']);
+            if ($productUpdate) {
+                $productUpdate->total_sales -= $product['quantity'];
+                $productUpdate->save();  
+            }
         }
 
         // Cập nhật trạng thái đơn hàng

@@ -15,73 +15,81 @@ use App\Mail\OrderMail;
 class MomoController extends Controller
 {
     public function momo_payment(Request $request)
-    {
-        $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+{
+    $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
 
-        $partnerCode = 'MOMOBKUN20180529';
-        $accessKey = 'klm05TvNBzhg7h7j';
-        $secretKey = 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa';
+    $partnerCode = 'MOMOBKUN20180529';
+    $accessKey = 'klm05TvNBzhg7h7j';
+    $secretKey = 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa';
 
-        $amount = $request->input('total_momo');
-        $orderId = $request->input('order_id');
+    $amount = $request->input('total_momo');
+    $orderId = $request->input('order_id');
 
-        if (!$amount || !$orderId) {
-            return response()->json(['message' => 'Thiếu total_momo hoặc order_id'], 400);
-        }
-
-        $order = Order::find($orderId);
-        if (!$order) {
-            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
-        }
-
-        if ($order->status_id != 1) {
-            return response()->json(['message' => 'Đơn hàng không hợp lệ hoặc đã được xử lý'], 400);
-        }
-
-        $orderInfo = "Thanh toan don hang " . $order->code;
-        $redirectUrl = route('momo.callback');
-        $ipnUrl = $redirectUrl;
-        $requestId = time() . "";
-        $requestType = "payWithATM";
-        $extraData = "";
-
-        $rawHash = "accessKey={$accessKey}&amount={$amount}&extraData={$extraData}&ipnUrl={$ipnUrl}&orderId={$order->code}&orderInfo={$orderInfo}&partnerCode={$partnerCode}&redirectUrl={$redirectUrl}&requestId={$requestId}&requestType={$requestType}";
-        $signature = hash_hmac("sha256", $rawHash, $secretKey);
-
-        $data = [
-            'partnerCode' => $partnerCode,
-            'partnerName' => "Test",
-            'storeId' => "MomoTestStore",
-            'requestId' => $requestId,
-            'amount' => $amount,
-            'orderId' => $order->code,
-            'orderInfo' => $orderInfo,
-            'redirectUrl' => $redirectUrl,
-            'ipnUrl' => $ipnUrl,
-            'lang' => 'vi',
-            'extraData' => $extraData,
-            'requestType' => $requestType,
-            'signature' => $signature
-        ];
-
-        try {
-            $response = Http::withHeaders(['Content-Type' => 'application/json'])->withOptions([
-                'verify'          => false,
-                'timeout'         => 60,  // Thời gian tối đa cho toàn bộ request
-                'connect_timeout' => 60   // Thời gian tối đa để kết nối
-            ])->post($endpoint, $data);
-
-            if ($response->failed() || !isset($response['payUrl'])) {
-                Log::error('MoMo Error:', ['body' => $response->body()]);
-                return response()->json(['message' => 'Không thể tạo thanh toán MoMo'], 500);
-            }
-
-            return response()->json(['payment_url' => $response['payUrl']], 200);
-        } catch (\Exception $e) {
-            Log::error('MoMo Exception:', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Lỗi kết nối đến MoMo'], 500);
-        }
+    if (!$amount || !$orderId) {
+        return response()->json(['message' => 'Thiếu total_momo hoặc order_id'], 400);
     }
+
+    $order = Order::find($orderId);
+    if (!$order) {
+        return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+    }
+
+    if ($order->status_id != 1) {
+        return response()->json(['message' => 'Đơn hàng không hợp lệ hoặc đã được xử lý'], 400);
+    }
+
+    // Tạo orderId duy nhất để gửi sang MoMo
+    $momoOrderId = $order->code . '-' . now()->timestamp;
+
+    // Lưu vào DB để callback dùng
+    $order->update(['momo_order_id' => $momoOrderId]);
+
+    $orderInfo = "Thanh toan don hang " . $momoOrderId;
+    $redirectUrl = route('momo.callback');
+    $ipnUrl = $redirectUrl;
+    $requestId = time() . "";
+    $requestType = "payWithATM";
+    $extraData = "";
+
+    // Dùng momoOrderId trong rawHash
+    $rawHash = "accessKey={$accessKey}&amount={$amount}&extraData={$extraData}&ipnUrl={$ipnUrl}&orderId={$momoOrderId}&orderInfo={$orderInfo}&partnerCode={$partnerCode}&redirectUrl={$redirectUrl}&requestId={$requestId}&requestType={$requestType}";
+    $signature = hash_hmac("sha256", $rawHash, $secretKey);
+
+    $data = [
+        'partnerCode' => $partnerCode,
+        'partnerName' => "Test",
+        'storeId' => "MomoTestStore",
+        'requestId' => $requestId,
+        'amount' => $amount,
+        'orderId' => $momoOrderId,
+        'orderInfo' => $orderInfo,
+        'redirectUrl' => $redirectUrl,
+        'ipnUrl' => $ipnUrl,
+        'lang' => 'vi',
+        'extraData' => $extraData,
+        'requestType' => $requestType,
+        'signature' => $signature
+    ];
+
+    try {
+        $response = Http::withHeaders(['Content-Type' => 'application/json'])->withOptions([
+            'verify'          => false,
+            'timeout'         => 60,
+            'connect_timeout' => 60
+        ])->post($endpoint, $data);
+
+        if ($response->failed() || !isset($response['payUrl'])) {
+            Log::error('MoMo Error:', ['body' => $response->body()]);
+            return response()->json(['message' => 'Không thể tạo thanh toán MoMo'], 500);
+        }
+
+        return response()->json(['payment_url' => $response['payUrl']], 200);
+    } catch (\Exception $e) {
+        Log::error('MoMo Exception:', ['error' => $e->getMessage()]);
+        return response()->json(['message' => 'Lỗi kết nối đến MoMo'], 500);
+    }
+}
+
 
     public function callback(Request $request)
     {
@@ -139,8 +147,8 @@ class MomoController extends Controller
                 return redirect()->away("http://localhost:5173/thanks?" . http_build_query([
                     'success' => 'true',
                     'order_id' => $order->id,
-                    'order_code' => $order->code,
-                    'momo_OrderInfo' => "Thanh toan don hang " . $order->code,
+                    'order_code' => $order->code . '-' . now()->timestamp,
+                    'momo_OrderInfo' => "Thanh toan don hang " . $order->code . '-' . now()->timestamp,
                     'momo_Amount' => $data['amount'],
                     'momo_ResponseCode' => '0',
                     'momo_PaymentType' => 'ATM'

@@ -324,7 +324,7 @@ class OrderReturnController extends Controller
             $productUpdate = Product::find($product['product_id']);
             if ($productUpdate) {
                 $productUpdate->total_sales -= $product['quantity'];
-                $productUpdate->save();  
+                $productUpdate->save();
             }
         }
 
@@ -487,6 +487,14 @@ class OrderReturnController extends Controller
         if ($order && $order->status_id == 13) {
             $order->status_id = 14; // Chuyển trạng thái đơn chính sang 14
             $order->save();
+            // Lưu trạng thái vào bảng order_order_statuses cho đơn hàng chính
+            $userId = $request->input('user_id', null);
+            OrderOrderStatus::create([
+                'order_id' => $orderId,
+                'order_status_id' => 14, // Trạng thái "Người bán đã nhận hàng"
+                'modified_by' => $userId,
+                'employee_evidence' => $request->input('employee_evidence', ''), // Chứng từ nếu có
+            ]);
         }
 
         return response()->json(['message' => 'All returns processed, stock updated (if applicable), and order status updated to 14']);

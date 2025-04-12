@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Events\OrderStatusUpdated;
 use App\Models\OrderReturn;
+use App\Models\Product;
 
 class OrderOrderStatusController extends Controller
 {
@@ -118,6 +119,17 @@ class OrderOrderStatusController extends Controller
             return response()->json([
                 'message' => 'Không thể chuyển trạng thái từ ' . $order->status_id . ' sang ' . $request->order_status_id
             ], 400);
+        }
+        // Nếu trạng thái là Hủy đơn (order_status_id = 8), trừ số lượng sản phẩm trong order_items
+        if ($request->order_status_id == 8) {
+            foreach ($order->orderItems as $item) {
+                $product = Product::find($item->product_id);
+
+                if ($product) {
+                    $product->total_sales -= $item->quantity;
+                    $product->save(); 
+                }
+            }
         }
 
 

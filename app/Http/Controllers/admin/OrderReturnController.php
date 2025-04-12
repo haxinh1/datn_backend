@@ -144,14 +144,14 @@ class OrderReturnController extends Controller
     {
         // Lấy danh sách đơn hoàn trả với thông tin liên quan đến order, product, và productVariant
         $orderReturns = OrderReturn::with(['order', 'product', 'productVariant.attributeValues'])
-            ->join('orders', 'order_returns.order_id', '=', 'orders.id') 
-            ->where('orders.user_id', $userId) 
+            ->join('orders', 'order_returns.order_id', '=', 'orders.id')
+            ->where('orders.user_id', $userId)
             ->orderBy('orders.created_at', 'desc')
             ->get()
-            ->groupBy('order_id') 
+            ->groupBy('order_id')
             ->map(function ($returns, $orderId) {
-                $firstReturn = $returns->first(); 
-                $order = $firstReturn->order; 
+                $firstReturn = $returns->first();
+                $order = $firstReturn->order;
 
                 return [
                     'order_id' => $orderId,
@@ -187,7 +187,7 @@ class OrderReturnController extends Controller
                             'sell_price' => $return->sell_price,
                             'product_variant_id' => $return->product_variant_id,
                             'quantity' => $return->quantity_returned,
-                            'attributes' => $attributes,  
+                            'attributes' => $attributes,
                         ];
                     })->values(),
                 ];
@@ -261,9 +261,12 @@ class OrderReturnController extends Controller
                     $query->where('product_variant_id', $product['product_variant_id']);
                 })
                 ->first();
+            // Cập nhật total_sales khi trả hàng
+            if ($orderItem) {
                 $product = Product::find($product['product_id']);
-                $product->total_sales -= $product['quantity']; 
-                $product->save(); 
+                $product->total_sales -= $orderItem->quantity;  // Trừ số lượng đã bán
+                $product->save();
+            }
 
             if (!$orderItem) {
                 return response()->json([
@@ -292,13 +295,13 @@ class OrderReturnController extends Controller
                 $refundAmount = $productTotal;
             }
 
-            $pointsUsed = $order->used_points ?? 0; 
+            $pointsUsed = $order->used_points ?? 0;
             log::info('Số điểm đã sử dụng: ' . $pointsUsed);
-            $pointsValue = 1; 
-            $pointsRefundAmount = ($pointsUsed * $productRatio) * $pointsValue; 
+            $pointsValue = 1;
+            $pointsRefundAmount = ($pointsUsed * $productRatio) * $pointsValue;
 
             // Trừ tiền hoàn trả theo điểm tiêu dùng
-            $refundAmount -= $pointsRefundAmount;  
+            $refundAmount -= $pointsRefundAmount;
 
             $totalRefundAmount += $refundAmount;
 

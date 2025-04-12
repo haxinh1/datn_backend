@@ -120,17 +120,28 @@ class OrderOrderStatusController extends Controller
                 'message' => 'Không thể chuyển trạng thái từ ' . $order->status_id . ' sang ' . $request->order_status_id
             ], 400);
         }
-        // Nếu trạng thái là Hủy đơn (order_status_id = 8), trừ số lượng sản phẩm trong order_items
+        // Nếu trạng thái là Hủy đơn (order_status_id = 8), trừ số lượng sản phẩm trong order_items và cộng lại stock
         if ($request->order_status_id == 8) {
             foreach ($order->orderItems as $item) {
                 $product = Product::find($item->product_id);
 
                 if ($product) {
                     $product->total_sales -= $item->quantity;
-                    $product->save(); 
+                    $product->save();  
+
+                    if ($item->product_variant_id) {
+                        $productVariant = \App\Models\ProductVariant::find($item->product_variant_id);
+                        if ($productVariant) {
+                            $productVariant->increment('stock', $item->quantity);
+                        }
+                    } else {
+                        $product->increment('stock', $item->quantity);
+                    }
                 }
             }
         }
+
+
 
 
 

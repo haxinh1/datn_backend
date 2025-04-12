@@ -394,7 +394,7 @@ class OrderController extends Controller
                 $momoController = app()->make(MomoController::class);
                 return $momoController->momo_payment(new Request([
                     'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
-                    'total_momo' => $totalAmount, // Tổng tiền
+                    'total_momo' => $order->total_amount, // Tổng tiền
                 ]));
             } else { // COD
                 $order->update(['status_id' => 3]);

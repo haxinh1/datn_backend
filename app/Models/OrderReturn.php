@@ -20,12 +20,14 @@ class OrderReturn extends Model
         'quantity_returned',
         'reason',
         'employee_evidence',
-        'refund_proof',          
+        'refund_proof',
+        'sell_price',          
         'status_id',
         'price',
         'bank_account_number',
         'bank_name',
         'bank_qr',
+        'total_refund_amount',
     ];
 
     // Quan hệ với bảng Orders

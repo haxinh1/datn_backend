@@ -212,7 +212,8 @@ class UserController extends Controller
         ], 200);
     }
 
-    //  lịch sử điểm
+
+    //  lịch sử điểm theo người dùng
      
     public function pointsHistory($id)
     {
@@ -221,8 +222,11 @@ class UserController extends Controller
             return response()->json(['message' => 'Người dùng không tồn tại'], 404);
         }
 
-        $pointHistory = $user->pointTransactions()->with('order:id,code')->get();
+        $pointHistory = $user->pointTransactions()->with('order:id,code')->orderBy('created_at', 'desc')->get();
 
         return response()->json($pointHistory, 200);
     }
 }
+
+
+

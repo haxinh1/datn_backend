@@ -30,9 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\CommentController;
 use App\Http\Controllers\admin\OrderReturnController;
-use App\Http\Controllers\admin\RefundController;
 use App\Http\Controllers\clients\ClientProductController;
-use App\Http\Controllers\ShippingController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MomoController;
@@ -121,8 +119,6 @@ Route::prefix('orders')->group(function () {
     Route::delete('{orderId}/items/{itemId}', [OrderItemController::class, 'destroy']);
     Route::get('/user/{userId}', [OrderController::class, 'getOrdersByUserId'])->name('orders.user');
     Route::post('/{orderId}/retry-payment', [OrderController::class, 'retryPayment']);
-
-
 });
 
 Route::prefix('order-returns')->group(function () {
@@ -131,10 +127,11 @@ Route::prefix('order-returns')->group(function () {
     Route::get('/{orderId}', [OrderReturnController::class, 'show']); // Lấy chi tiết thông tin trả hàng
     Route::get('/user/{userId}', [OrderReturnController::class, 'showByUser']); // Trả hàng theo user
     Route::post('/{orderId}/return', [OrderReturnController::class, 'store']); // Đặt thông tin trả hàng
-     // Admin xử lý chấp nhận hoặc từ chối
-     Route::post('/{orderId}/status/update', [OrderReturnController::class, 'updateStatusByOrder']);
-     // Admin xác nhận hoàn tiền thành công
-     Route::post('/{orderId}/refund/confirm', [OrderReturnController::class, 'confirmRefundByOrder']);
+    Route::post('/approve-return/{orderId}', [OrderReturnController::class, 'approveReturn']);
+    // Admin xử lý chấp nhận hoặc từ chối
+    Route::post('/{orderId}/status/update', [OrderReturnController::class, 'updateStatusByOrder']);
+    // Admin xác nhận hoàn tiền thành công
+    Route::post('/{orderId}/refund/confirm', [OrderReturnController::class, 'confirmRefundByOrder']);
 });
 
 
@@ -198,6 +195,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/products/search', [SearchController::class, 'searchProducts']);
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
     Route::get('/orders/search', [SearchController::class, 'searchOrders']);
+    Route::get('/orders-return/search', [SearchController::class, 'searchOrderReturn']);
 });
 //route admin user
 Route::prefix('admin')->group(function () {
@@ -312,5 +310,4 @@ Route::prefix('statistics')->group(function () {
     Route::get('/top-revenue-days', [StatisticController::class, 'topRevenueDays']);
     //Biểu đồ hoàn hủy
     Route::get('/revenue-statistics', [StatisticController::class, 'revenueStatistics']);
-
 });

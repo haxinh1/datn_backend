@@ -29,11 +29,22 @@ class OrderItemExport implements FromCollection, WithHeadings
                 'order_items.quantity',
                 'order_items.sell_price',
                 DB::raw("CASE 
-                        WHEN orders.status_id = 0 THEN 'Chưa xác nhận' 
-                        WHEN orders.status_id = 1 THEN 'Đã xác nhận' 
-                        WHEN orders.status_id = -1 THEN 'Bị hủy' 
-                        ELSE 'Không xác định' 
-                     END as order_status"),
+                WHEN orders.status_id = 1 THEN 'Chờ thanh toán'
+                WHEN orders.status_id = 2 THEN 'Đã thanh toán trực tuyến'
+                WHEN orders.status_id = 3 THEN 'Đang xử lý'
+                WHEN orders.status_id = 4 THEN 'Đang giao hàng'
+                WHEN orders.status_id = 5 THEN 'Đã giao hàng'
+                WHEN orders.status_id = 6 THEN 'Giao hàng thất bại'
+                WHEN orders.status_id = 7 THEN 'Hoàn thành'
+                WHEN orders.status_id = 8 THEN 'Hủy đơn'
+                WHEN orders.status_id = 9 THEN 'Chờ xử lý trả hàng'
+                WHEN orders.status_id = 10 THEN 'Chấp nhận trả hàng'
+                WHEN orders.status_id = 11 THEN 'Từ chối trả hàng'
+                WHEN orders.status_id = 12 THEN 'Hoàn tiền thành công'
+                WHEN orders.status_id = 13 THEN 'Hàng đang quay về shop'
+                WHEN orders.status_id = 14 THEN 'Người bán đã nhận hàng'
+                ELSE 'Không xác định'
+                END as order_status"),            
                 DB::raw("DATE_FORMAT(order_items.created_at, '%d-%m-%Y') as formatted_created_at")
             ]);
 

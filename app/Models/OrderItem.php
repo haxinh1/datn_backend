@@ -13,8 +13,9 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'product_variant_id',
-        'sell_price', // Cập nhật từ price
+        'sell_price', 
         'quantity',
+        'refund_amount', 
     ];
 
     public function order()

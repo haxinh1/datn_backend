@@ -100,6 +100,43 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    public function resendVerificationCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+    
+
+        $user = User::where('email', $request->email)->first();
+    
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng không tồn tại!'], 404);
+        }
+    
+
+        $code = random_int(100000, 999999);
+        $expiresTime = Carbon::now()->addMinutes(2);
+    
+
+        DB::table('email_verification_codes')->where('user_id', $user->id)->delete();
+    
+
+        DB::table('email_verification_codes')->insert([
+            'user_id' => $user->id,
+            'code' => $code,
+            'created_at' => now(),
+            'updated_at' => now(),
+            'expires_at' => $expiresTime,
+        ]);
+    
+       
+        Mail::to($user->email)->send(new VerifyEmail($user, $code));
+    
+        return response()->json([
+            'message' => 'Mã xác minh đã được gửi lại. Vui lòng kiểm tra email của bạn.',
+        ], 200);
+    }
     
     public function verifyEmail(Request $request)
     { 

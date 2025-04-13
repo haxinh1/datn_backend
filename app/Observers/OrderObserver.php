@@ -74,10 +74,11 @@ class OrderObserver
         $old = $order->getOriginal('status_id');
         $new = $order->status_id;
         Log::info("Status cũ: $old -> mới: $new");
+        $user = User::where('id', $order->user_id)->first();
 
         if ($order->status_id == 10) {
 
-            $user = User::where('id', $order->user_id)->first();
+  
             Log::info('User ID: ' . $user->id);
 
             if ($user) {
@@ -132,7 +133,7 @@ class OrderObserver
                         'reason' => $reason,
                     ]);
                 }
-      
+
 
 
                 if ($user->loyalty_points < 0) {
@@ -161,36 +162,38 @@ class OrderObserver
                 $user->save();
             }
         }
+  
+        if ($user) {
+            if ($order->status_id == 8) {
 
-        if ($order->status_id == 8) {
-            $user = User::where('id', $order->user_id)->first();
-            Log::info('User ID: ' . $user->id);
-            $totalPointsUsed = $order->used_points;
-            Log::info('Điểm sử dụng : ' . $totalPointsUsed);
-            $user->loyalty_points += $totalPointsUsed;
-
-
-            // $refundPoints = ($order->total_product_amount * 2) / 100;
-            // Log::info('Điểm hoàn trả status == 8: ' . $refundPoints);
-            // $user->loyalty_points -= $refundPoints;
-            // $user->rank_points -= $refundPoints;
-
-            // $user->total_spent -= $order->total_product_amount;
-            // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
-
-            $reason = 'Hoàn trả điểm hủy hàng : ' . $order->code;
-            UserPointTransaction::create([
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-                'points' => $totalPointsUsed,
-                'type' => 'add',
-                'reason' => $reason,
-            ]);
+                Log::info('User ID: ' . $user->id);
+                $totalPointsUsed = $order->used_points;
+                Log::info('Điểm sử dụng : ' . $totalPointsUsed);
+                $user->loyalty_points += $totalPointsUsed;
 
 
+                // $refundPoints = ($order->total_product_amount * 2) / 100;
+                // Log::info('Điểm hoàn trả status == 8: ' . $refundPoints);
+                // $user->loyalty_points -= $refundPoints;
+                // $user->rank_points -= $refundPoints;
+
+                // $user->total_spent -= $order->total_product_amount;
+                // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
+
+                $reason = 'Hoàn trả điểm hủy hàng : ' . $order->code;
+                UserPointTransaction::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => $totalPointsUsed,
+                    'type' => 'add',
+                    'reason' => $reason,
+                ]);
 
 
-            $user->save();
+
+
+                $user->save();
+            }
         }
     }
 

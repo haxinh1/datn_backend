@@ -90,6 +90,7 @@ class OrderOrderStatusController extends Controller
             'order_status_id' => 'required|exists:order_statuses,id',
             'note' => 'nullable|string|max:255',
             'employee_evidence' => 'nullable|string',
+            'user_id' => 'nullable|integer|exists:users,id',
         ]);
 
         // Kiểm tra đơn hàng có tồn tại không
@@ -147,7 +148,7 @@ class OrderOrderStatusController extends Controller
 
         DB::beginTransaction();
         try {
-            $userId = $request->input('user_id') ?? null;
+            $userId = $request->input('user_id', null);
             $orderOrderStatus = OrderOrderStatus::create([
                 'order_id' => $orderId,
                 'order_status_id' => $request->order_status_id,

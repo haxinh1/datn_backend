@@ -106,8 +106,6 @@ class CommentController extends Controller
 
     public function store(Request $request)
     {
-
-        // Check xem gười dùng đã đăg hập chưa
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -116,29 +114,27 @@ class CommentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'products_id' => 'required|exists:products,id',
-//            'users_id'    => 'required|exists:users,id',  // Bỏ để lấy user đang đăng nhập thay vì hư trước khi chưa có auth
             'comments'    => 'required|string',
             'rating'      => 'nullable|integer|min:1|max:5',
-            'parent_id'   => 'nullable|exists:comments,id', // parent_id là null thì là bình luận còn k thì là reply
-            'status'      => 'nullable|integer|in:0,1', // 0: Ẩn, 1: Hiện
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Mỗi ảnh tối đa 2MB
+            'parent_id'   => 'nullable|exists:comments,id',
+            'status'      => 'nullable|integer|in:0,1',
+            'images'      => 'nullable|array',
         ]);
 
-
         $productId = $request->input('products_id');
+
         if ($user && $user->role === "customer") {
-            //  Kiểm tra xem user đã có comment cho sản phẩm này chưa
-            $existingComment = Comment::where('products_id', $request->products_id)
+            $existingComment = Comment::where('products_id', $productId)
                 ->where('users_id', $userId)
-                ->whereNull('parent_id') // Đảm bảo chỉ kiểm tra comment chính, không tính reply
+                ->whereNull('parent_id')
                 ->exists();
 
             if ($existingComment) {
                 return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
             }
-            // Kiểm tra xem người dùng đã mua sản phẩm này hay chưa
+
             if (!Order::hasPurchasedProduct($userId, $productId)) {
-                return response()->json(['error' => 'You must purchase this product to comment'], 403);
+                return response()->json(['error' => 'Bạn chưa mua sản phẩm này!'], 403);
             }
         }
 
@@ -146,9 +142,8 @@ class CommentController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Tạo comment
         $comment = Comment::create([
-            'products_id'  => $request->products_id,
+            'products_id'  => $productId,
             'users_id'     => $userId,
             'comments'     => $request->comments,
             'rating'       => $request->rating,
@@ -156,22 +151,15 @@ class CommentController extends Controller
             'status'       => $request->status ?? 1,
             'parent_id'    => $request->parent_id,
         ]);
-        // Xử lý ảnh nếu có
-        if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            if (!is_array($files)) {
-                $files = [$files];
-            }
 
-            foreach ($files as $image) {
-                $path = $image->store('comments', 'public'); // Lưu ảnh vào storage/app/public/comments
+        if ($request->filled('images')) {
+            foreach ($request->images as $imageUrl) {
                 CommentImage::create([
                     'comment_id' => $comment->id,
-                    'image'  => $path,
+                    'image'      => $imageUrl,
                 ]);
             }
         }
-
 
         return response()->json([
             'message' => 'Comment created successfully!',
@@ -179,15 +167,10 @@ class CommentController extends Controller
         ], 201);
     }
 
+
     public function update(Request $request, $id)
     {
-
         $comment = Comment::find($id);
-
-        if (!$comment) {
-            return response()->json(['message' => 'Comment not found!'], 404);
-        }
-
         if (!$comment) {
             return response()->json(['message' => 'Comment not found!'], 404);
         }
@@ -197,47 +180,67 @@ class CommentController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        if ($user !== $comment->user_id) {
+        if ($user->id !== $comment->users_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'comments'  => 'sometimes|string',
-            'rating'    => 'sometimes|integer|min:1|max:5',
-            'status'    => 'sometimes|integer|in:0,1',
-            'images.*'  => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'remove_images' => 'nullable|array', // Danh sách ID ảnh cần xóa
-            'remove_images.*' => 'exists:comment_images,id', // Xác nhận ảnh tồn tại
+            'comments' => 'sometimes|string',
+            'rating'   => 'sometimes|integer|min:1|max:5',
+            'status'   => 'sometimes|integer|in:0,1',
+            'images'   => 'nullable|array',
+            'images.*' => 'nullable|url',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Cập nhật dữ liệu comment
         $comment->update([
-            'comments'  => $request->comments ?? $comment->comments,
-            'rating'    => $request->rating ?? $comment->rating,
-            'status'    => $request->status ?? $comment->status,
+            'comments' => $request->comments ?? $comment->comments,
+            'rating'   => $request->rating ?? $comment->rating,
+            'status'   => $request->status ?? $comment->status,
         ]);
-        // Xóa ảnh cũ nếu có yêu cầu
-        if ($request->has('remove_images')) {
-            foreach ($request->remove_images as $imageId) {
-                $image = CommentImage::find($imageId);
-                if ($image) {
-                    Storage::disk('public')->delete($image->image); // Xóa file khỏi storage
-                    $image->delete(); // Xóa bản ghi ảnh trong DB
+
+        // Xử lý ảnh
+        if ($request->has('images')) {
+            $newImages = $request->images;
+            $oldImages = $comment->images->pluck('image')->toArray();
+
+            if (empty($newImages)) {
+                // Nếu mảng ảnh rỗng: XÓA HẾT
+                CommentImage::where('comment_id', $comment->id)->delete();
+            } elseif (count($newImages) === 1) {
+                // Nếu chỉ còn 1 ảnh: GIỮ 1, XÓA HẾT CÁI KHÁC
+                CommentImage::where('comment_id', $comment->id)
+                    ->where('image', '!=', $newImages[0])
+                    ->delete();
+
+                // Nếu ảnh đó chưa có thì thêm
+                if (!in_array($newImages[0], $oldImages)) {
+                    CommentImage::create([
+                        'comment_id' => $comment->id,
+                        'image'      => $newImages[0],
+                    ]);
                 }
-            }
-        }
-        // Thêm ảnh mới nếu có
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('comments', 'public'); // Lưu ảnh vào storage/app/public/comments
-                CommentImage::create([
-                    'comment_id' => $comment->id,
-                    'image'  => $path,
-                ]);
+            } else {
+                // Trường hợp nhiều ảnh: xử lý thông thường
+                foreach ($oldImages as $oldImage) {
+                    if (!in_array($oldImage, $newImages)) {
+                        CommentImage::where('comment_id', $comment->id)
+                            ->where('image', $oldImage)
+                            ->delete();
+                    }
+                }
+
+                foreach ($newImages as $newImage) {
+                    if (!in_array($newImage, $oldImages)) {
+                        CommentImage::create([
+                            'comment_id' => $comment->id,
+                            'image'      => $newImage,
+                        ]);
+                    }
+                }
             }
         }
 
@@ -246,6 +249,9 @@ class CommentController extends Controller
             'comment' => $comment->load('images'),
         ]);
     }
+
+
+
 
 
     // Lấy ra comment theo product

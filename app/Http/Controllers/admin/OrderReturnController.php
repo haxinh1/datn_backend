@@ -450,53 +450,56 @@ class OrderReturnController extends Controller
     }
     public function approveReturn(Request $request, $orderId)
     {
-        // Lấy tất cả các đơn hàng trả lại nhóm theo order_id
-        $orderReturns = OrderReturn::where('order_id', $orderId)->get();
+        try {
+            $orderReturns = OrderReturn::where('order_id', $orderId)->get();
 
-        if ($orderReturns->isEmpty()) {
-            return response()->json(['message' => 'No order returns found for this order'], 404);
-        }
-
-        // Lấy tham số từ frontend (approve_stock)
-        $approveStock = $request->input('approve_stock', false); // Mặc định là false nếu không có
-
-        // Duyệt qua tất cả các đơn hoàn trả trong nhóm
-        foreach ($orderReturns as $orderReturn) {
-            if ($approveStock) {
-                // Nếu chọn cộng stock
-                if ($orderReturn->product_variant_id) {
-                    $productVariant = \App\Models\ProductVariant::find($orderReturn->product_variant_id);
-                    if ($productVariant) {
-                        $productVariant->increment('stock', $orderReturn->quantity_returned);
-                    }
-                } else {
-                    $product = \App\Models\Product::find($orderReturn->product_id);
-                    if ($product) {
-                        $product->increment('stock', $orderReturn->quantity_returned);
-                    }
-                }
+            if ($orderReturns->isEmpty()) {
+                return response()->json(['message' => 'No order returns found for this order'], 404);
             }
 
-            // Chuyển trạng thái đơn hàng trả lại sang 14 (Người bán đã nhận hàng)
-            $orderReturn->status_id = 14;  // Sử dụng status_id thay vì status
-            $orderReturn->save();
-        }
+            $approveStock = filter_var($request->input('approve_stock', false), FILTER_VALIDATE_BOOLEAN);
 
-        // Cập nhật trạng thái đơn hàng chính (Order) sang 14 nếu tất cả đơn hoàn trả đã hoàn tất
-        $order = Order::find($orderId);
-        if ($order && $order->status_id == 13) {
-            $order->status_id = 14; // Chuyển trạng thái đơn chính sang 14
-            $order->save();
-            // Lưu trạng thái vào bảng order_order_statuses cho đơn hàng chính
-            $userId = $request->input('user_id', null);
-            OrderOrderStatus::create([
-                'order_id' => $orderId,
-                'order_status_id' => 14, // Trạng thái "Người bán đã nhận hàng"
-                'modified_by' => $userId,
-                'employee_evidence' => $request->input('employee_evidence', ''), // Chứng từ nếu có
+            foreach ($orderReturns as $orderReturn) {
+                if ($approveStock) {
+                    if ($orderReturn->product_variant_id) {
+                        $productVariant = \App\Models\ProductVariant::find($orderReturn->product_variant_id);
+                        if ($productVariant) {
+                            $productVariant->increment('stock', $orderReturn->quantity_returned);
+                        }
+                    } else {
+                        $product = \App\Models\Product::find($orderReturn->product_id);
+                        if ($product) {
+                            $product->increment('stock', $orderReturn->quantity_returned);
+                        }
+                    }
+                }
+
+                $orderReturn->status_id = 14;
+                $orderReturn->save();
+            }
+
+            $order = Order::find($orderId);
+            if ($order && $order->status_id == 13) {
+                $order->status_id = 14;
+                $order->save();
+
+                $userId = $request->input('user_id', null);
+                OrderOrderStatus::create([
+                    'order_id' => $orderId,
+                    'order_status_id' => 14,
+                    'modified_by' => $userId,
+                    'employee_evidence' => $request->input('employee_evidence', ''),
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'All returns processed, stock updated (if applicable), and order status updated to 14'
             ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi xử lý đơn trả hàng',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json(['message' => 'All returns processed, stock updated (if applicable), and order status updated to 14']);
     }
 }

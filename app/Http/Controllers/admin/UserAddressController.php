@@ -79,6 +79,7 @@ class UserAddressController extends Controller
     public function show($user_id)
     {
         $address = UserAddress::where('user_id', $user_id)->orderBy('id_default', 'desc')->get();
+        // mặc định lên đầu
 
         if ($address->isEmpty()) {
             return response()->json(['message' => 'Không tìm thấy địa chỉ cho người dùng với ID này.'], 404);

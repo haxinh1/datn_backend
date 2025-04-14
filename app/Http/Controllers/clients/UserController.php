@@ -197,9 +197,53 @@ class UserController extends Controller
             ], 403);
         }
         if ($user->status === 'banned') {
-            return response()->json([
-                'message' => 'Tài khoản của bạn đã  bị khóa'
-            ], 403);
+            // Lấy bản ghi khóa mới nhất
+            $ban = \App\Models\BannedHistory::where('user_id', $user->id)
+                ->latest('banned_at')
+                ->first();
+
+            if ($ban) {
+                $now = Carbon::now();
+
+                // Nếu đã mở khóa
+                if ($ban->unbanned_at) {
+                    $user->update(['status' => 'active']);
+                } else {
+                    // Nếu chưa mở khóa, kiểm tra thời gian hết hạn
+                    $expireTime = $ban->ban_expires_at ? Carbon::parse($ban->ban_expires_at) : null;
+
+                    if ($expireTime && $now->gte($expireTime)) {
+                        // Hết thời gian khóa
+                        $ban->update(['unbanned_at' => $now]);
+                        $user->update(['status' => 'active']);
+                    } else {
+                    
+                        $secondsLeft = $expireTime ? $now->diffInSeconds($expireTime) : null;
+                        if ($secondsLeft) {
+                            if ($secondsLeft <= 50 * 60) { 
+                                $minutes = floor($secondsLeft / 60);
+                                $remainingSeconds = $secondsLeft % 60;
+                                $message = "Tài khoản của bạn đang bị khóa hãy thử lại sau $minutes phút $remainingSeconds giây";
+                            } else {
+                                $minutesLeft = $secondsLeft / 60;
+                                $hoursLeft = floor($minutesLeft / 60);
+                                $remainingMinutes = $minutesLeft % 60;
+                                $message = "Tài khoản của bạn đang bị khóa hãy thử lại sau $hoursLeft giờ";
+                                if ($remainingMinutes > 0) {
+                                    $message .= " $remainingMinutes phút";
+                                }
+                            }
+                        } else {
+                            $message = "Tài khoản của bạn đang bị khóa";
+                        }
+
+                        return response()->json([
+                            'message' => $message,
+                            'expires_at' => $expireTime ? $expireTime->toDateTimeString() : null,
+                        ], 403);
+                    }
+                }
+            }
         }
 
         $token = $user->createToken('customer_token')->plainTextToken;

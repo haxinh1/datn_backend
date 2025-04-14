@@ -34,6 +34,7 @@ use App\Http\Controllers\clients\ClientProductController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MomoController;
+use App\Http\Controllers\admin\BannedHistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -221,6 +222,12 @@ Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('aut
 Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
+// ->middleware(['auth:api'])
+Route::prefix('banned-history')->group(function () {
+    Route::get('/', [BannedHistoryController::class, 'index']); 
+    Route::post('/', [BannedHistoryController::class, 'store']); 
+    Route::post('/{id}/unban', [BannedHistoryController::class, 'unban']); 
+});
 
 // user address
 Route::middleware('auth:sanctum')->group(function () {

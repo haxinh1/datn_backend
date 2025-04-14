@@ -16,6 +16,7 @@ class Comment extends Model
         'rating',
         'comment_date',
         'status', // Thêm cột status
+        'parent_id'
     ];
 
     protected $casts = [

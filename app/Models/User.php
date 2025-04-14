@@ -96,4 +96,8 @@ public function orders()
 {
     return $this->hasMany(Order::class);
 }
+public function bannedHistories()
+    {
+        return $this->hasMany(BannedHistory::class);
+    }
 }

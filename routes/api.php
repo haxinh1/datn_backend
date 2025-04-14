@@ -34,6 +34,7 @@ use App\Http\Controllers\clients\ClientProductController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MomoController;
+use App\Http\Controllers\admin\BannedHistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -112,7 +113,7 @@ Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('orders.view'); // Danh sách đơn hàng
     Route::post('/place', [OrderController::class, 'store'])->name('orders.place'); // Đặt hàng
     Route::get('/{id}', [OrderController::class, 'show'])->name('orders.show'); // Chi tiết đơn hàng
-    Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus'); // Cập nhật trạng thái
+
     Route::get('{orderId}/items', [OrderItemController::class, 'index']);
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);
@@ -214,12 +215,19 @@ Route::prefix('admin')->group(function () {
 // route login user
 
 Route::post('/register', [ClientUserController::class, 'register']);
+Route::post('/resend-code', [ClientUserController::class, 'resendVerificationCode']);
 Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
 Route::post('/login', [ClientUserController::class, 'login']);
 Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
 Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
+// ->middleware(['auth:api'])
+Route::prefix('banned-history')->group(function () {
+    Route::get('/', [BannedHistoryController::class, 'index']); 
+    Route::post('/', [BannedHistoryController::class, 'store']); 
+    Route::post('/{id}/unban', [BannedHistoryController::class, 'unban']); 
+});
 
 // user address
 Route::middleware('auth:sanctum')->group(function () {

@@ -6,6 +6,10 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\UserPointTransaction;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
+use Carbon\Carbon;
+use App\Models\BannedHistory;
 
 class OrderObserver
 {
@@ -71,13 +75,15 @@ class OrderObserver
     public function updated(Order $order)
     {
 
+
         $old = $order->getOriginal('status_id');
         $new = $order->status_id;
         Log::info("Status cũ: $old -> mới: $new");
+        $user = User::where('id', $order->user_id)->first();
 
         if ($order->status_id == 10) {
 
-            $user = User::where('id', $order->user_id)->first();
+
             Log::info('User ID: ' . $user->id);
 
             if ($user) {
@@ -132,7 +138,7 @@ class OrderObserver
                         'reason' => $reason,
                     ]);
                 }
-      
+
 
 
                 if ($user->loyalty_points < 0) {
@@ -162,35 +168,70 @@ class OrderObserver
             }
         }
 
-        if ($order->status_id == 8) {
-            $user = User::where('id', $order->user_id)->first();
-            Log::info('User ID: ' . $user->id);
-            $totalPointsUsed = $order->used_points;
-            Log::info('Điểm sử dụng : ' . $totalPointsUsed);
-            $user->loyalty_points += $totalPointsUsed;
+        if ($user) {
+            if ($order->status_id == 8) {
+                if ($order->used_points > 0) {
+                    Log::info('User ID: ' . $user->id);
+                    $totalPointsUsed = $order->used_points;
+                    Log::info('Điểm sử dụng : ' . $totalPointsUsed);
+                    $user->loyalty_points += $totalPointsUsed;
 
 
-            // $refundPoints = ($order->total_product_amount * 2) / 100;
-            // Log::info('Điểm hoàn trả status == 8: ' . $refundPoints);
-            // $user->loyalty_points -= $refundPoints;
-            // $user->rank_points -= $refundPoints;
+                    // $refundPoints = ($order->total_product_amount * 2) / 100;
+                    // Log::info('Điểm hoàn trả status == 8: ' . $refundPoints);
+                    // $user->loyalty_points -= $refundPoints;
+                    // $user->rank_points -= $refundPoints;
 
-            // $user->total_spent -= $order->total_product_amount;
-            // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
+                    // $user->total_spent -= $order->total_product_amount;
+                    // Log::info('Tổng hóa đơn status == 8: ' . $order->total_product_amount);
 
-            $reason = 'Hoàn trả điểm hủy hàng : ' . $order->code;
-            UserPointTransaction::create([
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-                'points' => $totalPointsUsed,
-                'type' => 'add',
-                'reason' => $reason,
-            ]);
+                    $reason = 'Hoàn trả điểm hủy hàng : ' . $order->code;
+                    UserPointTransaction::create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'points' => $totalPointsUsed,
+                        'type' => 'add',
+                        'reason' => $reason,
+                    ]);
+
+                    $user->save();
+                }
+
+                try {
+                    $today = Carbon::today();
+
+                    $cancelledOrdersToday = \App\Models\Order::where('user_id', $user->id)
+                        ->where('status_id', 8)
+                        ->whereDate('updated_at', $today)
+                        ->count();
+
+                    if ($cancelledOrdersToday >= 5) {
+
+                        $latestBan = BannedHistory::where('user_id', $user->id)
+                        ->latest('banned_at')
+                        ->first();
+
+                        if (!$latestBan || ($latestBan->unbanned_at && $user->status === 'active')) {
+                            BannedHistory::create([
+                                'user_id' => $user->id,
+                                'banned_by' => auth()->check() ? auth()->id() : 1,
+                                'reason' => 'Hủy quá 5 đơn trong 1 ngày',
+                                'banned_at' => Carbon::now(),
+                                'ban_expires_at' => Carbon::now()->addDay(),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            $user->status = 'banned';
+                            $user->save();
 
 
-
-
-            $user->save();
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Lỗi khi hủy đơn: ' . $e->getMessage());
+                }
+            }
         }
     }
 

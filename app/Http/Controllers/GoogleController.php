@@ -28,6 +28,15 @@ class GoogleController extends Controller
 
             Auth::login($user);
 
+            $user->update([
+                'google_id' => $googleUser->id,
+                'phone_number' => $user->phone_number,
+                'email' => $user->email,
+                'fullname' => $googleUser->name,
+                'avatar' => $googleUser->avatar,
+                'status' => 'active',
+            ]);
+
             $token = $user->createToken('token')->plainTextToken;
             
             return redirect()->to('http://localhost:5173/google-callback?token=' . $token . '&user=' . urlencode(json_encode($user)));

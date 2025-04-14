@@ -160,6 +160,10 @@ class OrderController extends Controller
                     return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn'], 400);
                 }
 
+                if ($coupon->usage_limit !== null && $coupon->usage_count >= $coupon->usage_limit) {
+                    return response()->json(['message' => 'Mã giảm giá đã hết lượt sử dụng'], 400);
+                }
+
                 if ($coupon->discount_type == 'percent') {
                     $discountAmount = ($coupon->discount_value / 100) * $totalAmount;
                 } else {
@@ -288,6 +292,9 @@ class OrderController extends Controller
                 'coupon_discount_type' => $coupon ? $coupon->discount_type : null,
                 'coupon_discount_value' => $coupon ? $coupon->discount_value : null,
             ]);
+            if ($coupon) {
+                $coupon->increment('usage_count');
+            }
 
             if ($usedPoints > 0) {
                 UserPointTransaction::create([
@@ -359,8 +366,8 @@ class OrderController extends Controller
                 ]);
                 // Cập nhật lại total_sales của sản phẩm khi đặt hàng
                 $product = Product::find($item['product_id']);
-                $product->total_sales += $item['quantity']; 
-                $product->save(); 
+                $product->total_sales += $item['quantity'];
+                $product->save();
 
                 // Trừ stock nếu thanh toán qua COD
                 if ($paymentMethod == 'cod') {

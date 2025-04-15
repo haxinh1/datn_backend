@@ -5,6 +5,7 @@ namespace App\Http\Controllers\admin;
 
 use App\Models\CommentImage;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
@@ -251,9 +252,6 @@ class CommentController extends Controller
     }
 
 
-
-
-
     // Lấy ra comment theo product
     public function getCommentsByProduct(Request $request, $productId): JsonResponse
     {
@@ -282,6 +280,38 @@ class CommentController extends Controller
             ->paginate(10);
 
         return response()->json($comments);
+    }
+
+
+    public function remainingCommentCountByProduct(Request $request, $productId)
+    {
+
+        // Người dùng đang đăng nhập
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return $this->getRemainingCommentCountByProduct($user->id, $productId);
+    }
+
+    public  function getRemainingCommentCountByProduct($userId, $productId)
+    {
+        // 1. Tổng số lượng đã mua của sản phẩm này (đơn hàng hoàn thành)
+        $purchasedQty = OrderItem::whereHas('order', function ($query) use ($userId) {
+            $query->where('user_id', $userId)
+                ->where('status_id', 7);
+        })
+            ->where('product_id', $productId)
+            ->sum('quantity');
+        // 2. Số lượt đã bình luận cho sản phẩm này
+        $commentedQty = Comment::where('users_id', $userId)
+            ->where('products_id', $productId)
+            ->count();
+        $remaining = $purchasedQty - $commentedQty;
+
+        return max($remaining, 0); // Không trả số âm
     }
 
 

@@ -224,9 +224,9 @@ Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword'])
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 // ->middleware(['auth:api'])
 Route::prefix('banned-history')->group(function () {
-    Route::get('/', [BannedHistoryController::class, 'index']); 
-    Route::post('/', [BannedHistoryController::class, 'store']); 
-    Route::post('/{id}/unban', [BannedHistoryController::class, 'unban']); 
+    Route::get('/', [BannedHistoryController::class, 'index']);
+    Route::post('/', [BannedHistoryController::class, 'store']);
+    Route::post('/{id}/unban', [BannedHistoryController::class, 'unban']);
 });
 
 // user address
@@ -275,6 +275,7 @@ Route::prefix('comments')->group(function () {
     Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
     Route::post('/', [CommentController::class, 'store']); //  Tạo commet
     Route::get('/product/{productId}', [CommentController::class, 'getCommentsByProduct']);
+    Route::get('/product/can-comment/{productId}', [CommentController::class, 'remainingCommentCountByProduct']);
 });
 
 

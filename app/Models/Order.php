@@ -17,7 +17,7 @@ class Order extends Model
         'phone_number',
         'address',
         'total_amount',
-        'total_product_amount', 
+        'total_product_amount',
         'used_points',
         'discount_points',
         'shipping_fee',
@@ -94,5 +94,26 @@ class Order extends Model
     {
         return $this->hasMany(OrderReturn::class, 'order_id', 'id');
     }
-    
+
+    public static function getRemainingCommentCountByProduct($userId, $productId)
+    {
+        // 1. Tổng số lượng đã mua của sản phẩm này (đơn hàng hoàn thành)
+        $purchasedQty = OrderItem::whereHas('order', function ($query) use ($userId) {
+            $query->where('user_id', $userId)
+                ->where('status_id', 7);
+        })
+            ->where('product_id', $productId)
+            ->sum('quantity');
+
+        // 2. Số lượt đã bình luận cho sản phẩm này
+        $commentedQty = Comment::where('user_id', $userId)
+            ->where('product_id', $productId)
+            ->count();
+
+        // 3. Tính số lượt còn lại có thể bình luận
+        $remaining = $purchasedQty - $commentedQty;
+
+        return max($remaining, 0); // Không trả số âm
+    }
+
 }

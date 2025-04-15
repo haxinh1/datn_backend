@@ -275,6 +275,7 @@ Route::prefix('comments')->group(function () {
     Route::post('/bulk-action', [CommentController::class, 'bulkAction']); //  // Duỵyệt nhiều comment
     Route::post('/', [CommentController::class, 'store']); //  Tạo commet
     Route::get('/product/{productId}', [CommentController::class, 'getCommentsByProduct']);
+//    Kiểm tra xem người dùng hiện tại còn bao nhiêu lượt bình luận cho một sản phẩm cụ thể, dựa trên số lần đã mua và đã bình luận.
     Route::get('/product/can-comment/{productId}', [CommentController::class, 'remainingCommentCountByProduct']);
 });
 

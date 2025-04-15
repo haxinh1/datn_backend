@@ -125,17 +125,13 @@ class CommentController extends Controller
         $productId = $request->input('products_id');
 
         if ($user && $user->role === "customer") {
-            $existingComment = Comment::where('products_id', $productId)
-                ->where('users_id', $userId)
-                ->whereNull('parent_id')
-                ->exists();
-
-            if ($existingComment) {
-                return response()->json(['error' => 'Bạn chỉ được phép bình luận 1 lần trên sản phẩm này'], 403);
-            }
-
             if (!Order::hasPurchasedProduct($userId, $productId)) {
                 return response()->json(['error' => 'Bạn chưa mua sản phẩm này!'], 403);
+            }
+            $remaining = $this->getRemainingCommentCountByProduct($userId, $productId);
+
+            if ($remaining <= 0) {
+                return response()->json(['error' => 'Bạn đã hết lượt bình luận cho sản phẩm này!'], 403);
             }
         }
 

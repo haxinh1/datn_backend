@@ -63,15 +63,30 @@ class ProductRepository {
             ]);
         }
     }
-        public function viewedProduct($user){
-            $datas = ViewedProduct::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->with(['product' => function ($query) {
-                $query->select('id', 'name', 'slug', 'thumbnail', 'sell_price', 'sale_price');
-            }])
-            ->get()
-            ->pluck('product');;
-            return $datas;
+    public function viewedProduct($user){
+        $datas = ViewedProduct::where('user_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->with(['product' => function ($query) {
+            $query->select('id', 'name', 'slug', 'thumbnail', 'sell_price', 'sale_price');
+        }])
+        ->get()
+        ->pluck('product');;
+        return $datas;
+    }
+    public function avgRate($id)
+    {
+        $product = Product::withAvg('comments', 'rating')->find($id);
+
+        if (!$product) {
+            return 5;
         }
+
+        $avg = round($product->comments_avg_rating, 1);
+
+        return $avg == 0 ? 5 : $avg;
+    }
+
+
+
 
 }

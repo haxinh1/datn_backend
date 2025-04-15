@@ -32,10 +32,13 @@ class ClientProductController extends Controller
                 $this->productService->addViewedProducts($user, $product);
                 $dataViewed = $this->productService->viewedProduct($user);
             }
+
+            $avgRate = $this->productService->avgRate($id);
     
             return response()->json([
                 'success' => true,
                 'data' => $product,
+                'avgRate' => $avgRate,
                 'dataViewed' => $dataViewed,
             ], 200);
     

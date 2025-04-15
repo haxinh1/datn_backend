@@ -25,5 +25,8 @@ class ProductService
     public function moreViewProductById($user){
        return $this->productRepository->moreViewProductById($user);
     }
+    public function avgRate($id){
+       return $this->productRepository->avgRate($id);
+    }
 
 }

@@ -64,5 +64,8 @@ class Product extends Model
     {
         return $this->hasMany(ViewedProduct::class);
     }
+    public function comments(){
+        return $this->hasMany(Comment::class,'products_id');
+    }
 
 }

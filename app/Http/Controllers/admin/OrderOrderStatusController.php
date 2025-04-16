@@ -62,11 +62,10 @@ class OrderOrderStatusController extends Controller
 
 
         try {
-            // Truy vấn tất cả các bản ghi trong bảng `order_order_statuses` theo modified_by và eager load bảng `orders`
             $orderStatuses = OrderOrderStatus::where('modified_by', $modified_by)
-                ->with('order:id,code')  // Eager load bảng orders chỉ lấy id và code
-                ->orderBy('created_at', 'desc')  // Sắp xếp theo thời gian cập nhật
-                ->get(); // Lấy tất cả các bản ghi
+                ->with('order:id,code')  
+                ->orderBy('created_at', 'desc') 
+                ->get(); 
 
             // Trả về danh sách các order_statuses chỉ có mã đơn hàng
             return response()->json([
@@ -153,14 +152,14 @@ class OrderOrderStatusController extends Controller
                 'order_id' => $orderId,
                 'order_status_id' => $request->order_status_id,
                 'modified_by' =>  $userId,
-                'employee_evidence' => $request->employee_evidence ?? '', // Tránh null nếu dùng kiểu string
+                'employee_evidence' => $request->employee_evidence ?? '', 
             ]);
 
             // Cập nhật trạng thái đơn hàng trong bảng `orders`
             $order->update(['status_id' => $request->order_status_id]);
 
             // Phát sự kiện để cập nhật trạng thái thời gian thực
-            event(new OrderStatusUpdated($order)); // Phát sự kiện OrderStatusUpdated
+            event(new OrderStatusUpdated($order)); 
 
             DB::commit();
 
@@ -182,7 +181,7 @@ class OrderOrderStatusController extends Controller
         // Validate dữ liệu đầu vào
         $request->validate([
             'order_ids' => 'required|array|min:1',
-            'order_ids.*' => 'integer|exists:orders,id', // Đảm bảo các ID đơn hàng là hợp lệ
+            'order_ids.*' => 'integer|exists:orders,id', 
             'current_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14',
             'new_status' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14'
         ]);
@@ -245,7 +244,7 @@ class OrderOrderStatusController extends Controller
 
             return response()->json([
                 'message' => 'Cập nhật trạng thái thành công!',
-                'updated_orders' => $orders->pluck('id') // Trả về danh sách ID đơn hàng đã cập nhật
+                'updated_orders' => $orders->pluck('id') 
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();

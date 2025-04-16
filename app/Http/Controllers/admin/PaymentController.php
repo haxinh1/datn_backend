@@ -75,7 +75,7 @@ class PaymentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'parent_id' => 'nullable|exists:payments,id', // Cho phép cập nhật parent_id
+            'parent_id' => 'nullable|exists:payments,id',
             'name' => 'sometimes|string|max:255',
             'logo' => 'sometimes|string|max:255',
             'is_active' => 'boolean',

@@ -74,17 +74,31 @@ class ProductRepository {
         return $datas;
     }
     public function avgRate($id)
-    {
-        $product = Product::withAvg('comments', 'rating')->find($id);
+{
+    $product = Product::withAvg(['comments as comments_avg_rating' => function ($query) {
+                            $query->where('status', 1);
+                        }], 'rating')
+                      ->withCount(['comments as comments_count' => function ($query) {
+                            $query->where('status', 1);
+                        }])
+                      ->find($id);
 
-        if (!$product) {
-            return 5;
-        }
-
-        $avg = round($product->comments_avg_rating, 1);
-
-        return $avg == 0 ? 5 : $avg;
+    if (!$product) {
+        return [
+            'avg' => 5,
+            'total' => 0
+        ];
     }
+
+    $avg = round($product->comments_avg_rating, 1);
+
+    return [
+        'avg' => $avg == 0 ? 5 : $avg,
+        'total' => $product->comments_count
+    ];
+}
+
+
 
 
 

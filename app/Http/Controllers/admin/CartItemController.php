@@ -23,8 +23,8 @@ class CartItemController extends Controller
 
         if ($userId) {
             $cartItems = CartItem::where('user_id', $userId)
-                ->with(['product', 'productVariant'])
-                ->get();
+            ->with(['product', 'productVariant.attributeValues'])
+            ->get();
             $now = now();
             foreach ($cartItems as $item) {
                 if ($item->productVariant) {

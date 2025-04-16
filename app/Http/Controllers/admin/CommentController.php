@@ -104,7 +104,6 @@ class CommentController extends Controller
 
         return response()->json(['message' => 'Bulk action performed successfully']);
     }
-
     public function store(Request $request)
     {
         $user = Auth::guard('sanctum')->user();
@@ -120,6 +119,7 @@ class CommentController extends Controller
             'parent_id'   => 'nullable|exists:comments,id',
             'status'      => 'nullable|integer|in:0,1',
             'images'      => 'nullable|array',
+            'order_id'    => 'nullable|exists:orders,id',
         ]);
 
         $productId = $request->input('products_id');
@@ -128,9 +128,17 @@ class CommentController extends Controller
             if (!Order::hasPurchasedProduct($userId, $productId)) {
                 return response()->json(['error' => 'Bạn chưa mua sản phẩm này!'], 403);
             }
-            $remaining = $this->getRemainingCommentCountByProduct($userId, $productId);
 
-            if ($remaining <= 0) {
+            // Lấy ra 1 OrderItem chưa được comment
+            $orderItem = OrderItem::whereHas('order', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->where('status_id', 7);
+            })
+                ->where('product_id', $productId)
+                ->where('is_commented', false)
+                ->first();
+
+            if (!$orderItem) {
                 return response()->json(['error' => 'Bạn đã hết lượt bình luận cho sản phẩm này!'], 403);
             }
         }
@@ -149,6 +157,7 @@ class CommentController extends Controller
             'parent_id'    => $request->parent_id,
         ]);
 
+        // Lưu ảnh nếu có
         if ($request->filled('images')) {
             foreach ($request->images as $imageUrl) {
                 CommentImage::create([
@@ -158,11 +167,16 @@ class CommentController extends Controller
             }
         }
 
+        // Đánh dấu OrderItem đã được bình luận
+        if (isset($orderItem)) {
+            $orderItem->update(['is_commented' => true]);
+        }
         return response()->json([
             'message' => 'Comment created successfully!',
             'comment' => $comment->load('images'),
         ], 201);
     }
+
 
 
     public function update(Request $request, $id)
@@ -292,23 +306,18 @@ class CommentController extends Controller
         return $this->getRemainingCommentCountByProduct($user->id, $productId);
     }
 
-    public  function getRemainingCommentCountByProduct($userId, $productId)
+    public function getRemainingCommentCountByProduct($userId, $productId)
     {
-        // 1. Tổng số lượng đã mua của sản phẩm này (đơn hàng hoàn thành)
-        $purchasedQty = OrderItem::whereHas('order', function ($query) use ($userId) {
+        // Đếm số OrderItem chưa được bình luận
+        return OrderItem::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId)
                 ->where('status_id', 7);
         })
             ->where('product_id', $productId)
-            ->sum('quantity');
-        // 2. Số lượt đã bình luận cho sản phẩm này
-        $commentedQty = Comment::where('users_id', $userId)
-            ->where('products_id', $productId)
+            ->where('is_commented', false)
             ->count();
-        $remaining = $purchasedQty - $commentedQty;
-
-        return max($remaining, 0); // Không trả số âm
     }
+
 
 
 

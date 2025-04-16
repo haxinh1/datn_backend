@@ -26,7 +26,7 @@ class GoogleController extends Controller
 
         if ($user) {
 
-            Auth::login($user);
+            Auth::login($user); 
 
             $token = $user->createToken('token')->plainTextToken;
             

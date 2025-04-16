@@ -34,8 +34,8 @@ class OrderItemController extends Controller
                     'name' => $product->name,
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $variantItems->first()->sell_price,
-                    'quantity' => $variantItems->sum('quantity'), // Quantity tính từ biến thể
-                    'refund_amount' => $variantItems->first()->refund_amount, // Lấy refund_amount cho biến thể
+                    'quantity' => $variantItems->sum('quantity'), 
+                    'refund_amount' => $variantItems->first()->refund_amount, 
                     'variants' => $variantItems->map(function ($item) {
                         return [
                             'variant_id' => $item->productVariant->id,
@@ -44,28 +44,28 @@ class OrderItemController extends Controller
                             'variant_thumbnail' => $item->productVariant->thumbnail,
                             'attributes' => $item->productVariant->attributeValues->map(function ($attributeValue) {
                                 return [
-                                    'attribute_name' => $attributeValue->value, // Lấy tên thuộc tính (value)
-                                    'attribute_id' => $attributeValue->attribute_id // ID thuộc tính
+                                    'attribute_name' => $attributeValue->value, 
+                                    'attribute_id' => $attributeValue->attribute_id 
                                 ];
                             }),
                         ];
                     }),
                 ];
             }
-        })->filter();  // Loại bỏ các nhóm mà không có `product_variant_id`
+        })->filter();  
 
         // Xử lý sản phẩm đơn (không có biến thể)
         $simpleProducts = $items->filter(function ($item) {
-            return $item->product_variant_id === null;  // Sản phẩm không có biến thể
+            return $item->product_variant_id === null;  
         })->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
                 'name' => $item->product->name,
                 'thumbnail' => $item->product->thumbnail,
                 'sell_price' => $item->sell_price,
-                'quantity' => $item->quantity, // Lấy quantity của sản phẩm đơn
-                'refund_amount' => $item->refund_amount,  // Lấy refund_amount cho sản phẩm đơn
-                'variants' => []  // Không có biến thể
+                'quantity' => $item->quantity, 
+                'refund_amount' => $item->refund_amount,  
+                'variants' => []  
             ];
         });
 
@@ -78,10 +78,10 @@ class OrderItemController extends Controller
     {
         // Truy vấn tất cả order_items liên kết với user_id
         $orderItems = OrderItem::select('product_id', 'product_variant_id', DB::raw('SUM(quantity) as total_quantity'))
-            ->join('orders', 'order_items.order_id', '=', 'orders.id') // Liên kết với bảng orders
-            ->where('orders.user_id', $userId) // Lọc theo user_id
-            ->groupBy('product_id', 'product_variant_id') // Nhóm theo product_id và product_variant_id
-            ->orderByDesc('total_quantity') // Sắp xếp theo số lượng giảm dần
+            ->join('orders', 'order_items.order_id', '=', 'orders.id') 
+            ->where('orders.user_id', $userId)
+            ->groupBy('product_id', 'product_variant_id') 
+            ->orderByDesc('total_quantity') 
             ->get();
 
         // Lấy thông tin sản phẩm cho mỗi sản phẩm đã mua
@@ -93,8 +93,8 @@ class OrderItemController extends Controller
                 $productVariant = $product->variants()->find($item->product_variant_id);
                 $attributes = $productVariant ? $productVariant->attributeValues->map(function ($attributeValue) {
                     return [
-                        'attribute_name' => $attributeValue->value,  // Tên thuộc tính
-                        'attribute_id' => $attributeValue->attribute_id  // ID thuộc tính
+                        'attribute_name' => $attributeValue->value, 
+                        'attribute_id' => $attributeValue->attribute_id  
                     ];
                 }) : [];
 
@@ -104,7 +104,7 @@ class OrderItemController extends Controller
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $productVariant ? $productVariant->sell_price : 0,
                     'quantity' => $item->total_quantity,
-                    'refund_amount' => $item->refund_amount, // Refund amount cho từng sản phẩm hoặc biến thể
+                    'refund_amount' => $item->refund_amount, 
                     'variant' => [
                         'variant_id' => $productVariant ? $productVariant->id : null,
                         'variant_thumbnail' => $productVariant ? $productVariant->thumbnail : null,
@@ -119,8 +119,8 @@ class OrderItemController extends Controller
                     'thumbnail' => $product->thumbnail,
                     'sell_price' => $product->sell_price,
                     'quantity' => $item->total_quantity,
-                    'refund_amount' => $item->refund_amount, // Refund amount cho sản phẩm đơn
-                    'variant' => []  // Sản phẩm đơn không có biến thể
+                    'refund_amount' => $item->refund_amount, 
+                    'variant' => []  
                 ];
             }
         });

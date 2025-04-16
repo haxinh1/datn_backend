@@ -62,7 +62,7 @@ class OrderController extends Controller
     public function acceptedReturnOrders(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
-            ->where('status_id', 10)  // Trạng thái "Chấp nhận trả hàng"
+            ->where('status_id', 10)  
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -97,9 +97,7 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Lấy userId từ frontend hoặc local
             $userId = $request->input('user_id') ?? null;
-            // Kiểm tra nếu đã đăng nhập
             $user = $userId ? User::find($userId) : null;
 
             // Nếu người dùng đã đăng nhập, lấy giỏ hàng từ database
@@ -107,7 +105,7 @@ class OrderController extends Controller
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
                 // Giỏ hàng sẽ được lấy từ session khi khách chưa đăng nhập
-                $cartItems = collect($request->input('cart_items'));  // Nhận giỏ hàng từ frontend
+                $cartItems = collect($request->input('cart_items'));  
             }
 
             // Kiểm tra nếu giỏ hàng trống
@@ -306,7 +304,7 @@ class OrderController extends Controller
                 'total_amount' => $totalAmount,
                 'total_product_amount' => $totalProductAmount,
                 'shipping_fee' => $shippingFee,
-                'status_id' => ($paymentMethod == 'cod') ? 3 : 1, // COD: confirmed, VNPay/MoMo: pending
+                'status_id' => ($paymentMethod == 'cod') ? 3 : 1, 
                 'payment_id' => $paymentId,
                 'used_points' => $usedPoints,
                 'discount_points' => $discountPoints,
@@ -428,8 +426,8 @@ class OrderController extends Controller
                 DB::commit();
                 $momoController = app()->make(MomoController::class);
                 return $momoController->momo_payment(new Request([
-                    'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
-                    'total_momo' => $order->total_amount, // Tổng tiền
+                    'order_id' => $order->id, 
+                    'total_momo' => $order->total_amount, 
                 ]));
             } else { // COD
                 $order->update(['status_id' => 3]);
@@ -465,7 +463,7 @@ class OrderController extends Controller
 
             return $vnpayController->createPayment(new Request([
                 'order_id' => $order->id,
-                'payment_method' => 'vnpay' // Giữ nguyên VNPay
+                'payment_method' => 'vnpay' 
             ]));
         }
 
@@ -474,8 +472,8 @@ class OrderController extends Controller
             $amount = (int) $order->total_amount;
             $momoController = app()->make(MomoController::class);
             return $momoController->momo_payment(new Request([
-                'order_id' => $order->id, // Truyền mã đơn hàng thay vì ID
-                'total_momo' => $amount, // Tổng tiền
+                'order_id' => $order->id, 
+                'total_momo' => $amount, 
             ]));
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\admin;
 
+use App\Events\OrderReturnStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -22,7 +23,7 @@ class OrderReturnController extends Controller
         $orderId = $request->query('order_id');
 
         // Query để lấy thông tin trả hàng với các chi tiết liên quan
-        $query = OrderReturn::with(['order', 'product', 'productVariant.attributeValues']); // Quan hệ để lấy productVariant và attributeValues
+        $query = OrderReturn::with(['order', 'product', 'productVariant.attributeValues']); 
 
         if ($orderId) {
             $query->where('order_id', $orderId);
@@ -70,7 +71,7 @@ class OrderReturnController extends Controller
                             'sell_price' => $return->sell_price,
                             'product_variant_id' => $return->product_variant_id,
                             'quantity' => $return->quantity_returned,
-                            'attributes' => $attributes,  // Trả về danh sách thuộc tính nếu có
+                            'attributes' => $attributes,  
                         ];
                     })->values(),
                 ];
@@ -220,7 +221,7 @@ class OrderReturnController extends Controller
         $userId = $request->input('user_id');
         $reason = $request->input('reason');
         $evidence = $request->input('employee_evidence');
-        $statusId = 9; // Trạng thái yêu cầu trả hàng
+        $statusId = 9; 
 
         // Kiểm tra nếu có yêu cầu hoàn tiền, thì điền thông tin ngân hàng
         $bankAccount = $request->input('bank_account_number', null);
@@ -232,7 +233,7 @@ class OrderReturnController extends Controller
 
         // Lấy tổng tiền sản phẩm trong đơn hàng
         $order = Order::findOrFail($orderId);
-        $totalProductAmount = $order->total_product_amount; // Total sản phẩm từ bảng orders
+        $totalProductAmount = $order->total_product_amount; 
 
         // Lặp qua từng sản phẩm trong yêu cầu trả hàng
         foreach ($request->products as $product) {
@@ -309,14 +310,14 @@ class OrderReturnController extends Controller
                 'reason' => $reason,
                 'employee_evidence' => $evidence,
                 'status_id' => $statusId,
-                'sell_price' => $orderItem->sell_price, // Lưu giá bán của sản phẩm vào cột sell_price
-                'price' => $refundAmount, // Lưu giá hoàn trả của sản phẩm vào cột price
-                'bank_account_number' => $bankAccount, // Có thể null nếu không hoàn tiền
-                'bank_name' => $bankName, // Có thể null nếu không hoàn tiền
-                'bank_qr' => $bankQr, // Có thể null nếu không hoàn tiền
+                'sell_price' => $orderItem->sell_price, 
+                'price' => $refundAmount, 
+                'bank_account_number' => $bankAccount, 
+                'bank_name' => $bankName, 
+                'bank_qr' => $bankQr, 
                 'created_at' => now(),
                 'updated_at' => now(),
-                'total_refund_amount' => $refundAmount, // Lưu tổng tiền hoàn trả cho sản phẩm
+                'total_refund_amount' => $refundAmount, 
             ]);
 
             $createdReturns[] = OrderReturn::with(['order', 'product', 'productVariant'])->find($returnId);
@@ -362,7 +363,7 @@ class OrderReturnController extends Controller
     public function updateStatusByOrder(Request $request, $orderId)
     {
         $request->validate([
-            'status_id' => 'required|in:10,11', // 10: Chấp nhận trả hàng, 11: Từ chối
+            'status_id' => 'required|in:10,11', 
             'note' => 'nullable|string',
             'user_id' => 'required|exists:users,id',
         ]);
@@ -391,6 +392,8 @@ class OrderReturnController extends Controller
             ]);
 
             DB::commit();
+            // Phát sự kiện khi trạng thái đơn hàng thay đổi
+            broadcast(new OrderReturnStatusUpdated($order));
             return response()->json(['message' => 'Cập nhật trạng thái trả hàng theo đơn thành công!']);
         } catch (\Exception $e) {
             DB::rollBack();

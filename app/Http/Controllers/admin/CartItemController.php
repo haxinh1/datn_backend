@@ -92,9 +92,11 @@ class CartItemController extends Controller
             if ($productVariantId) {
                 $productVariant = ProductVariant::where('product_id', $productId)->findOrFail($productVariantId);
                 $availableStock = $productVariant->stock;
+                $price = $productVariant->sell_price;
             } else {
                 $product = Product::findOrFail($productId);
                 $availableStock = $product->stock;
+                $price = $product->sale_price ?? $product->sell_price;
             }
 
             if ($availableStock < $quantity) {
@@ -123,6 +125,8 @@ class CartItemController extends Controller
                         'product_id' => $productId,
                         'product_variant_id' => $productVariantId,
                         'quantity' => $quantity,
+                        'quantity' => $quantity,
+                        'price' => $price
                     ]);
                 }
 

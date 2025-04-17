@@ -26,6 +26,13 @@ class GoogleController extends Controller
 
         if ($user) {
 
+            if($user->status == 'inactive') {
+                return redirect()->to('http://localhost:5173/');
+            }
+            if($user->status == 'banned') {
+                return redirect()->to('http://localhost:5173/');
+            }
+        
             Auth::login($user);
 
             $user->update([
@@ -44,7 +51,7 @@ class GoogleController extends Controller
         } else {
             $newUser = User::create([
                 'google_id' => $googleUser->id,
-                'phone_number' => '0' . rand(100000000, 999999999),
+                'phone_number' => null,
                 'password' => bcrypt(Str::random(16)),
                 'email' => $googleUser->email,
                 'fullname' => $googleUser->name,

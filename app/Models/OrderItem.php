@@ -16,7 +16,8 @@ class OrderItem extends Model
         'sell_price',
         'quantity',
         'refund_amount',
-        'is_commented'
+        'is_commented',
+        'has_reviewed',
     ];
 
     public function order()

@@ -28,6 +28,7 @@ use App\Http\Controllers\statistics\StatisticController;
 use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\admin\CommentController;
 use App\Http\Controllers\admin\OrderReturnController;
 use App\Http\Controllers\clients\ClientProductController;
@@ -228,6 +229,7 @@ Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
 // ->middleware(['auth:api'])
 Route::prefix('banned-history')->group(function () {
     Route::get('/', [BannedHistoryController::class, 'index']);
+    Route::get('/{user_id}', [BannedHistoryController::class, 'show']);
     Route::post('/', [BannedHistoryController::class, 'store']);
     Route::post('/{id}/unban', [BannedHistoryController::class, 'unban']);
 });

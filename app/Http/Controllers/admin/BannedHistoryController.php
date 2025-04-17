@@ -20,6 +20,16 @@ class BannedHistoryController extends Controller
         return response()->json($bannedHistories);
     }
 
+    public function show($user_id)
+    {
+        $bannedHistories = BannedHistory::with(['user', 'bannedBy'])
+            ->where('user_id', $user_id)
+            ->get();
+
+        return response()->json($bannedHistories);
+    }
+  
+
 
     public function store(Request $request)
     {

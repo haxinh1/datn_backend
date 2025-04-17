@@ -36,6 +36,7 @@ class OrderItemController extends Controller
                     'sell_price' => $variantItems->first()->sell_price,
                     'quantity' => $variantItems->sum('quantity'), 
                     'refund_amount' => $variantItems->first()->refund_amount, 
+                    'has_reviewed' => $variantItems->first()->has_reviewed == 1 ? true : false,
                     'variants' => $variantItems->map(function ($item) {
                         return [
                             'variant_id' => $item->productVariant->id,
@@ -65,6 +66,7 @@ class OrderItemController extends Controller
                 'sell_price' => $item->sell_price,
                 'quantity' => $item->quantity, 
                 'refund_amount' => $item->refund_amount,  
+                'has_reviewed' => $item->has_reviewed == 1 ? true : false,
                 'variants' => []  
             ];
         });

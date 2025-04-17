@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Order;
+use App\Events\UserStatusUpdated;
 
 class UserController extends Controller
 {
@@ -119,6 +120,10 @@ class UserController extends Controller
         }
 
         $user->save();
+
+    if (isset($validatedData['status'])) {
+        event(new UserStatusUpdated($user));
+    }
 
         return response()->json($user, 200);
     }

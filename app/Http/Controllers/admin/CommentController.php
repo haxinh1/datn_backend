@@ -35,11 +35,13 @@ class CommentController extends Controller
 
         $comments = $query
             ->with([
-                'user',  // 🟢 Thêm thông tin user của comment
+                'user',// 🟢 Thêm thông tin user của comment
+                'product:id,name' , 
                 'replies' => function ($query) {
                     $query->with('user')->orderBy('created_at', 'asc'); // 🟢 Lấy user của replies
                 },
-                'images'
+                'images',
+               
             ])
             ->orderBy('created_at', 'desc')
             ->paginate(10);

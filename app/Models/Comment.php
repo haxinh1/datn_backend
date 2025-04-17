@@ -45,4 +45,8 @@ class Comment extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'users_id');
     }
+    public function product()
+{
+    return $this->belongsTo(Product::class, 'products_id');
+}
 }

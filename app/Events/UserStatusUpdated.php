@@ -3,11 +3,12 @@
 namespace App\Events;
 
 use App\Models\User;
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class UserStatusUpdated implements ShouldBroadcastNow
 {
@@ -15,39 +16,31 @@ class UserStatusUpdated implements ShouldBroadcastNow
 
     public $user;
 
-    /**
-     * Create a new event instance.
-     */
     public function __construct(User $user)
     {
         $this->user = $user;
+        Log::info('UserStatusUpdated constructed', ['user_id' => $user->id, 'status' => $user->status]);
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     */
     public function broadcastOn()
     {
-        return new Channel('user-status-channel');
+        Log::info('Broadcasting on channel', ['channel' => 'user.' . $this->user->id]);
+        return new PrivateChannel('user.' . $this->user->id);
     }
 
-    /**
-     * Get the event name to broadcast as.
-     */
     public function broadcastAs()
     {
         return 'user-status-updated';
     }
 
-    /**
-     * Get the data to broadcast.
-     */
     public function broadcastWith()
     {
-        return [
+        $data = [
             'user_id' => $this->user->id,
             'status' => $this->user->status,
             'updated_at' => $this->user->updated_at->toDateTimeString(),
         ];
+        Log::info('Broadcasting data', $data);
+        return $data;
     }
 }

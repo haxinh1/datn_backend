@@ -84,14 +84,14 @@ class UserController extends Controller
         }
 
         $validatedData = $request->validate([
-            'phone_number'   => 'sometimes|regex:/^0[0-9]{9}$/|required|max:20|unique:users,phone_number,' . $user->id,
-            'email'          => 'sometimes|required|email|max:100|unique:users,email,' . $user->id,
-            'fullname'       => 'sometimes|required|max:100',
-            'avatar'         => 'sometimes|nullable|url',
-            'gender'         => ['sometimes', 'nullable', Rule::in(['male', 'female', 'other'])],
-            'birthday'       => 'sometimes|nullable|date',
-            'role'           => ['sometimes', Rule::in(['customer', 'admin', 'manager'])], 
-            'status'         => ['sometimes', Rule::in(['active', 'inactive'])], 
+            'phone_number' => 'sometimes|regex:/^0[0-9]{9}$/|required|max:20|unique:users,phone_number,' . $user->id,
+            'email' => 'sometimes|required|email|max:100|unique:users,email,' . $user->id,
+            'fullname' => 'sometimes|required|max:100',
+            'avatar' => 'sometimes|nullable|url',
+            'gender' => ['sometimes', 'nullable', Rule::in(['male', 'female', 'other'])],
+            'birthday' => 'sometimes|nullable|date',
+            'role' => ['sometimes', Rule::in(['customer', 'admin', 'manager'])],
+            'status' => ['sometimes', Rule::in(['active', 'inactive', 'banned'])], // Thêm banned
         ]);
 
         if (isset($validatedData['phone_number'])) {
@@ -113,7 +113,7 @@ class UserController extends Controller
             $user->birthday = $validatedData['birthday'];
         }
         if (isset($validatedData['role'])) {
-            $user->role = $validatedData['role']; 
+            $user->role = $validatedData['role'];
         }
         if (isset($validatedData['status'])) {
             $user->status = $validatedData['status'];
@@ -121,9 +121,9 @@ class UserController extends Controller
 
         $user->save();
 
-    if (isset($validatedData['status'])) {
-        event(new UserStatusUpdated($user));
-    }
+        if (isset($validatedData['status'])) {
+            event(new UserStatusUpdated($user));
+        }
 
         return response()->json($user, 200);
     }

@@ -219,6 +219,9 @@ Route::post('/resend-code', [ClientUserController::class, 'resendVerificationCod
 Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
 Route::post('/login', [ClientUserController::class, 'login']);
 Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+})->middleware('auth:sanctum');
 Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);

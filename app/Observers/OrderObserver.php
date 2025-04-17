@@ -205,8 +205,8 @@ class OrderObserver
                         ->whereDate('updated_at', $today)
                         ->count();
 
-                    if ($cancelledOrdersToday >= 5) {
-
+                    if ($cancelledOrdersToday >= 3) {
+                        Log::info('Số đơn hàng đã hủy hôm nay: ' . $cancelledOrdersToday);
                         $latestBan = BannedHistory::where('user_id', $user->id)
                         ->latest('banned_at')
                         ->first();

@@ -135,7 +135,7 @@ class CommentController extends Controller
                     ->where('status_id', 7);
             })
                 ->where('product_id', $productId)
-                ->where('is_commented', false)
+                ->where('has_reviewed', false)
                 ->first();
 
             if (!$orderItem) {
@@ -169,7 +169,7 @@ class CommentController extends Controller
 
         // Đánh dấu OrderItem đã được bình luận
         if (isset($orderItem)) {
-            $orderItem->update(['is_commented' => true]);
+            $orderItem->update(['has_reviewed' => true]);
         }
         return response()->json([
             'message' => 'Comment created successfully!',
@@ -314,7 +314,7 @@ class CommentController extends Controller
                 ->where('status_id', 7);
         })
             ->where('product_id', $productId)
-            ->where('is_commented', false)
+            ->where('has_reviewed', false)
             ->count();
     }
 

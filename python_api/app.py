@@ -77,6 +77,43 @@ def recommend_products(product_id, top_n=2):
     connection.close()
     return products
 
+def get_variants_and_attributes(product_id):
+    """ Lấy thông tin về các biến thể và thuộc tính của sản phẩm """
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    query = """
+        SELECT 
+            product_variants.id AS variant_id, 
+            product_variants.thumbnail AS variant_thumbnail, 
+            product_variants.sell_price AS variant_sell_price, 
+            product_variants.sale_price AS variant_sale_price,
+            attribute_values.value AS attribute_value
+        FROM product_variants
+        JOIN attribute_value_product_variants ON product_variants.id = attribute_value_product_variants.product_variant_id
+        JOIN attribute_values ON attribute_value_product_variants.attribute_value_id = attribute_values.id
+        WHERE product_variants.product_id = %s
+    """
+    cursor.execute(query, (product_id,))
+    variants = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Gộp các attribute_values vào mảng attributes cho từng variant
+    variant_dict = {}
+    for variant in variants:
+        variant_id = variant['variant_id']
+        if variant_id not in variant_dict:
+            variant_dict[variant_id] = {
+                "variant_id": variant_id,
+                "variant_thumbnail": variant['variant_thumbnail'],
+                "variant_sell_price": variant['variant_sell_price'],
+                "variant_sale_price": variant['variant_sale_price'],
+                "attributes": []
+            }
+        variant_dict[variant_id]["attributes"].append(variant['attribute_value'])
+
+    return list(variant_dict.values())
+
 @app.route('/recommend', methods=['GET'])
 def recommend():
     product_id = request.args.get('product_id', type=int)
@@ -84,8 +121,23 @@ def recommend():
         return jsonify({"error": "Missing product_id"}), 400
 
     recommendations = recommend_products(product_id)
+    if not recommendations:
+        return jsonify({"message": "Không tìm thấy sản phẩm tương tự"}), 404
+
+    recommended_products = []
+    for product in recommendations:
+        product_data = {
+            "product_id": product['id'],
+            "product_name": product['name'],
+            "product_thumbnail": product['thumbnail'],
+            "product_sell_price": product['sell_price'],
+            "product_sale_price": product['sale_price'],
+            "variants": get_variants_and_attributes(product['id'])
+        }
+        recommended_products.append(product_data)
+
     return Response(
-        json.dumps({"recommended_products": recommendations}, ensure_ascii=False, default=decimal_to_float),
+        json.dumps({"recommended_products": recommended_products}, ensure_ascii=False, default=decimal_to_float),
         content_type="application/json; charset=utf-8"
     )
 
@@ -163,17 +215,27 @@ def search_image():
     temp_path = 'temp_image.jpg'
     image_file.save(temp_path)
 
-    recommendations = search_similar_images(temp_path, threshold=20.0)
+    recommendations = search_similar_images(temp_path, threshold=30.0)
     if not recommendations:
         return jsonify({"message": "Không tìm thấy sản phẩm tương tự"}), 404
 
+    recommended_products = []
+    for product in recommendations:
+        product_data = {
+            "product_id": product['id'],
+            "product_name": product['name'],
+            "product_thumbnail": product['thumbnail'],
+            "product_sell_price": product['sell_price'],
+            "product_sale_price": product['sale_price'],
+            "variants": get_variants_and_attributes(product['id'])
+        }
+        recommended_products.append(product_data)
+
     return Response(
-        json.dumps({"recommended_products": recommendations}, ensure_ascii=False, default=decimal_to_float),
+        json.dumps({"recommended_products": recommended_products}, ensure_ascii=False, default=decimal_to_float),
         content_type="application/json; charset=utf-8"
     )
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-

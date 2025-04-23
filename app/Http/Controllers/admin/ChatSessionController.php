@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\admin;
 
+use App\Events\ChatSessionUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\ChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ChatSessionController extends Controller
 {
@@ -31,6 +33,7 @@ class ChatSessionController extends Controller
             'status' => 'open',
             'created_date' => now()
         ]);
+        broadcast(new ChatSessionUpdated($chatSession));
 
         return response()->json(['message' => 'Chat session created', 'chat_session' => $chatSession], 201);
     }
@@ -65,6 +68,8 @@ class ChatSessionController extends Controller
     {
         $chatSession = ChatSession::findOrFail($id);
         $chatSession->update(['status' => 'closed', 'closed_date' => now()]);
+
+        broadcast(new ChatSessionUpdated($chatSession));
 
         return response()->json(['message' => 'Chat session closed']);
     }

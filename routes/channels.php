@@ -3,6 +3,7 @@
 use App\Models\ChatSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,22 +21,26 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 
-// Chat event
+
 Broadcast::channel('chat.{chatSessionId}', function ($user, $chatSessionId) {
+
 
     $chatSession = ChatSession::where('id', $chatSessionId)->first();
     if (!$chatSession) {
+
         return false;
     }
+
     $auth = Auth::guard('sanctum')->user();
     if ($auth) {
-        // Nếu đã đăng nhập, kiểm tra quyền truy cập
-        return $chatSession->customer_id === $auth->id ||
-            $auth->role != "customer";
+        $allowed = $chatSession->customer_id === $auth->id || $auth->role != "customer";
+
+        return $allowed;
     }
 
-    // Nếu là guest, kiểm tra session và trả về dữ liệu guest
-    if (session()->has('guest_phone') && session('guest_phone') === $chatSession->guest_phone) {
+    $guestPhone = request()->input('guest_phone') ?? session('guest_phone');
+    if ($guestPhone && $guestPhone === $chatSession->guest_phone) {
+
         return [
             'guest_phone' => $chatSession->guest_phone,
             'guest_name' => $chatSession->guest_name,
@@ -43,4 +48,9 @@ Broadcast::channel('chat.{chatSessionId}', function ($user, $chatSessionId) {
     }
 
     return false;
+});
+
+Broadcast::channel('chat-sessions', function ($user) {
+    Log::info('Broadcast auth attempt', ['user' => $user]);
+    return true;
 });

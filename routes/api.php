@@ -35,6 +35,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MomoController;
 use App\Http\Controllers\admin\BannedHistoryController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -219,9 +222,7 @@ Route::post('/resend-code', [ClientUserController::class, 'resendVerificationCod
 Route::post('/verify-email', [ClientUserController::class, 'verifyEmail']);
 Route::post('/login', [ClientUserController::class, 'login']);
 Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('auth:sanctum');
-Route::post('/broadcasting/auth', function (Request $request) {
-    return Broadcast::auth($request);
-})->middleware('auth:sanctum');
+
 Route::put('/change-password/{id}', [AdminUserController::class, 'changePassword'])->middleware('auth:sanctum');
 Route::post('/forgot-password', [ClientUserController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientUserController::class, 'resetPassword']);
@@ -300,6 +301,7 @@ Route::prefix('chat')->group(function () {
 
     Route::post('/mark-as-read/{id}', [MessageController::class, 'markAsRead']);
 });
+
 
 //Client
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);

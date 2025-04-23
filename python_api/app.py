@@ -232,7 +232,7 @@ def search_image():
         recommended_products.append(product_data)
 
     return Response(
-        json.dumps({"recommended_products": recommended_products}, ensure_ascii=False, default=decimal_to_float),
+        json.dumps({"datas": recommended_products}, ensure_ascii=False, default=decimal_to_float),
         content_type="application/json; charset=utf-8"
     )
 

@@ -75,7 +75,7 @@ class ProductRepository
         $datas = ViewedProduct::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->with(['product' => function ($query) {
-                $query->select('id', 'name', 'slug', 'thumbnail', 'sell_price', 'sale_price', 'status')
+                $query->select('id', 'name', 'slug', 'thumbnail', 'sell_price', 'sale_price')
                     ->with([
                         'variants' => function ($q) {
                             $q->select('id', 'product_id', 'sell_price', 'sale_price')

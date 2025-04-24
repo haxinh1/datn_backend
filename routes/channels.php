@@ -23,7 +23,6 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 // Chat event
 Broadcast::channel('chat.{chatSessionId}', function ($user, $chatSessionId) {
 
-    dd(1);
     $chatSession = ChatSession::where('id', $chatSessionId)->first();
     if (!$chatSession) {
         return false;

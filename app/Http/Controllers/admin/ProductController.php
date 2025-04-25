@@ -233,7 +233,7 @@ class ProductController extends Controller
         $datas = $request->only(
             'brand_id',
             'name',
-            'name_link',
+            // 'name_link',
             'slug',
             'views',
             'content',
@@ -297,6 +297,29 @@ class ProductController extends Controller
                             ]);
                         }
                     } else {
+                        if (!empty($variant['attribute_values'])) {
+                            $existingVariants = ProductVariant::where('product_id', $product->id)->get();
+
+                            foreach ($existingVariants as $existingVariant) {
+                                $existingAttributeValues = DB::table('attribute_value_product_variants')
+                                    ->where('product_variant_id', $existingVariant->id)
+                                    ->pluck('attribute_value_id')
+                                    ->toArray();
+
+                                sort($existingAttributeValues);
+                                $newAttributeValues = $variant['attribute_values'];
+                                sort($newAttributeValues);
+
+                                if ($existingAttributeValues == $newAttributeValues) {
+                                    DB::rollBack();
+                                    return response()->json([
+                                        'success' => false,
+                                        'message' => 'Biến thể này đã tồn tại cho sản phẩm!',
+                                    ], 400);
+                                }
+                            }
+                        }
+
                         $productVariant = ProductVariant::create([
                             'product_id' => $product->id,
                             'sku' => $variant['sku'] ?? null,

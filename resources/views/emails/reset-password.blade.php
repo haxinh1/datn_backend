@@ -85,7 +85,7 @@
             <p>Bạn nhận được email này vì chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
 
             <div class="button">
-                <a href="http://localhost:5173/resetad/{{ $token }}">Đặt lại mật khẩu</a>
+                <a href="http://localhost:5173/reset/{{ $token }}">Đặt lại mật khẩu</a>
             </div>
 
             

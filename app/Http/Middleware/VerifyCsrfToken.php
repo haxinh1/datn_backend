@@ -15,5 +15,6 @@ class VerifyCsrfToken extends Middleware
         '/broadcasting/auth',
         'api/*','/verify',
         '/auth/google/callback',
+        '*',
     ];
 }

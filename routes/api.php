@@ -325,4 +325,6 @@ Route::prefix('statistics')->group(function () {
     Route::get('/top-revenue-days', [StatisticController::class, 'topRevenueDays']);
     //Biểu đồ hoàn hủy
     Route::get('/revenue-statistics', [StatisticController::class, 'revenueStatistics']);
+    //Thống kê nhập hàng theo ngày
+    Route::get('/revenue-stocks', [StatisticController::class, 'revenueStock']);
 });

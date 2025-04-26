@@ -50,5 +50,11 @@ class StatisticController extends Controller
         $topRevenueDays = $this->statisticService->topRevenueDays();
         return response()->json($topRevenueDays);
     }
+    public function revenueStock(Request $request){
+        $revenueStock = $this->statisticService->revenueStock();
+        return response()->json([
+            'revenueStock'=> $revenueStock,
+        ]);
+    }
 
 }

@@ -123,7 +123,6 @@ class CartItemController extends Controller
                         'product_id' => $productId,
                         'product_variant_id' => $productVariantId,
                         'quantity' => $quantity,
-                        'quantity' => $quantity,
                         'price' => $price
                     ]);
                 }

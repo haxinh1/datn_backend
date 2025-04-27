@@ -5,24 +5,41 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
+use App\Console\Commands\ClearExpiredSale;
+use App\Console\Commands\ClearExpiredCoupon;
+
 class Kernel extends ConsoleKernel
 {
     /**
-     * Define the application's command schedule.
+     * Đăng ký các command cho Artisan.
+     */
+    protected $commands = [
+        ClearExpiredSale::class,
+        ClearExpiredCoupon::class,
+    ];
+
+    /**
+     * Lên lịch cho các command Artisan.
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Chạy hàng ngày vào 00:00 (12h đêm)
-        // $schedule->command('inspire')->hourly();
+        // Xóa giá sale sản phẩm hết hạn mỗi phút
+        $schedule->command('clear:expired-sale')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        // Xóa coupon hết hạn mỗi phút
+        $schedule->command('clear:expired-coupon')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**
-     * Register the commands for the application.
+     * Load các command tự động.
      */
     protected function commands(): void
     {
         $this->load(__DIR__ . '/Commands');
-
         require base_path('routes/console.php');
     }
 }

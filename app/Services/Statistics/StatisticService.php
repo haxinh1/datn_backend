@@ -31,5 +31,8 @@ class StatisticService
     public function revenueStatistics(){
         return $this->statisticRepository->revenueStatistics();
     }
+    public function revenueStock(){
+        return $this->statisticRepository->revenueStock();
+    }
     
 }

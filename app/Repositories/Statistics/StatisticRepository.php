@@ -4,6 +4,8 @@ namespace App\Repositories\Statistics;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ProductStock;
+use App\Models\Stock;
 use App\Models\OrderStatus;
 use App\Models\Product;
 use App\Models\User;
@@ -14,16 +16,27 @@ class StatisticRepository
     protected $user;
     protected $order;
     protected $orderItems;
+    protected $productStock;
     protected $statusOrder;
     protected $product;
+    protected $stock;
 
-    public function __construct(User $user, Order $order, OrderItem $orderItems, OrderStatus $statusOrder, Product $product)
-    {
+    public function __construct(
+        User $user, 
+        Order $order, 
+        OrderItem $orderItems, 
+        OrderStatus $statusOrder, 
+        ProductStock $productStock, 
+        Product $product,
+        Stock $stock,
+        ){
         $this->user = $user;
         $this->order = $order;
         $this->orderItems = $orderItems;
         $this->statusOrder = $statusOrder;
         $this->product = $product;
+        $this->productStock = $productStock;
+        $this->stock = $stock;
     }
 
     public function topUserBought()
@@ -144,4 +157,23 @@ class StatisticRepository
             'statistics' => $statistics
         ];
     }
+    public function revenueStock()
+{
+    $datas = $this->stock
+        ->select(
+            DB::raw('DATE(stocks.created_at) as date'),
+            DB::raw('SUM(product_stocks.quantity) as total_quantity'),
+            DB::raw('SUM(stocks.total_amount) as total_amount')
+        )
+        ->leftJoin('product_stocks', 'stocks.id', '=', 'product_stocks.stock_id')
+        ->where('stocks.status', 1)
+        ->groupBy(DB::raw('DATE(stocks.created_at)'))
+        ->orderBy('date', 'ASC')
+        ->get();
+
+    return [
+        'datas' => $datas
+    ];
+}
+
 }

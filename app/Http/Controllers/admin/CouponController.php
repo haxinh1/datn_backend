@@ -58,7 +58,7 @@ class CouponController extends Controller
 
     public function index()
     {
-        $coupons = Coupon::withTrashed()->orderByDesc('id')->get()->map(function ($coupon) {
+        $coupons = Coupon::orderByDesc('id')->get()->map(function ($coupon) {
             if ($coupon->coupon_type === 'private') {
                 $coupon->load('users');
             }

@@ -100,7 +100,7 @@ class CartItemController extends Controller
             }
 
             if ($availableStock < $quantity) {
-                return response()->json(['message' => 'Sản phẩm không đủ số lượng tồn kho'], 400);
+                $quantity = $availableStock;
             }
 
             if ($userId) {
@@ -112,9 +112,7 @@ class CartItemController extends Controller
                 $cartQuantity = $existingCartItem ? $existingCartItem->quantity : 0;
 
                 if (($cartQuantity + $quantity) > $availableStock) {
-                    return response()->json([
-                        'message' => 'Không đủ tồn kho. Chỉ còn ' . $availableStock . ' sản phẩm.'
-                    ], 400);
+                    $quantity = $availableStock;
                 }
 
                 if ($existingCartItem) {
@@ -124,7 +122,6 @@ class CartItemController extends Controller
                         'user_id' => $userId,
                         'product_id' => $productId,
                         'product_variant_id' => $productVariantId,
-                        'quantity' => $quantity,
                         'quantity' => $quantity,
                         'price' => $price
                     ]);
@@ -142,7 +139,7 @@ class CartItemController extends Controller
                 $cartQuantity = isset($cartItems[$key]) ? $cartItems[$key]['quantity'] : 0;
 
                 if (($cartQuantity + $quantity) > $availableStock) {
-                    return response()->json(['message' => 'Không đủ tồn kho. Chỉ còn ' . $availableStock . ' sản phẩm.'], 400);
+                    $quantity = $availableStock;
                 }
 
                 if (isset($cartItems[$key])) {

@@ -105,6 +105,7 @@ class OrderCancelController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'reason' => 'required'
         ]);
 
         $order = Order::findOrFail($orderId);
@@ -122,7 +123,7 @@ class OrderCancelController extends Controller
             'bank_account_number' => '',
             'bank_name' => '',
             'bank_qr' => null,
-            'reason' => 'Admin chủ động hủy đơn hàng',
+            'reason' => $request->reason,
             'status_id' => 8,
             'refund_proof' => '',
         ]);

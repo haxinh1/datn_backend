@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,4 +36,12 @@ class BannedHistory extends Model
     {
         return is_null($this->unbanned_at);
     }
+    public function getBannedAtAttribute($value)
+{
+    return Carbon::parse($value)->format('Y-m-d\TH:i:s.u\Z');
+}
+public function getBanExpiresAtAttribute($value)
+{
+    return Carbon::parse($value)->format('Y-m-d\TH:i:s.u\Z');
+}
 }

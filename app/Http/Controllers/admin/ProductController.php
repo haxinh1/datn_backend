@@ -4,11 +4,13 @@ namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\products\PostProductRequest;
+use App\Http\Requests\products\UpdateProductRequest;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\AttributeValueProduct;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductGalleries;
 use App\Models\ProductVariant;
@@ -227,13 +229,13 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
         $product = Product::findOrFail($id);
         $datas = $request->only(
             'brand_id',
             'name',
-            'name_link',
+            // 'name_link',
             'slug',
             'views',
             'content',
@@ -297,6 +299,29 @@ class ProductController extends Controller
                             ]);
                         }
                     } else {
+                        if (!empty($variant['attribute_values'])) {
+                            $existingVariants = ProductVariant::where('product_id', $product->id)->get();
+
+                            foreach ($existingVariants as $existingVariant) {
+                                $existingAttributeValues = DB::table('attribute_value_product_variants')
+                                    ->where('product_variant_id', $existingVariant->id)
+                                    ->pluck('attribute_value_id')
+                                    ->toArray();
+
+                                sort($existingAttributeValues);
+                                $newAttributeValues = $variant['attribute_values'];
+                                sort($newAttributeValues);
+
+                                if ($existingAttributeValues == $newAttributeValues) {
+                                    DB::rollBack();
+                                    return response()->json([
+                                        'success' => false,
+                                        'message' => 'Biến thể này đã tồn tại cho sản phẩm!',
+                                    ], 400);
+                                }
+                            }
+                        }
+
                         $productVariant = ProductVariant::create([
                             'product_id' => $product->id,
                             'sku' => $variant['sku'] ?? null,

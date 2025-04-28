@@ -48,6 +48,12 @@ class CommentController extends Controller
 
         return response()->json($comments);
     }
+    
+    public function showIduser($user_id){
+        $comments = Comment::with(['user','product',          
+       ])->where('users_id', $user_id)->get();
+        return response()->json($comments);
+    }
 
 
     public function detail($id): JsonResponse

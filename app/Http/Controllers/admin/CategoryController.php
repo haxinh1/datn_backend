@@ -70,7 +70,6 @@ class CategoryController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
         try {
             DB::beginTransaction();
             $category->name = $request->name;
@@ -80,6 +79,7 @@ class CategoryController extends Controller
             $category->is_active = $request->is_active;
             $category->thumbnail = $request->thumbnail;
             $category->save();
+            DB::commit();
             return response()->json($category);
         } catch (\Throwable $throwable) {
             DB::rollBack();
@@ -114,7 +114,7 @@ class CategoryController extends Controller
     public function getProductByCategory($id)
     {
         try {
-        
+
               $category = Category::find($id);
         if(!$category){
             return response()->json([
@@ -123,7 +123,7 @@ class CategoryController extends Controller
             ], 500);
         }
             $products = Product::with([
-            
+
                 'atributeValueProduct.attributeValue', // Lấy thông tin giá trị thuộc tính của sản phẩm
                 'variants', // Lấy các biến thể của sản phẩm
                 'variants.attributeValueProductVariants.attributeValue', // Lấy thông tin giá trị thuộc tính của các biến thể

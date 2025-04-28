@@ -31,7 +31,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->orderBy('created_at', 'desc')
             ->get();
         return response()->json(['orders' => $orders], 200);
@@ -39,16 +39,36 @@ class OrderController extends Controller
     // Lọc theo userId
     public function getOrdersByUserId($userId)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json(['orders' => $orders], 200);
     }
+    /**
+     * Lấy đơn hàng theo mã đơn (order_code)
+     */
+    public function getOrderByCode($orderCode)
+{
+    $order = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        ->where('code', $orderCode) 
+        ->first();
+
+    if (!$order) {
+        return response()->json([
+            'message' => 'Không tìm thấy đơn hàng với mã ' . $orderCode
+        ], 404);
+    }
+
+    return response()->json([
+        'order' => $order
+    ], 200);
+}
+
     public function completedOrders(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->whereIn('status_id', [7, 11])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -61,8 +81,8 @@ class OrderController extends Controller
     }
     public function acceptedReturnOrders(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
-            ->where('status_id', 10)  
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
+            ->where('status_id', 10)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -77,7 +97,8 @@ class OrderController extends Controller
     public function show($id)
     {
         // Lấy đơn hàng theo ID
-        $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+        // $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+        $order = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->where('id', $id)
             ->orderBy('created_at', 'desc')
             ->first();
@@ -105,7 +126,7 @@ class OrderController extends Controller
                 $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
             } else {
                 // Giỏ hàng sẽ được lấy từ session khi khách chưa đăng nhập
-                $cartItems = collect($request->input('cart_items'));  
+                $cartItems = collect($request->input('cart_items'));
             }
 
             // Kiểm tra nếu giỏ hàng trống
@@ -304,7 +325,7 @@ class OrderController extends Controller
                 'total_amount' => $totalAmount,
                 'total_product_amount' => $totalProductAmount,
                 'shipping_fee' => $shippingFee,
-                'status_id' => ($paymentMethod == 'cod') ? 3 : 1, 
+                'status_id' => ($paymentMethod == 'cod') ? 3 : 1,
                 'payment_id' => $paymentId,
                 'used_points' => $usedPoints,
                 'discount_points' => $discountPoints,
@@ -426,8 +447,8 @@ class OrderController extends Controller
                 DB::commit();
                 $momoController = app()->make(MomoController::class);
                 return $momoController->momo_payment(new Request([
-                    'order_id' => $order->id, 
-                    'total_momo' => $order->total_amount, 
+                    'order_id' => $order->id,
+                    'total_momo' => $order->total_amount,
                 ]));
             } else { // COD
                 $order->update(['status_id' => 3]);
@@ -463,7 +484,7 @@ class OrderController extends Controller
 
             return $vnpayController->createPayment(new Request([
                 'order_id' => $order->id,
-                'payment_method' => 'vnpay' 
+                'payment_method' => 'vnpay'
             ]));
         }
 
@@ -472,8 +493,8 @@ class OrderController extends Controller
             $amount = (int) $order->total_amount;
             $momoController = app()->make(MomoController::class);
             return $momoController->momo_payment(new Request([
-                'order_id' => $order->id, 
-                'total_momo' => $amount, 
+                'order_id' => $order->id,
+                'total_momo' => $amount,
             ]));
         }
 

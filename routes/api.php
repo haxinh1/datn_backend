@@ -116,7 +116,7 @@ Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('orders.view'); // Danh sách đơn hàng
     Route::post('/place', [OrderController::class, 'store'])->name('orders.place'); // Đặt hàng
     Route::get('/{id}', [OrderController::class, 'show'])->name('orders.show'); // Chi tiết đơn hàng
-
+    Route::get('/code/{orderCode}', [OrderController::class, 'getOrderByCode']);
     Route::get('{orderId}/items', [OrderItemController::class, 'index']);
     Route::post('{orderId}/items', [OrderItemController::class, 'store']);
     Route::put('{orderId}/items/{itemId}', [OrderItemController::class, 'update']);

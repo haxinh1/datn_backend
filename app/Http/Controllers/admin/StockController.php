@@ -107,20 +107,20 @@ class StockController extends Controller
             $user = Auth::guard('sanctum')->user();
             $stock = Stock::create([
                 'total_amount' => 0,
-                'status' =>  $user->role == "admin" ? 1 : 0 ,
+                'status' =>  $user->role == "admin" ? 1 : 0,
                 'reason' => $validatedData['reason'] ?? null,
             ]);
-    
+
             $totalAmount = 0;
             $errors = [];
-    
+
             foreach ($validatedData['products'] as $productData) {
                 $product = Product::find($productData['id']);
                 if (!$product) {
                     $errors[] = "Không tìm thấy sản phẩm với ID: {$productData['id']}";
                     continue;
                 }
-    
+
                 if (!empty($productData['variants'])) {
                     foreach ($productData['variants'] as $variant) {
                         $productVariant = ProductVariant::find($variant['id']);
@@ -128,20 +128,20 @@ class StockController extends Controller
                             $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
                             continue;
                         }
-                        
+
                         $sellPrice = $variant['sell_price'] ?? null;
                         $salePrice = $variant['sale_price'] ?? null;
-                        
+
                         if ($variant['price'] > 0 && $user->role == "admin" && $sellPrice !== null && $variant['price'] >= $sellPrice) {
                             $errors[] = "Giá nhập ({$variant['price']}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$sellPrice})!";
                             continue;
                         }
-                        
+
                         if ($user->role == "admin" && $salePrice !== null && $sellPrice !== null && $salePrice > $sellPrice) {
                             $errors[] = "Giá khuyến mại ({$salePrice}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$sellPrice})!";
                             continue;
                         }
-    
+
                         ProductStock::create([
                             'stock_id' => $stock->id,
                             'product_id' => $product->id,
@@ -151,30 +151,40 @@ class StockController extends Controller
                             'sell_price' => $user->role == "admin" ? ($sellPrice > 0 ? $sellPrice : $productVariant->sell_price) : null,
                             'sale_price' => $user->role == "admin" ? ($salePrice > 0 ? $salePrice : $productVariant->sale_price) : null,
                         ]);
-    
-                        if ($user->role == "admin" ) {
+
+                        if ($user->role == "admin") {
                             $productVariant->stock += $variant['quantity'];
                             $productVariant->sell_price = $sellPrice > 0 ? $sellPrice : $productVariant->sell_price;
                             $productVariant->sale_price = $salePrice > 0 ? $salePrice : $productVariant->sale_price;
+
+                            // Chỉ cập nhật thời gian khuyến mãi nếu là admin
+                            if (isset($variant['sale_price_start_at'])) {
+                                $productVariant->sale_price_start_at = $variant['sale_price_start_at'];
+                            }
+
+                            if (isset($variant['sale_price_end_at'])) {
+                                $productVariant->sale_price_end_at = $variant['sale_price_end_at'];
+                            }
+
                             $productVariant->save();
                         }
-    
+
                         $totalAmount += $variant['quantity'] * $variant['price'];
                     }
                 } else {
                     $sellPrice = $productData['sell_price'] ?? null;
                     $salePrice = $productData['sale_price'] ?? null;
-                    
+
                     if ($productData['price'] > 0 && $user->role == "admin" && $sellPrice !== null && $productData['price'] >= $sellPrice) {
                         $errors[] = "Giá nhập ({$productData['price']}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$sellPrice})!";
                         continue;
                     }
-                    
+
                     if ($user->role == "admin" && $salePrice !== null && $sellPrice !== null && $salePrice > $sellPrice) {
                         $errors[] = "Giá khuyến mại ({$salePrice}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$sellPrice})!";
                         continue;
                     }
-    
+
                     ProductStock::create([
                         'stock_id' => $stock->id,
                         'product_id' => $product->id,
@@ -183,18 +193,28 @@ class StockController extends Controller
                         'sell_price' => $user->role == "admin" ? ($sellPrice > 0 ? $sellPrice : $product->sell_price) : null,
                         'sale_price' => $user->role == "admin" ? ($salePrice > 0 ? $salePrice : $product->sale_price) : null,
                     ]);
-    
-                    if ($user->role == "admin" ) {
+
+                    if ($user->role == "admin") {
                         $product->stock += $productData['quantity'];
                         $product->sell_price = $sellPrice > 0 ? $sellPrice : $product->sell_price;
                         $product->sale_price = $salePrice > 0 ? $salePrice : $product->sale_price;
+
+                        // Chỉ cập nhật thời gian khuyến mãi nếu là admin
+                        if (isset($productData['sale_price_start_at'])) {
+                            $product->sale_price_start_at = $productData['sale_price_start_at'];
+                        }
+
+                        if (isset($productData['sale_price_end_at'])) {
+                            $product->sale_price_end_at = $productData['sale_price_end_at'];
+                        }
+
                         $product->save();
                     }
-    
+
                     $totalAmount += $productData['quantity'] * $productData['price'];
                 }
             }
-    
+
             if (!empty($errors)) {
                 DB::rollBack();
                 return response()->json([
@@ -203,12 +223,12 @@ class StockController extends Controller
                     'errors' => $errors,
                 ], 422);
             }
-    
+
             $stock->update([
                 'total_amount' => $totalAmount,
                 'reason' => $validatedData['reason'] ?? $stock->reason,
             ]);
-    
+
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -224,7 +244,6 @@ class StockController extends Controller
             ], 500);
         }
     }
-    
 
 
     /**
@@ -248,6 +267,7 @@ class StockController extends Controller
                 'product_stocks.price',
                 'products.id as product_id',
                 'products.name as product_name',
+                'products.total_sales as total_sales',
                 'product_variants.id as variant_id',
                 'product_variants.sku as variant_sku',
                 'product_variants.thumbnail as variant_image'
@@ -278,7 +298,7 @@ class StockController extends Controller
     {
         $validatedData = $request->all();
         DB::beginTransaction();
-
+    
         try {
             $stock = Stock::find($id);
             if (!$stock) {
@@ -287,38 +307,54 @@ class StockController extends Controller
                     'message' => 'Không tìm thấy thông tin nhập kho!',
                 ], 404);
             }
-
+    
+            $user = Auth::guard('sanctum')->user();
+            $isAdmin = $user->role == "admin";
             $totalAmount = 0;
-            $errors = [];
-
+    
             foreach ($validatedData['products'] as $productData) {
                 $product = Product::find($productData['id']);
                 if (!$product) {
-                    $errors[] = "Không tìm thấy sản phẩm với ID: {$productData['id']}";
-                    continue;
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Không tìm thấy sản phẩm với ID: {$productData['id']}",
+                    ], 422);
                 }
-
+    
                 if (!empty($productData['variants'])) {
                     foreach ($productData['variants'] as $variant) {
                         $productVariant = ProductVariant::find($variant['id']);
                         if (!$productVariant) {
-                            $errors[] = "Không tìm thấy biến thể với ID: {$variant['id']}";
-                            continue;
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Không tìm thấy biến thể với ID: {$variant['id']}",
+                            ], 422);
                         }
-
-                        // Kiểm tra giá nhập không được cao hơn giá bán
-                        if ($variant['price'] > 0 && $variant['sell_price'] !== null && $variant['price'] >= $variant['sell_price']) {
-                            $errors[] = "Giá nhập ({$variant['price']}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$variant['sell_price']})!";
-                            continue;
+    
+                        if ($variant['price'] > 0 && isset($variant['sell_price']) && $variant['price'] >= $variant['sell_price']) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Giá nhập ({$variant['price']}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$variant['sell_price']})!",
+                            ], 422);
                         }
-
-                        // Cập nhật stock quantity (chỉ cập nhật chứ không cộng dồn)
+                        
+                        if ($isAdmin && isset($variant['sale_price']) && isset($variant['sell_price']) && $variant['sale_price'] > $variant['sell_price']) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Giá khuyến mại ({$variant['sale_price']}) của biến thể ID {$variant['id']} không được cao hơn giá bán ({$variant['sell_price']})!",
+                            ], 422);
+                        }
+    
                         $productStock = ProductStock::where([
                             'stock_id' => $stock->id,
                             'product_id' => $product->id,
                             'product_variant_id' => $variant['id']
                         ])->first();
-
+    
                         if ($productStock) {
                             $productStock->update([
                                 'quantity' => $variant['quantity'],
@@ -337,29 +373,47 @@ class StockController extends Controller
                                 'sale_price' => $variant['sale_price'] ?? null,
                             ]);
                         }
-
-                        // **Chỉ cập nhật bảng product_variant nếu status == 1**
-                        if ($validatedData['status'] == 1) {
+    
+                        if ($validatedData['status'] == 1 && $isAdmin) {
                             $productVariant->stock += $variant['quantity'];
                             $productVariant->sell_price = $variant['sell_price'] ?? $productVariant->sell_price;
                             $productVariant->sale_price = $variant['sale_price'] ?? $productVariant->sale_price;
+                            
+                            if (isset($variant['sale_price_start_at'])) {
+                                $productVariant->sale_price_start_at = $variant['sale_price_start_at'];
+                            }
+                            
+                            if (isset($variant['sale_price_end_at'])) {
+                                $productVariant->sale_price_end_at = $variant['sale_price_end_at'];
+                            }
+                            
                             $productVariant->save();
                         }
-
+    
                         $totalAmount += $variant['quantity'] * $variant['price'];
                     }
                 } else {
-                    // Kiểm tra giá nhập không được cao hơn giá bán
-                    if ($productData['price'] > 0 && $productData['sell_price'] !== null && $productData['price'] >= $productData['sell_price']) {
-                        $errors[] = "Giá nhập ({$productData['price']}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$productData['sell_price']})!";
-                        continue;
+                    if ($productData['price'] > 0 && isset($productData['sell_price']) && $productData['price'] >= $productData['sell_price']) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Giá nhập ({$productData['price']}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$productData['sell_price']})!",
+                        ], 422);
                     }
-
+                    
+                    if ($isAdmin && isset($productData['sale_price']) && isset($productData['sell_price']) && $productData['sale_price'] > $productData['sell_price']) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Giá khuyến mại ({$productData['sale_price']}) của sản phẩm ID {$productData['id']} không được cao hơn giá bán ({$productData['sell_price']})!",
+                        ], 422);
+                    }
+    
                     $productStock = ProductStock::where([
                         'stock_id' => $stock->id,
                         'product_id' => $product->id
                     ])->whereNull('product_variant_id')->first();
-
+    
                     if ($productStock) {
                         $productStock->update([
                             'quantity' => $productData['quantity'],
@@ -377,36 +431,33 @@ class StockController extends Controller
                             'sale_price' => $productData['sale_price'] ?? null,
                         ]);
                     }
-
-                    // **Chỉ cập nhật bảng product nếu status == 1**
-                    if ($validatedData['status'] == 1) {
+    
+                    if ($validatedData['status'] == 1 && $isAdmin) {
                         $product->stock += $productData['quantity'];
                         $product->sell_price = $productData['sell_price'] ?? $product->sell_price;
                         $product->sale_price = $productData['sale_price'] ?? $product->sale_price;
+                        
+                        if (isset($productData['sale_price_start_at'])) {
+                            $product->sale_price_start_at = $productData['sale_price_start_at'];
+                        }
+                        
+                        if (isset($productData['sale_price_end_at'])) {
+                            $product->sale_price_end_at = $productData['sale_price_end_at'];
+                        }
+                        
                         $product->save();
                     }
-
+    
                     $totalAmount += $productData['quantity'] * $productData['price'];
                 }
             }
-
-            // Nếu có lỗi, rollback và trả về response
-            if (!empty($errors)) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi cập nhật nhập kho.',
-                    'errors' => $errors,
-                ], 422);
-            }
-
-            // Cập nhật total_amount, status, reason
+    
             $stock->update([
                 'total_amount' => $totalAmount,
                 'status' => $validatedData['status'],
                 'reason' => $validatedData['reason'] ?? $stock->reason,
             ]);
-
+    
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -444,7 +495,7 @@ class StockController extends Controller
 
             $import = new ProductStockImport();
             Excel::import($import, $request->file('file'));
-            
+
             if (!empty($import->errors)) {
                 DB::rollBack();
                 return response()->json([
@@ -453,7 +504,7 @@ class StockController extends Controller
                     'errors' => $import->errors,
                 ], 422);
             }
-            
+
             DB::commit();
             return response()->json([
                 'success' => true,

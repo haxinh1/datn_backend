@@ -18,7 +18,7 @@ class OrderCancelController extends Controller
     public function index()
     {
         $orderCancels = OrderCancel::with([
-            'order:user_id,id,total_amount'
+            'order:user_id,id,code,total_amount'
         ])->latest()->get();
 
         return response()->json([
@@ -34,7 +34,7 @@ class OrderCancelController extends Controller
         $orderCancels = OrderCancel::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->with([
-            'order:user_id,id,total_amount'
+            'order:user_id,id,code,total_amount'
         ])->latest()->get();
 
         return response()->json([
@@ -50,11 +50,21 @@ class OrderCancelController extends Controller
     {
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
+            'user_id' => 'required|exists:users,id',
             'bank_account_number' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
             'bank_qr' => 'nullable|string',
             'reason' => 'nullable|string',
         ]);
+        // Lấy đơn hàng
+        $order = Order::findOrFail($validated['order_id']);
+
+        // Kiểm tra trạng thái đơn hàng: chỉ cho phép trạng thái 1,2,3
+        if (!in_array($order->status_id, [1, 2, 3])) {
+            return response()->json([
+                'message' => 'Chỉ có thể hủy đơn khi đơn ở trạng thái Chờ thanh toán, Đã thanh toán trực tuyến hoặc Đang xử lý.'
+            ], 400);
+        }
 
         // Tạo đơn hủy
         $orderCancel = OrderCancel::create([
@@ -68,20 +78,18 @@ class OrderCancelController extends Controller
         ]);
 
         // Cập nhật trạng thái đơn gốc
-        $order = Order::find($validated['order_id']);
-        if ($order) {
-            $order->update(['status_id' => 8]);
+        $order->update(['status_id' => 8]);
 
-            // Ghi lịch sử
-            OrderOrderStatus::create([
-                'order_id' => $order->id,
-                'order_status_id' => 8,
-                'modified_by' => auth()->id() ?? null,
-                'note' => 'Khách hàng yêu cầu hủy đơn hàng',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+        // Ghi lịch sử
+        OrderOrderStatus::create([
+            'order_id' => $order->id,
+            'order_status_id' => 8,
+            'modified_by' => $validated['user_id'],
+            'note' => 'Khách hàng yêu cầu hủy đơn hàng',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
 
         return response()->json([
             'message' => 'Yêu cầu hủy đơn đã được gửi thành công',
@@ -95,7 +103,18 @@ class OrderCancelController extends Controller
      */
     public function adminCancelOrder(Request $request, $orderId)
     {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
         $order = Order::findOrFail($orderId);
+
+        // Kiểm tra trạng thái đơn hàng: cho phép hủy ở trạng thái 1,2,3,4,6
+        if (!in_array($order->status_id, [1, 2, 3, 4, 6])) {
+            return response()->json([
+                'message' => 'Chỉ có thể hủy đơn khi đơn ở trạng thái Chờ xác nhận, Đang xử lý, Đã xác nhận, Đang giao hàng hoặc Chờ lấy hàng.'
+            ], 400);
+        }
 
         // Tạo đơn hủy
         $orderCancel = OrderCancel::create([
@@ -104,7 +123,7 @@ class OrderCancelController extends Controller
             'bank_name' => '',
             'bank_qr' => null,
             'reason' => 'Admin chủ động hủy đơn hàng',
-            'status_id' => 8, // Hủy đơn
+            'status_id' => 8,
             'refund_proof' => '',
         ]);
 
@@ -115,7 +134,7 @@ class OrderCancelController extends Controller
         OrderOrderStatus::create([
             'order_id' => $order->id,
             'order_status_id' => 8,
-            'modified_by' => auth()->id() ?? null,
+            'modified_by' => $validated['user_id'],
             'note' => 'Admin hủy đơn hàng',
             'created_at' => now(),
             'updated_at' => now(),
@@ -156,6 +175,7 @@ class OrderCancelController extends Controller
     public function adminRefundOrder(Request $request, $cancelId)
     {
         $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
             'refund_proof' => 'required|string|max:255',
         ]);
 
@@ -176,7 +196,7 @@ class OrderCancelController extends Controller
             \App\Models\OrderOrderStatus::create([
                 'order_id' => $order->id,
                 'order_status_id' => 12,
-                'modified_by' => auth()->id() ?? null,
+                'modified_by' => $validated['user_id'],
                 'note' => 'Admin xác nhận hoàn tiền đơn hàng',
                 'created_at' => now(),
                 'updated_at' => now(),

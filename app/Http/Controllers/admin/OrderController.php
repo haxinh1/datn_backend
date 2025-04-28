@@ -31,7 +31,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->orderBy('created_at', 'desc')
             ->get();
         return response()->json(['orders' => $orders], 200);
@@ -39,7 +39,7 @@ class OrderController extends Controller
     // Lọc theo userId
     public function getOrdersByUserId($userId)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -50,25 +50,25 @@ class OrderController extends Controller
      * Lấy đơn hàng theo mã đơn (order_code)
      */
     public function getOrderByCode($orderCode)
-{
-    $order = Order::with(['orderItems.product', 'orderItems.productVariant'])
-        ->where('code', $orderCode) 
-        ->first();
+    {
+        $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+            ->where('code', $orderCode)
+            ->first();
 
-    if (!$order) {
+        if (!$order) {
+            return response()->json([
+                'message' => 'Không tìm thấy đơn hàng với mã ' . $orderCode
+            ], 404);
+        }
+
         return response()->json([
-            'message' => 'Không tìm thấy đơn hàng với mã ' . $orderCode
-        ], 404);
+            'order' => $order
+        ], 200);
     }
-
-    return response()->json([
-        'order' => $order
-    ], 200);
-}
 
     public function completedOrders(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->whereIn('status_id', [7, 11])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -81,7 +81,7 @@ class OrderController extends Controller
     }
     public function acceptedReturnOrders(Request $request)
     {
-        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('status_id', 10)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -97,8 +97,7 @@ class OrderController extends Controller
     public function show($id)
     {
         // Lấy đơn hàng theo ID
-        // $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
-        $order = Order::with(['orderItems.product', 'orderItems.productVariant'])
+        $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('id', $id)
             ->orderBy('created_at', 'desc')
             ->first();

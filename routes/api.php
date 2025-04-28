@@ -21,6 +21,10 @@ use App\Http\Controllers\admin\SearchController;
 use App\Http\Controllers\admin\StockController;
 use App\Http\Controllers\admin\TagController;
 use App\Http\Controllers\admin\UserAddressController;
+use App\Http\Controllers\admin\BannedHistoryController;
+use App\Http\Controllers\admin\OrderCancelController;
+use App\Http\Controllers\admin\CommentController;
+use App\Http\Controllers\admin\OrderReturnController;
 use App\Http\Controllers\admin\UserController as AdminUserController;
 
 use App\Http\Controllers\clients\UserController as ClientUserController;
@@ -29,13 +33,11 @@ use App\Http\Controllers\VNPayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
-use App\Http\Controllers\admin\CommentController;
-use App\Http\Controllers\admin\OrderReturnController;
 use App\Http\Controllers\clients\ClientProductController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MomoController;
-use App\Http\Controllers\admin\BannedHistoryController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -156,6 +158,28 @@ Route::prefix('payments')->group(function () {
     // VNPay Payment
     Route::post('/vnpay', [VNPayController::class, 'createPayment'])->name('payment.process');
     Route::get('/vnpay/return', [VNPayController::class, 'paymentReturn'])->name('payment.vnpayReturn');
+});
+
+
+Route::prefix('order-cancels')->group(function () {
+
+    // Admin get all đơn hủy
+    Route::get('/', [OrderCancelController::class, 'index']);
+
+    // Client get đơn hủy theo user_id
+    Route::get('/user/{userId}', [OrderCancelController::class, 'showByUser']);
+
+    // Client chủ động gửi yêu cầu hủy
+    Route::post('/request-cancel', [OrderCancelController::class, 'clientRequestCancel']);
+
+    // Admin chủ động hủy đơn
+    Route::post('/admin-cancel/{orderId}', [OrderCancelController::class, 'adminCancelOrder']);
+
+    // Client bổ sung bank info sau khi admin yêu cầu
+    Route::post('/submit-bank-info/{cancelId}', [OrderCancelController::class, 'clientSubmitBankInfo']);
+
+    // Admin hoàn tiền (upload minh chứng)
+    Route::post('/refund/{cancelId}', [OrderCancelController::class, 'adminRefundOrder']);
 });
 
 
@@ -281,7 +305,7 @@ Route::prefix('comments')->group(function () {
     Route::post('/', [CommentController::class, 'store']); //  Tạo commet
     Route::get('/user/{user_id}', [CommentController::class, 'showIduser']); // Lấy danh sách bình luận theo sản phẩm
     Route::get('/product/{productId}', [CommentController::class, 'getCommentsByProduct']);
-//    Kiểm tra xem người dùng hiện tại còn bao nhiêu lượt bình luận cho một sản phẩm cụ thể, dựa trên số lần đã mua và đã bình luận.
+    //    Kiểm tra xem người dùng hiện tại còn bao nhiêu lượt bình luận cho một sản phẩm cụ thể, dựa trên số lần đã mua và đã bình luận.
     Route::get('/product/can-comment/{productId}', [CommentController::class, 'remainingCommentCountByProduct']);
 });
 

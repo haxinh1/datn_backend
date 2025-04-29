@@ -222,6 +222,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/users/search', [SearchController::class, 'searchUsers']);
     Route::get('/orders/search', [SearchController::class, 'searchOrders']);
     Route::get('/orders-return/search', [SearchController::class, 'searchOrderReturn']);
+    Route::get('/orders-cancel/search', [SearchController::class, 'searchOrderCancel']);
 });
 //route admin user
 Route::prefix('admin')->group(function () {
@@ -279,7 +280,7 @@ Route::get('user/points/{id}', [AdminUserController::class, 'pointsHistory']);
 Route::get('categories', [CategoryController::class, 'index']); // Lấy danh sách danh mục
 Route::get('product-by-category/{id}', [CategoryController::class, 'getProductByCategory']); // Lấy danh sách danh mục
 Route::get('categories/{category}', [CategoryController::class, 'show']); // Lấy thông tin danh mục cụ thể
-Route::post('categories/create', [CategoryController::class, 'create']);
+Route::post('cateadminCaes/create', [CategoryController::class, 'create']);
 Route::put('categories/update/{category}', [CategoryController::class, 'update']);
 Route::put('categories/update-status/{category}', [CategoryController::class, 'updateStatus']);
 Route::delete('categories/delete/{category}', [CategoryController::class, 'destroy']);

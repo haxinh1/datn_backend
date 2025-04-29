@@ -7,8 +7,10 @@ use App\Models\Order;
 use App\Models\OrderCancel;
 use App\Models\OrderOrderStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
 
 class OrderCancelController extends Controller
 {
@@ -18,7 +20,7 @@ class OrderCancelController extends Controller
     public function index()
     {
         $orderCancels = OrderCancel::with([
-            'order:user_id,id,code,total_amount'
+            'order:user_id,id,code,total_amount,payment_id'
         ])->latest()->get();
 
         return response()->json([
@@ -34,7 +36,7 @@ class OrderCancelController extends Controller
         $orderCancels = OrderCancel::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->with([
-            'order:user_id,id,code,total_amount'
+            'order:user_id,id,code,total_amount,payment_id'
         ])->latest()->get();
 
         return response()->json([
@@ -105,6 +107,7 @@ class OrderCancelController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'reason' => 'required'
         ]);
 
         $order = Order::findOrFail($orderId);
@@ -116,13 +119,19 @@ class OrderCancelController extends Controller
             ], 400);
         }
 
+     
+
+
+        Mail::to($order->email)->send(new \App\Mail\OrderCancel($order));
+
+
         // Tạo đơn hủy
         $orderCancel = OrderCancel::create([
             'order_id' => $order->id,
             'bank_account_number' => '',
             'bank_name' => '',
             'bank_qr' => null,
-            'reason' => 'Admin chủ động hủy đơn hàng',
+            'reason' => $request->reason,
             'status_id' => 8,
             'refund_proof' => '',
         ]);

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderReturn;
+use App\Models\OrderCancel;
 
 class SearchController extends Controller
 {
@@ -89,5 +90,23 @@ class SearchController extends Controller
         }
     
         return response()->json($orderReturns);
+    }
+    public function searchOrderCancel(Request $request)
+    {
+        $validated = $request->validate([
+            'keyword' => 'required|string',
+        ]);
+
+        $keyword = $validated['keyword'];
+
+        $orderCancels = OrderCancel::with(['order:user_id,id,code,total_amount,payment_id'])->whereHas('order', function ($query) use ($keyword) {
+            $query->where('code', 'LIKE', '%' . $keyword . '%');
+        })->get();
+
+        if ($orderCancels->isEmpty()) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng hủy'], 404);
+        }
+
+        return response()->json($orderCancels);
     }
 }

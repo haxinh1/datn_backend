@@ -19,6 +19,7 @@ class MessageController extends Controller
      */
     public function sendMessage(Request $request)
     {
+
         // Tìm phiên chat theo ID
         $chatSession = ChatSession::find($request->chat_session_id);
 
@@ -58,10 +59,24 @@ class MessageController extends Controller
             'guest_phone' => $userRole === 'guest' ? $request->guest_phone : null, // Nếu là khách thì lưu số điện thoại
             'guest_name' => $userRole === 'guest' ? $request->guest_name : null, // Nếu là khách thì lưu tên
             'message' => $request->message, // Nội dung tin nhắn
-            'type' => $request->type ?? 'text', // Loại tin nhắn, mặc định là "text"
+            'type' => $request->type ?? 'text', // Loại tin nhắn, mặc định là "text",
+            'media' => 'nullable|array',
+            'media.*.url' => 'required_with:media|string|url',
+            'media.*.type' => 'required_with:media|in:image,video',
         ]);
 
-        $message->load('sender');
+        if ($request->has('media') && is_array($request->media)) {
+            foreach ($request->media as $mediaItem) {
+                if (isset($mediaItem['url']) && isset($mediaItem['type'])) {
+                    $message->media()->create([
+                        'type' => $mediaItem['type'], // 'image' hoặc 'video'
+                        'url' => $mediaItem['url'],
+                    ]);
+                }
+            }
+        }
+
+        $message->load(['sender', 'media']);
 
 
         // Phats ra event để client bắt web socket
@@ -78,12 +93,12 @@ class MessageController extends Controller
      */
     public function getMessages($chatSessionId)
     {
-        // Truy vấn tất cả tin nhắn của một phiên chat theo ID, sắp xếp theo thời gian tạo (từ cũ đến mới)
-        $messages = Message::where('chat_session_id', $chatSessionId)
+        // Truy vấn tin nhắn + media liên kết
+        $messages = Message::with(['media', 'sender']) // Load quan hệ media và sender
+        ->where('chat_session_id', $chatSessionId)
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Trả về danh sách tin nhắn dưới dạng JSON
         return response()->json(['messages' => $messages]);
     }
 

@@ -135,7 +135,7 @@
         </ul>
 
         <div class="button">
-            <a href="http://localhost:5173/detail/{{$order->id}}">Xem chi tiết đơn hàng</a>
+            <a href="http://localhost:5173/detail/{{$order->code}}">Xem chi tiết đơn hàng</a>
         </div>
 
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>

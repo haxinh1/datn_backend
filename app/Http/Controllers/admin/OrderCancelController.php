@@ -208,6 +208,7 @@ class OrderCancelController extends Controller
             \App\Models\OrderOrderStatus::create([
                 'order_id' => $order->id,
                 'order_status_id' => 12,
+                'employee_evidence' => $validated['refund_proof'],
                 'modified_by' => $validated['user_id'],
                 'note' => 'Admin xác nhận hoàn tiền đơn hàng',
                 'created_at' => now(),

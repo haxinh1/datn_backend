@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Mail\OrderCancel;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserPointTransaction;
@@ -168,6 +169,56 @@ class OrderObserver
             }
         }
 
+        if ($order->status_id == 8) {
+            $orderCancel = \App\Models\OrderCancel::where('order_id', $order->id)->first();
+
+            if ($orderCancel) {
+                $checkrole = User::where('id', $orderCancel->user_id)->first();
+                Log::info('User ID check role: ' . $checkrole->id);
+                if ($checkrole->role == 'admin') {
+                    Log::info('Admin hủy đơn hàng: ' . $checkrole->role);
+                } else {
+                    Log::info('Customer hủy đơn hàng: ' . $checkrole->role);
+                    try {
+                        $today = Carbon::today();
+
+                        $cancelledOrdersToday = \App\Models\OrderCancel::where('user_id', $user->id)
+                            ->where('status_id', 8)
+                            ->whereDate('updated_at', $today)
+                            ->count();
+
+                        Log::info('Số đơn hàng đã hủy hôm nay: ' . $cancelledOrdersToday);
+                        if ($cancelledOrdersToday >= 5) {
+                            $latestBan = BannedHistory::where('user_id', $user->id)
+                                ->latest('banned_at')
+                                ->first();
+
+                            if (!$latestBan || ($latestBan->unbanned_at && $user->status === 'active')) {
+                                BannedHistory::create([
+                                    'user_id' => $user->id,
+                                    'banned_by' => auth()->check() ? auth()->id() : 1,
+                                    'reason' => 'Hủy quá 5 đơn trong 1 ngày',
+                                    'banned_at' => Carbon::now(),
+                                    'ban_expires_at' => Carbon::now()->addDay(),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+
+                                $user->status = 'banned';
+                                $user->save();
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Lỗi khi hủy đơn: ' . $e->getMessage());
+                    }
+                }
+            } else {
+
+                Log::info('Không tìm thấy thông tin hủy đơn hàng cho order_id: ' . $order->id);
+            }
+        }
+
+
         if ($user) {
             if ($order->status_id == 8) {
                 if ($order->used_points > 0) {
@@ -196,41 +247,38 @@ class OrderObserver
 
                     $user->save();
                 }
+                // try {
+                //     $today = Carbon::today();
 
-                try {
-                    $today = Carbon::today();
+                //     $cancelledOrdersToday = \App\Models\Order::where('user_id', $user->id)
+                //         ->where('status_id', 8)
+                //         ->whereDate('updated_at', $today)
+                //         ->count();
 
-                    $cancelledOrdersToday = \App\Models\Order::where('user_id', $user->id)
-                        ->where('status_id', 8)
-                        ->whereDate('updated_at', $today)
-                        ->count();
+                //     Log::info('Số đơn hàng đã hủy hôm nay: ' . $cancelledOrdersToday);
+                //     if ($cancelledOrdersToday >= 5) {
+                //         $latestBan = BannedHistory::where('user_id', $user->id)
+                //             ->latest('banned_at')
+                //             ->first();
 
-                    if ($cancelledOrdersToday >= 1) {
-                        Log::info('Số đơn hàng đã hủy hôm nay: ' . $cancelledOrdersToday);
-                        $latestBan = BannedHistory::where('user_id', $user->id)
-                        ->latest('banned_at')
-                        ->first();
+                //         if (!$latestBan || ($latestBan->unbanned_at && $user->status === 'active')) {
+                //             BannedHistory::create([
+                //                 'user_id' => $user->id,
+                //                 'banned_by' => auth()->check() ? auth()->id() : 1,
+                //                 'reason' => 'Hủy quá 5 đơn trong 1 ngày',
+                //                 'banned_at' => Carbon::now(),
+                //                 'ban_expires_at' => Carbon::now()->addDay(),
+                //                 'created_at' => now(),
+                //                 'updated_at' => now(),
+                //             ]);
 
-                        if (!$latestBan || ($latestBan->unbanned_at && $user->status === 'active')) {
-                            BannedHistory::create([
-                                'user_id' => $user->id,
-                                'banned_by' => auth()->check() ? auth()->id() : 1,
-                                'reason' => 'Hủy quá 5 đơn trong 1 ngày',
-                                'banned_at' => Carbon::now(),
-                                'ban_expires_at' => Carbon::now()->addDay(),
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-
-                            $user->status = 'banned';
-                            $user->save();
-
-
-                        }
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Lỗi khi hủy đơn: ' . $e->getMessage());
-                }
+                //             $user->status = 'banned';
+                //             $user->save();
+                //         }
+                //     }
+                // } catch (\Exception $e) {
+                //     Log::error('Lỗi khi hủy đơn: ' . $e->getMessage());
+                // }
             }
         }
     }

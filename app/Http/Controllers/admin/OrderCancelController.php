@@ -59,6 +59,7 @@ class OrderCancelController extends Controller
             'reason' => 'nullable|string',
         ]);
         // Lấy đơn hàng
+        Log::info('order_id: ' . $validated['user_id']);
         $order = Order::findOrFail($validated['order_id']);
 
         // Kiểm tra trạng thái đơn hàng: chỉ cho phép trạng thái 1,2,3
@@ -71,6 +72,7 @@ class OrderCancelController extends Controller
         // Tạo đơn hủy
         $orderCancel = OrderCancel::create([
             'order_id' => $validated['order_id'],
+            'user_id' => $validated['user_id'],
             'bank_account_number' => $validated['bank_account_number'],
             'bank_name' => $validated['bank_name'],
             'bank_qr' => $validated['bank_qr'] ?? null,
@@ -119,7 +121,7 @@ class OrderCancelController extends Controller
             ], 400);
         }
 
-     
+      Log::info('user_id: ' . $request->user_id);
 
 
         Mail::to($order->email)->send(new \App\Mail\OrderCancel($order));
@@ -128,6 +130,7 @@ class OrderCancelController extends Controller
         // Tạo đơn hủy
         $orderCancel = OrderCancel::create([
             'order_id' => $order->id,
+            'user_id' => $request->user_id,
             'bank_account_number' => '',
             'bank_name' => '',
             'bank_qr' => null,

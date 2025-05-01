@@ -169,6 +169,8 @@ Route::prefix('order-cancels')->group(function () {
     // Client get đơn hủy theo user_id
     Route::get('/user/{userId}', [OrderCancelController::class, 'showByUser']);
 
+    Route::get('/order/{orderId}', [OrderCancelController::class, 'showByOrderId']);
+
     // Client chủ động gửi yêu cầu hủy
     Route::post('/request-cancel', [OrderCancelController::class, 'clientRequestCancel']);
 

@@ -128,7 +128,7 @@
                     {{ $item->productVariant->attributeValues->map(fn($attributeValue) => $attributeValue->value)->implode(' - ') }}
                    ) <br>
                 @endif 
-                    <strong>Số lượng:</strong> {{ $item->quantity }}<br>
+                <br>  <strong>Số lượng:</strong> {{ $item->quantity }}<br>
                     <strong>Giá:</strong> {{ number_format($item->sell_price, 0, ',', '.') }} VND
                 </li>
             @endforeach
@@ -141,9 +141,11 @@
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
         
         <div class="footer">
-            <p>Trân trọng,</p>
-            <p>Đội ngũ hỗ trợ khách hàng</p>
-            <p><a href="mailto:support@company.com">Liên hệ với chúng tôi</a></p>
+            <p>Đội ngũ hỗ trợ khách hàng</p> 
+            <p><strong>Hotline:</strong> 09100204</p>
+            <p><strong>Email:</strong> hotro@mollashop.com</p>
+             <p>Trân trọng,</p>
+            <p><a href="mailto:hotro@mollashop.com">Liên hệ với chúng tôi</a></p>
         </div>
     </div>
 </body>

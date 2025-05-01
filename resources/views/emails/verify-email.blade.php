@@ -86,7 +86,11 @@
         </div>
 
         <div class="footer">
-            <p>Trân trọng</p>
+            <p>Đội ngũ hỗ trợ khách hàng</p> 
+            <p><strong>Hotline:</strong> 09100204</p>
+            <p><strong>Email:</strong> hotro@mollashop.com</p>
+             <p>Trân trọng,</p>
+            <p><a href="mailto:hotro@mollashop.com">Liên hệ với chúng tôi</a></p>
         </div>
     </div>
 </body>

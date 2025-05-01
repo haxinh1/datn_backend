@@ -135,11 +135,15 @@
                 </li>
             @endforeach
         </ul>
-
+         @if($order->user_id)
         <div class="button">
             <a href="http://localhost:5173/dashboard/cancels/{{$order->user_id}}">Xem chi tiết đơn hủy</a>
         </div>
-
+        @else 
+        <div class="button">
+            <a href="http://localhost:5173/detail/{{$order->code}}">Xem chi tiết đơn huỷ</a>
+        </div>
+        @endif
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
         
         <div class="footer">

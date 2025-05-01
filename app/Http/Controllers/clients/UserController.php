@@ -253,6 +253,7 @@ class UserController extends Controller
             'token' => $token,
             'user' => [
                 'id' => $user->id,
+                'google_id' => $user->google_id,
                 'phone_number' => $user->phone_number,
                 'email' => $user->email,
                 'fullname' => $user->fullname,

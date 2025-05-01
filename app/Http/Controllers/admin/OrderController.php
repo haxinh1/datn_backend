@@ -13,9 +13,12 @@ use App\Models\User;
 use App\Models\UserAddress;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderMail;
 use App\Models\Coupon;
@@ -33,7 +36,6 @@ class OrderController extends Controller
             ->get();
         return response()->json(['orders' => $orders], 200);
     }
-
     // Lọc theo userId
     public function getOrdersByUserId($userId)
     {
@@ -44,6 +46,25 @@ class OrderController extends Controller
 
         return response()->json(['orders' => $orders], 200);
     }
+    /**
+     * Lấy đơn hàng theo mã đơn (order_code)
+     */
+    public function getOrderByCode($orderCode)
+    {
+        $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
+            ->where('code', $orderCode)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Không tìm thấy đơn hàng với mã ' . $orderCode
+            ], 404);
+        }
+
+        return response()->json([
+            'order' => $order
+        ], 200);
+    }
 
     public function completedOrders(Request $request)
     {
@@ -53,12 +74,11 @@ class OrderController extends Controller
             ->get();
 
         if ($orders->isEmpty()) {
-            return response()->json(['message' => 'Không tìm thấy đơn hàng hoàn thành.'], 404);
+            return response()->json(['message' => 'No completed orders found.'], 404);
         }
 
         return response()->json(['orders' => $orders], 200);
     }
-
     public function acceptedReturnOrders(Request $request)
     {
         $orders = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
@@ -67,20 +87,22 @@ class OrderController extends Controller
             ->get();
 
         if ($orders->isEmpty()) {
-            return response()->json(['message' => 'Không tìm thấy đơn hàng được chấp nhận trả lại.'], 404);
+            return response()->json(['message' => 'No orders accepted for return found.'], 404);
         }
 
         return response()->json(['orders' => $orders], 200);
     }
 
+
     public function show($id)
     {
+        // Lấy đơn hàng theo ID
         $order = Order::with(['orderItems.product', 'orderItems.productVariant', 'payment', 'status', 'orderStatuses'])
             ->where('id', $id)
             ->orderBy('created_at', 'desc')
             ->first();
         if (!$order) {
-            return response()->json(['message' => 'Đơn hàng không tồn tại'], 404);
+            return response()->json(['message' => 'Order not found'], 404);
         }
         return response()->json(['order' => $order], 200);
     }
@@ -90,7 +112,7 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('DEBUG - Dữ liệu yêu cầu khi đặt hàng:', ['request' => $request->all()]);
+        Log::info('DEBUG - Toàn bộ giỏ hàng khi đặt hàng:', ['cart_items' => $request->cart_items]);
 
         DB::beginTransaction();
 
@@ -98,16 +120,20 @@ class OrderController extends Controller
             $userId = $request->input('user_id') ?? null;
             $user = $userId ? User::find($userId) : null;
 
-            // Lấy danh sách sản phẩm từ yêu cầu (chỉ các sản phẩm được chọn)
-            $selectedProducts = collect($request->input('products', []));
-
-            // Kiểm tra nếu không có sản phẩm được chọn
-            if ($selectedProducts->isEmpty()) {
-                return response()->json(['message' => 'Không có sản phẩm nào được chọn'], 400);
+            // Nếu người dùng đã đăng nhập, lấy giỏ hàng từ database
+            if ($userId) {
+                $cartItems = CartItem::where('user_id', $userId)->with('product', 'productVariant')->get();
+            } else {
+                // Giỏ hàng sẽ được lấy từ session khi khách chưa đăng nhập
+                $cartItems = collect($request->input('cart_items'));
             }
 
-            // Xác thực sản phẩm và kiểm tra tồn kho
-            foreach ($selectedProducts as $item) {
+            // Kiểm tra nếu giỏ hàng trống
+            if ($cartItems->isEmpty()) {
+                return response()->json(['message' => 'Giỏ hàng trống'], 400);
+            }
+            // Kiểm tra tồn kho trước khi đặt hàng
+            foreach ($cartItems as $item) {
                 $product = Product::find($item['product_id']);
                 if (!$product) {
                     return response()->json(['message' => "Sản phẩm ID {$item['product_id']} không tồn tại"], 400);
@@ -126,12 +152,13 @@ class OrderController extends Controller
 
             // Tính tổng tiền đơn hàng
             $now = now();
-            $totalAmount = $selectedProducts->sum(function ($item) use ($now) {
+            $totalAmount = $cartItems->sum(function ($item) use ($now) {
                 $product = Product::find($item['product_id']);
                 $price = 0;
 
                 if (!empty($item['product_variant_id'])) {
                     $productVariant = ProductVariant::find($item['product_variant_id']);
+
                     if (
                         $productVariant &&
                         $productVariant->sale_price !== null &&
@@ -160,13 +187,13 @@ class OrderController extends Controller
                 return $item['quantity'] * $price;
             });
 
+
             // Kiểm tra và áp dụng mã giảm giá
             $couponCode = $request->input('coupon_code');
             $discountAmount = 0;
             $coupon = null;
             if ($couponCode) {
-                $coupon = Coupon::where('code', $couponCode)
-                    ->where('is_active', true)
+                $coupon = Coupon::where('code', $couponCode)->where('is_active', true)
                     ->where('start_date', '<=', now())
                     ->where('end_date', '>=', now())
                     ->first();
@@ -179,6 +206,7 @@ class OrderController extends Controller
                     return response()->json(['message' => 'Mã giảm giá đã hết lượt sử dụng'], 400);
                 }
 
+
                 if ($coupon->discount_type == 'percent') {
                     $discountAmount = ($coupon->discount_value / 100) * $totalAmount;
                 } else {
@@ -189,46 +217,34 @@ class OrderController extends Controller
                     $discountAmount = $totalAmount;
                 }
 
+                $totalAmount -= $discountAmount;
+
                 Log::info("DEBUG - Áp dụng mã giảm giá: {$couponCode}, giảm giá: $discountAmount, tổng tiền sau giảm: $totalAmount");
             }
-
-            // Kiểm tra phí vận chuyển
             $shippingFee = $request->input('shipping_fee', 0);
-            if ($shippingFee < 0) {
-                return response()->json(['message' => 'Phí vận chuyển không hợp lệ'], 400);
-            }
+            $totalAmount += $shippingFee;
 
-            // Kiểm tra điểm tiêu dùng
             $usedPoints = $request->input('used_points', 0);
             $discountPoints = 0;
+
+
             if ($userId) {
-                if ($usedPoints < 0) {
-                    return response()->json(['message' => 'Số điểm sử dụng không hợp lệ'], 400);
-                }
                 if ($usedPoints > $user->loyalty_points) {
-                    return response()->json(['message' => 'Số điểm không đủ'], 400);
+                    return response()->json(['message' => 'Số điểm không hợp lệ'], 400);
                 }
                 $discountPoints = $usedPoints;
+                $totalAmount -= $discountPoints;
             }
 
-            // Tính tổng tiền sau khi áp dụng giảm giá và điểm
-            $totalAmount = $totalAmount - $discountAmount + $shippingFee - $discountPoints;
             if ($totalAmount < 0) {
                 $totalAmount = 0;
             }
 
-            // Tổng tiền sản phẩm
+            Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', ['total_amount' => $totalAmount]);
+
+            // Tổng tiền sản phẩm 
             $totalProductAmount = $totalAmount + $discountAmount + $usedPoints - $shippingFee;
 
-            Log::info('DEBUG - Tổng tiền sau khi áp dụng giảm giá và điểm thưởng:', [
-                'subtotal' => $totalProductAmount,
-                'discount_amount' => $discountAmount,
-                'used_points' => $usedPoints,
-                'shipping_fee' => $shippingFee,
-                'total_amount' => $totalAmount
-            ]);
-
-            // Trừ điểm tiêu dùng
             if ($userId && $usedPoints > 0) {
                 $user->decrement('loyalty_points', $usedPoints);
                 $updatedPoints = $user->fresh()->loyalty_points;
@@ -240,7 +256,6 @@ class OrderController extends Controller
                 ]);
             }
 
-            // Xác thực thông tin người dùng
             $request->validate([
                 'fullname' => $user ? 'nullable' : 'required|string|max:255',
                 'email' => $user ? 'nullable' : 'required|email|max:255',
@@ -277,10 +292,12 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Thiếu phương thức thanh toán'], 400);
             }
 
+            // Cập nhật điều kiện cho phép khách vãng lai thanh toán qua VNPay hoặc MoMo
             if (!$userId && !in_array($paymentMethod, ['vnpay', 'momo'])) {
                 return response()->json(['message' => 'Khách vãng lai chỉ có thể thanh toán qua VNPay hoặc MoMo'], 400);
             }
 
+            // Cập nhật danh sách phương thức thanh toán hợp lệ
             if (!in_array($paymentMethod, ['vnpay', 'cod', 'momo'])) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
@@ -293,6 +310,8 @@ class OrderController extends Controller
             if (!$paymentId) {
                 return response()->json(['message' => 'Phương thức thanh toán không hợp lệ'], 400);
             }
+
+            Log::info('DEBUG - Tổng tiền đơn hàng:', ['total_amount' => $totalAmount]);
 
             // Tạo đơn hàng
             $order = Order::create([
@@ -316,32 +335,33 @@ class OrderController extends Controller
                 'coupon_discount_type' => $coupon ? $coupon->discount_type : null,
                 'coupon_discount_value' => $coupon ? $coupon->discount_value : null,
             ]);
-
             if ($coupon) {
                 if ($coupon->usage_limit !== null && $coupon->usage_limit > 0) {
                     $coupon->decrement('usage_limit');
                 }
+
                 $coupon->increment('usage_count');
             }
+
 
             if ($usedPoints > 0) {
                 UserPointTransaction::create([
                     'user_id' => $userId,
                     'points' => -$usedPoints,
                     'type' => 'subtract',
-                    'reason' => 'Sử dụng điểm để thanh toán đơn hàng: ' . $order->code,
+                    'reason' => 'Sử dụng điểm để thanh toán đơn hàng : ' . $order->code,
                     'order_id' => $order->id,
                 ]);
             }
 
             // Lưu chi tiết đơn hàng và cập nhật tồn kho
-            $orderItems = [];
             $now = now();
-            foreach ($selectedProducts as $item) {
-                $product = Product::find($item['product_id']);
-                $productVariant = $item['product_variant_id'] ? ProductVariant::find($item['product_variant_id']) : null;
 
-                // Giá bán thực tế
+            foreach ($cartItems as $item) {
+                $product = Product::find($item['product_id']);
+                $productVariant = ProductVariant::find($item['product_variant_id']);
+
+                // === Giá bán thực tế (đã kiểm tra thời gian khuyến mãi) ===
                 if ($productVariant) {
                     $sellPrice = (
                         $productVariant->sale_price &&
@@ -362,42 +382,38 @@ class OrderController extends Controller
                 $productTotal = $sellPrice * $item['quantity'];
 
                 // Tính tỉ lệ sản phẩm trong đơn
-                $productRatio = $totalProductAmount ? ($productTotal / $totalProductAmount) : 0;
+                $productRatio = $productTotal / $totalProductAmount;
 
                 // Tính giảm giá theo coupon
-                $couponDiscount = 0;
                 if ($order->coupon_discount_type === 'percent') {
-                    $couponDiscount = ($order->coupon_discount_value / 100) * $productTotal;
+                    $refundAmount = ($productTotal - ($order->coupon_discount_value / 100) * $productTotal) / $item['quantity'];
                 } elseif ($order->coupon_discount_type === 'fix_amount') {
-                    $couponDiscount = $productRatio * $order->coupon_discount_value;
+                    $refundAmount = ($productTotal - ($productRatio * $order->coupon_discount_value)) / $item['quantity'];
+                } else {
+                    $refundAmount = $productTotal / $item['quantity'];
                 }
 
-                // Tính giảm giá theo điểm
-                $pointsDiscount = $order->used_points ? ($order->used_points * $productRatio) : 0;
-
-                // Tính refund_amount
-                $refundAmount = ($productTotal - $couponDiscount - $pointsDiscount) / $item['quantity'];
-                if ($refundAmount < 0) {
-                    $refundAmount = 0;
+                // Trừ điểm khách hàng
+                if ($order->used_points) {
+                    $pointsRefundAmount = ($order->used_points * $productRatio);
+                    $refundAmount -= $pointsRefundAmount / $item['quantity'];
                 }
 
-                // Tạo mục đơn hàng
-                $orderItems[] = [
+                // Tạo order item
+                OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
                     'quantity' => $item['quantity'],
                     'sell_price' => $sellPrice,
-                    'refund_amount' => round($refundAmount, 2),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                // Cập nhật tổng số lượng bán
+                    'refund_amount' => $refundAmount,
+                ]);
+                // Cập nhật lại total_sales của sản phẩm khi đặt hàng
+                $product = Product::find($item['product_id']);
                 $product->total_sales += $item['quantity'];
                 $product->save();
 
-                // Trừ kho nếu thanh toán qua COD
+                // Trừ stock nếu thanh toán qua COD
                 if ($paymentMethod == 'cod') {
                     if ($item['product_variant_id']) {
                         ProductVariant::where('id', $item['product_variant_id'])->decrement('stock', $item['quantity']);
@@ -407,16 +423,13 @@ class OrderController extends Controller
                 }
             }
 
-            // Bulk insert OrderItem
-            OrderItem::insert($orderItems);
 
-            // Xóa chỉ các sản phẩm được chọn khỏi giỏ hàng
+
+
+
+            // Xóa giỏ hàng sau khi đặt hàng thành công
             if ($userId) {
-                foreach ($selectedProducts as $item) {
-                    if (isset($item['id']) && $item['id']) {
-                        CartItem::where('id', $item['id'])->delete();
-                    }
-                }
+                CartItem::where('user_id', $userId)->delete();
             }
 
             // Xử lý các phương thức thanh toán
@@ -441,13 +454,13 @@ class OrderController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi đặt hàng:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Lỗi hệ thống', 'error' => $e->getMessage()], 500);
         }
     }
 
     public function retryPayment($orderId, Request $request)
     {
+        // Lấy đơn hàng theo ID và kiểm tra trạng thái
         $order = Order::find($orderId);
 
         if (!$order) {
@@ -458,16 +471,21 @@ class OrderController extends Controller
             return response()->json(['message' => 'Đơn hàng không thể thanh toán lại, trạng thái không hợp lệ'], 400);
         }
 
+        // Lấy phương thức thanh toán từ yêu cầu
         $paymentMethod = $request->input('payment_method');
 
+        // Kiểm tra nếu phương thức thanh toán là VNPay
         if ($paymentMethod == 'vnpay') {
+            // Tạo yêu cầu thanh toán VNPay
             $vnpayController = app()->make(VNPayController::class);
+
             return $vnpayController->createPayment(new Request([
                 'order_id' => $order->id,
                 'payment_method' => 'vnpay'
             ]));
         }
 
+        // Kiểm tra nếu phương thức thanh toán là MoMo
         if ($paymentMethod === 'momo') {
             $amount = (int) $order->total_amount;
             $momoController = app()->make(MomoController::class);

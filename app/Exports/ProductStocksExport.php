@@ -18,15 +18,20 @@ class ProductStocksExport implements FromCollection, WithHeadings
 
     public function collection()
     {
+        // Truy vấn chính
         $query = ProductStock::join('products', 'products.id', '=', 'product_stocks.product_id')
             ->join('stocks', 'stocks.id', '=', 'product_stocks.stock_id')
-            ->join('attribute_value_product_variants', 'product_stocks.product_variant_id', '=', 'attribute_value_product_variants.product_variant_id')
-            ->join('attribute_values', 'attribute_values.id', '=', 'attribute_value_product_variants.attribute_value_id')
+            ->leftJoin('product_variants', 'product_stocks.product_variant_id', '=', 'product_variants.id')
             ->select([
                 'product_stocks.id',
                 DB::raw('products.name as product_name'),
-                // Lấy 2 giá trị thuộc tính đầu tiên của biến thể
-                DB::raw("SUBSTRING_INDEX(GROUP_CONCAT(attribute_values.value ORDER BY attribute_values.id SEPARATOR ', '), ',', 2) as variant_attributes"),
+                DB::raw('(CASE WHEN product_stocks.product_variant_id IS NULL THEN "" ELSE 
+                    (SELECT GROUP_CONCAT(attribute_values.value ORDER BY attribute_values.id SEPARATOR ", ")
+                    FROM attribute_value_product_variants
+                    JOIN attribute_values ON attribute_values.id = attribute_value_product_variants.attribute_value_id
+                    WHERE attribute_value_product_variants.product_variant_id = product_stocks.product_variant_id
+                    GROUP BY attribute_value_product_variants.product_variant_id)
+                END) as variant_attributes'),
                 'product_stocks.quantity',
                 'product_stocks.price',
                 DB::raw("CASE 
@@ -37,8 +42,7 @@ class ProductStocksExport implements FromCollection, WithHeadings
                          END as stock_status"),
                 'product_stocks.stock_id',
                 DB::raw("DATE_FORMAT(product_stocks.created_at, '%d-%m-%Y') as formatted_created_at")
-            ])
-            ->groupBy('product_stocks.id');
+            ]);
 
         if (!empty($this->orderIds)) {
             $query->whereIn('product_stocks.stock_id', $this->orderIds);

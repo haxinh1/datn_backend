@@ -435,6 +435,7 @@ class OrderReturnController extends Controller
             OrderOrderStatus::create([
                 'order_id' => $orderId,
                 'order_status_id' => 12,
+                'employee_evidence' => $request->refund_proof,
                 'modified_by' => $request->user_id,
                 'note' => $request->note ?? 'Hoàn tiền thành công',
                 'created_at' => now(),

@@ -11,6 +11,7 @@ class OrderCancel extends Model
 
     protected $fillable = [
         'order_id',
+        'user_id',
         'bank_account_number',
         'bank_name',
         'bank_qr',
@@ -22,4 +23,8 @@ class OrderCancel extends Model
     {
         return $this->belongsTo(Order::class, 'order_id');
     }
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id', 'id');
+}
 }

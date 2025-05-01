@@ -44,6 +44,21 @@ class OrderCancelController extends Controller
         ]);
     }
 
+    /**
+     * Lấy thông tin đơn hủy theo order_id
+     */
+    public function showByOrderId($orderId)
+    {
+        $orderCancel = OrderCancel::with([
+            'order:user_id,id,code,total_amount,payment_id'
+        ])
+            ->where('order_id', $orderId)
+            ->first();
+
+        return response()->json([
+            'order_cancel' => $orderCancel
+        ]);
+    }
 
     /**
      * Client chủ động gửi yêu cầu hủy đơn

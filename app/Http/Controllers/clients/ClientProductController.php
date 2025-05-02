@@ -71,5 +71,29 @@ class ClientProductController extends Controller
             'recommended_products' => $recommended_products,
         ]);
     }
-        
+    public function searchImage(Request $request)
+    {
+        if (!$request->hasFile('image')) {
+            return response()->json(['error' => 'Vui lòng chọn ảnh để tìm kiếm'], 400);
+        }
+
+        $image = $request->file('image');
+
+        try {
+            $response = Http::attach(
+                'image',      
+                file_get_contents($image),
+                $image->getClientOriginalName()
+            )->post('http://127.0.0.1:5000/search-image');
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            } else {
+                return response()->json(['error' => 'Lỗi từ API Flask', 'detail' => $response->body()], $response->status());
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Không thể kết nối đến API Flask', 'message' => $e->getMessage()], 500);
+        }
+    }        
 }

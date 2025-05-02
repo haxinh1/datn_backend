@@ -334,6 +334,7 @@ Route::prefix('chat')->group(function () {
 //Client
 Route::get('/product-detail/{id}', [ClientProductController::class, 'productDetail']);
 Route::get('/product-recommend/{id}', [ClientProductController::class, 'getRecommendedProducts']);
+Route::post('/search-image', [ClientProductController::class, 'searchImage']);
 
 
 //Thống kê

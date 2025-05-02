@@ -95,6 +95,8 @@ class OrderCancelController extends Controller
             'status_id' => 8, // Hủy đơn
             'refund_proof' => '', // Chưa upload minh chứng
         ]);
+        $this->rollbackInventory($order);
+
 
         // Cập nhật trạng thái đơn gốc
         $order->update(['status_id' => 8]);
@@ -153,6 +155,7 @@ class OrderCancelController extends Controller
             'status_id' => 8,
             'refund_proof' => '',
         ]);
+        $this->rollbackInventory($order);
 
         // Cập nhật trạng thái đơn hàng
         $order->update(['status_id' => 8]);
@@ -235,5 +238,27 @@ class OrderCancelController extends Controller
             'message' => 'Đã hoàn tiền và cập nhật đơn hàng thành công',
             'order_cancel' => $orderCancel
         ]);
+    }
+    /**
+     * Trả lại tồn kho và trừ tổng bán khi hủy đơn
+     */
+    private function rollbackInventory(Order $order)
+    {
+        foreach ($order->orderItems as $item) {
+            $product = \App\Models\Product::find($item->product_id);
+            if ($product) {
+                $product->total_sales -= $item->quantity;
+                $product->save();
+
+                if ($item->product_variant_id) {
+                    $variant = \App\Models\ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $variant->increment('stock', $item->quantity);
+                    }
+                } else {
+                    $product->increment('stock', $item->quantity);
+                }
+            }
+        }
     }
 }

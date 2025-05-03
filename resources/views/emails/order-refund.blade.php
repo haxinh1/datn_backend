@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Thông báo hủy đơn hàng</title>
+    <title>Xác nhận hoàn tiền đơn hàng</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -102,49 +102,30 @@
     </style>
 </head>
 <body>
- 
-
     <div class="container">
         <h1>Xin chào {{ $order->fullname }},    </h1>
 
-        <p>Chúng tôi rất tiếc phải thông báo rằng đơn hàng <strong>{{ $order->code }}</strong> của bạn đã bị hủy. Dưới đây là thông tin chi tiết đơn hàng:</p>
+        <p>Đơn hàng <strong>{{ $orderCode }}</strong> của bạn đã được hoàn tiền thành công.</p>
 
-        <p><strong>Lý do hủy:</strong> Đơn hàng của bạn không thể được xử lý do một số lý do. Chúng tôi rất tiếc vì sự bất tiện này.</p>
-
-        <h3>Thông tin đơn hàng:</h3>
+        <h3>Thông tin hoàn tiền:</h3>
         <ul>
-            <li><strong>Mã đơn hàng:</strong> {{ $order->code }}</li>
-            <li><strong>Họ và tên:</strong> {{ $order->fullname }}</li>
-            <li><strong>Email:</strong> {{ $order->email }}</li>
-            <li><strong>Số điện thoại:</strong> {{ $order->phone_number }}</li>
-            <li><strong>Địa chỉ:</strong> {{ $order->address }}</li>
-            <li><strong>Tổng tiền:</strong> {{ number_format($order->total_amount, 0, ',', '.') }} VND</li>
-        </ul>
-
-        <h3>Chi tiết sản phẩm:</h3>
-        <ul>
-            @foreach ($order->orderItems as $item)
-                <li>
-                    <strong>Sản phẩm:</strong> {{ $item->product->name ?? 'Không xác định' }} (
-                    @if ($item->productVariant)
-                    {{ $item->productVariant->attributeValues->map(fn($attributeValue) => $attributeValue->value)->implode(' - ') }}
-                ) 
-                @endif 
-                   <br> <strong>Số lượng:</strong> {{ $item->quantity }}<br>
-                    <strong>Giá:</strong> {{ number_format($item->sell_price, 0, ',', '.') }} VND
-                </li>
-            @endforeach
-        </ul>
-         @if($order->user_id)
+            <li><strong>Số tài khoản ngân hàng:</strong> {{ $bankAccount }}</li>
+            <li><strong>Tên ngân hàng:</strong> {{ $bankName }}</li>
+            <li><strong>Tổng số tiền:</strong> {{ number_format($totalAmount, 0, ',', '.') }} VND</li>
+            <li><strong>Minh chứng hoàn tiền:</strong> {{ $refundProof }}</li>
+        </ul> 
+        
+        @if($order->user_id)
         <div class="button">
-            <a href="http://localhost:5173/dashboard/cancels/{{$order->user_id}}">Xem chi tiết đơn hủy</a>
+            <a href="http://localhost:5173/dashboard/cancels/{{$order->user_id}}">Xem chi tiết </a>
         </div>
         @else 
         <div class="button">
-            <a href="http://localhost:5173/detail/{{$order->code}}">Xem chi tiết đơn huỷ</a>
+            <a href="http://localhost:5173/detail/{{$order->code}}">Xem chi tiết </a>
         </div>
         @endif
-        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
+        
+        <p>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi.</p>
         
         <div class="footer">
             <p>Đội ngũ hỗ trợ khách hàng</p>
@@ -154,6 +135,6 @@
             <p><a href="mailto:hotro@mollashop.com">Liên hệ với chúng tôi</a></p>
         </div>
     </div>
-   
 </body>
 </html>
+

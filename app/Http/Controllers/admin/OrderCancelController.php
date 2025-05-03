@@ -232,6 +232,8 @@ class OrderCancelController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            Mail::to($order->email)->send(new \App\Mail\OrderRefund($orderCancel , $order));
+
         }
 
         return response()->json([

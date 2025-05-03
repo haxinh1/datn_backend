@@ -19,6 +19,23 @@ class MessageController extends Controller
      */
     public function sendMessage(Request $request)
     {
+        $request->validate([
+            'chat_session_id' => 'required|exists:chat_sessions,id',
+            'message' => 'nullable|string', // Cho phép null
+            'media' => 'nullable|array',
+            'media.*.url' => 'required_with:media|string|url',
+            'media.*.type' => 'required_with:media|in:image,video',
+            'guest_phone' => 'required_if:user_role,guest|nullable|string',
+            'guest_name' => 'required_if:user_role,guest|nullable|string',
+        ], [
+            'message.required_without' => 'Bạn phải nhập tin nhắn hoặc gửi media.',
+            'media.required_without' => 'Bạn phải nhập tin nhắn hoặc gửi media.',
+        ]);
+
+        if (empty($request->message) && empty($request->media)) {
+            return response()->json(['error' => 'Bạn phải nhập tin nhắn hoặc gửi media.'], 422);
+        }
+
 
         // Tìm phiên chat theo ID
         $chatSession = ChatSession::find($request->chat_session_id);
@@ -51,6 +68,7 @@ class MessageController extends Controller
             $senderType = 'guest';
         }
 
+
         // Tạo một tin nhắn mới và lưu vào database
         $message = Message::create([
             'chat_session_id' => $chatSession->id,
@@ -58,12 +76,10 @@ class MessageController extends Controller
             'sender_type' => $senderType, // Loại người gửi: store, customer, guest
             'guest_phone' => $userRole === 'guest' ? $request->guest_phone : null, // Nếu là khách thì lưu số điện thoại
             'guest_name' => $userRole === 'guest' ? $request->guest_name : null, // Nếu là khách thì lưu tên
-            'message' => $request->message, // Nội dung tin nhắn
-            'type' => $request->type ?? 'text', // Loại tin nhắn, mặc định là "text",
-            'media' => 'nullable|array',
-            'media.*.url' => 'required_with:media|string|url',
-            'media.*.type' => 'required_with:media|in:image,video',
+            'message' => $request->has('message') ? $request->message : "",
+            'type' => $request->type ?? 'text', // Loại tin nhắn, mặc định là "text"
         ]);
+
 
         if ($request->has('media') && is_array($request->media)) {
             foreach ($request->media as $mediaItem) {

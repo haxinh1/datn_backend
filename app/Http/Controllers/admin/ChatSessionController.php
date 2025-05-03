@@ -45,10 +45,13 @@ class ChatSessionController extends Controller
         if ($user) {
             // Nếu là nhân viên, lấy tất cả chat đang mở
             if (!($user->role === "customer")) {
-                $sessions = ChatSession::where('status', 'open')->get();
+                $sessions = ChatSession::with('customer')
+                    ->get();
             } else {
                 // Nếu là khách hàng đã đăng nhập, chỉ lấy phiên của họ
-                $sessions = ChatSession::where('customer_id',$user->id)->get();
+                $sessions = ChatSession::with('customer')
+                    ->where('customer_id', $user->id)
+                    ->get();
             }
         } else {
             // Nếu là khách vãng lai, lấy phiên theo số điện thoại

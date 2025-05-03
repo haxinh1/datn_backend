@@ -109,15 +109,11 @@ class MessageController extends Controller
      */
     public function getMessages($chatSessionId)
     {
-        $messages = Message::with(['media', 'sender'])
-            ->where('chat_session_id', $chatSessionId)
+        // Truy vấn tin nhắn + media liên kết
+        $messages = Message::with(['media', 'sender']) // Load quan hệ media và sender
+        ->where('chat_session_id', $chatSessionId)
             ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function ($message) {
-                $messageArray = $message->toArray();
-                $messageArray['user'] = $message->sender; // Thêm trường user
-                return $messageArray;
-            });
+            ->get();
 
         return response()->json(['messages' => $messages]);
     }
